@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { PlusCircle, Search, Truck, MessageSquare } from "lucide-react";
 
-const ACTIONS = [
+const ACTIONS: { label: string; icon: typeof PlusCircle; to: string; primary?: boolean }[] = [
   { label: "Post a Listing", icon: PlusCircle, to: "/marketplace", primary: true },
   { label: "Find a Supplier", icon: Search, to: "/farmers" },
   { label: "Book Transport", icon: Truck, to: "/transport" },
   { label: "Chat with Buyer", icon: MessageSquare, to: "/chat" },
-] as const;
+];
 
 export function QuickActions() {
   return (
