@@ -42,6 +42,25 @@ type Props = {
 
 export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const { profile, user, signOut } = useAuth();
+
+  const displayName =
+    profile?.full_name?.trim() || user?.email?.split("@")[0] || "Account";
+  const initials = (displayName || "HH")
+    .split(/\s+/)
+    .map((s) => s[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  const roleLabel = profile ? ROLE_LABEL[profile.role] : "Member";
+
+  async function handleLogout() {
+    onCloseMobile();
+    await signOut();
+    navigate({ to: "/login" });
+  }
 
   const content = (
     <div className="flex h-full flex-col gap-6 p-5">
@@ -91,14 +110,25 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
         })}
       </nav>
 
-      <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">
-          Season
+      <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-secondary font-display ring-1 ring-secondary/40">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm text-foreground">{displayName}</div>
+            <div className="truncate text-[11px] uppercase tracking-wider text-secondary/80">
+              {roleLabel}
+            </div>
+          </div>
         </div>
-        <div className="mt-1 font-display text-lg">2025 / 26</div>
-        <div className="mt-1 text-xs text-muted-foreground">
-          Summer cropping window
-        </div>
+        <button
+          onClick={handleLogout}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-foreground/80 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-foreground"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Sign out
+        </button>
       </div>
     </div>
   );
