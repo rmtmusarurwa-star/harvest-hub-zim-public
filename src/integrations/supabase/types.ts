@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      listings: {
+        Row: {
+          category: Database["public"]["Enums"]["listing_category"]
+          created_at: string
+          delivery_available: boolean
+          description: string
+          farmer_id: string
+          id: string
+          image_url: string | null
+          location: string
+          price: number
+          province: string
+          quantity: number
+          rating: number
+          status: Database["public"]["Enums"]["listing_status"]
+          title: string
+          unit: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["listing_category"]
+          created_at?: string
+          delivery_available?: boolean
+          description?: string
+          farmer_id: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          price: number
+          province?: string
+          quantity?: number
+          rating?: number
+          status?: Database["public"]["Enums"]["listing_status"]
+          title: string
+          unit?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["listing_category"]
+          created_at?: string
+          delivery_available?: boolean
+          description?: string
+          farmer_id?: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          price?: number
+          province?: string
+          quantity?: number
+          rating?: number
+          status?: Database["public"]["Enums"]["listing_status"]
+          title?: string
+          unit?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -49,6 +109,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      listing_category:
+        | "produce"
+        | "livestock"
+        | "poultry"
+        | "dairy"
+        | "grain"
+        | "other"
+      listing_status: "active" | "sold" | "draft" | "archived"
       user_role: "farmer" | "buyer" | "supplier" | "transporter"
     }
     CompositeTypes: {
@@ -177,6 +245,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      listing_category: [
+        "produce",
+        "livestock",
+        "poultry",
+        "dairy",
+        "grain",
+        "other",
+      ],
+      listing_status: ["active", "sold", "draft", "archived"],
       user_role: ["farmer", "buyer", "supplier", "transporter"],
     },
   },
