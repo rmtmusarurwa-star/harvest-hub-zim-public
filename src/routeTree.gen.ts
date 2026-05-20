@@ -17,7 +17,6 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTransportRouteImport } from './routes/_authenticated/transport'
 import { Route as AuthenticatedShopsRouteImport } from './routes/_authenticated/shops'
-import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenticated/marketplace'
 import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
 import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
 import { Route as AuthenticatedFarmersRouteImport } from './routes/_authenticated/farmers'
@@ -26,6 +25,8 @@ import { Route as AuthenticatedDiseaseIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
+import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -66,12 +67,6 @@ const AuthenticatedShopsRoute = AuthenticatedShopsRouteImport.update({
   path: '/shops',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedMarketplaceRoute =
-  AuthenticatedMarketplaceRouteImport.update({
-    id: '/marketplace',
-    path: '/marketplace',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedMarketIntelligenceRoute =
   AuthenticatedMarketIntelligenceRouteImport.update({
     id: '/market-intelligence',
@@ -114,6 +109,18 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMarketplaceIndexRoute =
+  AuthenticatedMarketplaceIndexRouteImport.update({
+    id: '/marketplace/',
+    path: '/marketplace/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMarketplaceListingIdRoute =
+  AuthenticatedMarketplaceListingIdRouteImport.update({
+    id: '/marketplace/$listingId',
+    path: '/marketplace/$listingId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -129,9 +136,10 @@ export interface FileRoutesByFullPath {
   '/farmers': typeof AuthenticatedFarmersRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/marketplace': typeof AuthenticatedMarketplaceRoute
   '/shops': typeof AuthenticatedShopsRoute
   '/transport': typeof AuthenticatedTransportRoute
+  '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -146,10 +154,11 @@ export interface FileRoutesByTo {
   '/farmers': typeof AuthenticatedFarmersRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/marketplace': typeof AuthenticatedMarketplaceRoute
   '/shops': typeof AuthenticatedShopsRoute
   '/transport': typeof AuthenticatedTransportRoute
   '/': typeof AuthenticatedIndexRoute
+  '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -166,10 +175,11 @@ export interface FileRoutesById {
   '/_authenticated/farmers': typeof AuthenticatedFarmersRoute
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/_authenticated/marketplace': typeof AuthenticatedMarketplaceRoute
   '/_authenticated/shops': typeof AuthenticatedShopsRoute
   '/_authenticated/transport': typeof AuthenticatedTransportRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -187,9 +197,10 @@ export interface FileRouteTypes {
     | '/farmers'
     | '/financial-hub'
     | '/market-intelligence'
-    | '/marketplace'
     | '/shops'
     | '/transport'
+    | '/marketplace/$listingId'
+    | '/marketplace/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -204,10 +215,11 @@ export interface FileRouteTypes {
     | '/farmers'
     | '/financial-hub'
     | '/market-intelligence'
-    | '/marketplace'
     | '/shops'
     | '/transport'
     | '/'
+    | '/marketplace/$listingId'
+    | '/marketplace'
   id:
     | '__root__'
     | '/_authenticated'
@@ -223,10 +235,11 @@ export interface FileRouteTypes {
     | '/_authenticated/farmers'
     | '/_authenticated/financial-hub'
     | '/_authenticated/market-intelligence'
-    | '/_authenticated/marketplace'
     | '/_authenticated/shops'
     | '/_authenticated/transport'
     | '/_authenticated/'
+    | '/_authenticated/marketplace/$listingId'
+    | '/_authenticated/marketplace/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -295,13 +308,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShopsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/marketplace': {
-      id: '/_authenticated/marketplace'
-      path: '/marketplace'
-      fullPath: '/marketplace'
-      preLoaderRoute: typeof AuthenticatedMarketplaceRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/market-intelligence': {
       id: '/_authenticated/market-intelligence'
       path: '/market-intelligence'
@@ -358,6 +364,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/marketplace/': {
+      id: '/_authenticated/marketplace/'
+      path: '/marketplace'
+      fullPath: '/marketplace/'
+      preLoaderRoute: typeof AuthenticatedMarketplaceIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/marketplace/$listingId': {
+      id: '/_authenticated/marketplace/$listingId'
+      path: '/marketplace/$listingId'
+      fullPath: '/marketplace/$listingId'
+      preLoaderRoute: typeof AuthenticatedMarketplaceListingIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -370,10 +390,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFarmersRoute: typeof AuthenticatedFarmersRoute
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
-  AuthenticatedMarketplaceRoute: typeof AuthenticatedMarketplaceRoute
   AuthenticatedShopsRoute: typeof AuthenticatedShopsRoute
   AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedMarketplaceListingIdRoute: typeof AuthenticatedMarketplaceListingIdRoute
+  AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -385,10 +406,12 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFarmersRoute: AuthenticatedFarmersRoute,
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
-  AuthenticatedMarketplaceRoute: AuthenticatedMarketplaceRoute,
   AuthenticatedShopsRoute: AuthenticatedShopsRoute,
   AuthenticatedTransportRoute: AuthenticatedTransportRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedMarketplaceListingIdRoute:
+    AuthenticatedMarketplaceListingIdRoute,
+  AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
