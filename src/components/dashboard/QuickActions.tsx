@@ -14,7 +14,7 @@ export function QuickActions() {
       {ACTIONS.map((a) => (
         <Link
           key={a.label}
-          to={a.to}
+          to={a.to as "/marketplace"}
           className={`group glass flex items-center gap-3 rounded-2xl p-4 transition hover:border-secondary/30 ${
             a.primary ? "ring-1 ring-secondary/30" : ""
           }`}
