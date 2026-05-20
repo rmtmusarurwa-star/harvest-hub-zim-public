@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
 
-export const Route = createFileRoute("/disease-id")({
-  component: () => <PagePlaceholder title="Disease ID" />,
+export const Route = createFileRoute("/_authenticated/equipment")({
+  component: () => <PagePlaceholder title="Equipment" />,
 });

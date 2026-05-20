@@ -9,127 +9,176 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TransportRouteImport } from './routes/transport'
-import { Route as ShopsRouteImport } from './routes/shops'
-import { Route as MarketplaceRouteImport } from './routes/marketplace'
-import { Route as MarketIntelligenceRouteImport } from './routes/market-intelligence'
-import { Route as FinancialHubRouteImport } from './routes/financial-hub'
-import { Route as FarmersRouteImport } from './routes/farmers'
-import { Route as EquipmentRouteImport } from './routes/equipment'
-import { Route as DiseaseIdRouteImport } from './routes/disease-id'
-import { Route as CommunityRouteImport } from './routes/community'
-import { Route as ChatRouteImport } from './routes/chat'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedTransportRouteImport } from './routes/_authenticated/transport'
+import { Route as AuthenticatedShopsRouteImport } from './routes/_authenticated/shops'
+import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenticated/marketplace'
+import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
+import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
+import { Route as AuthenticatedFarmersRouteImport } from './routes/_authenticated/farmers'
+import { Route as AuthenticatedEquipmentRouteImport } from './routes/_authenticated/equipment'
+import { Route as AuthenticatedDiseaseIdRouteImport } from './routes/_authenticated/disease-id'
+import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
+import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
-const TransportRoute = TransportRouteImport.update({
-  id: '/transport',
-  path: '/transport',
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ShopsRoute = ShopsRouteImport.update({
-  id: '/shops',
-  path: '/shops',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MarketplaceRoute = MarketplaceRouteImport.update({
-  id: '/marketplace',
-  path: '/marketplace',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MarketIntelligenceRoute = MarketIntelligenceRouteImport.update({
-  id: '/market-intelligence',
-  path: '/market-intelligence',
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FinancialHubRoute = FinancialHubRouteImport.update({
-  id: '/financial-hub',
-  path: '/financial-hub',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FarmersRoute = FarmersRouteImport.update({
-  id: '/farmers',
-  path: '/farmers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EquipmentRoute = EquipmentRouteImport.update({
-  id: '/equipment',
-  path: '/equipment',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiseaseIdRoute = DiseaseIdRouteImport.update({
-  id: '/disease-id',
-  path: '/disease-id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommunityRoute = CommunityRouteImport.update({
-  id: '/community',
-  path: '/community',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatRoute = ChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTransportRoute = AuthenticatedTransportRouteImport.update({
+  id: '/transport',
+  path: '/transport',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedShopsRoute = AuthenticatedShopsRouteImport.update({
+  id: '/shops',
+  path: '/shops',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMarketplaceRoute =
+  AuthenticatedMarketplaceRouteImport.update({
+    id: '/marketplace',
+    path: '/marketplace',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMarketIntelligenceRoute =
+  AuthenticatedMarketIntelligenceRouteImport.update({
+    id: '/market-intelligence',
+    path: '/market-intelligence',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinancialHubRoute =
+  AuthenticatedFinancialHubRouteImport.update({
+    id: '/financial-hub',
+    path: '/financial-hub',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFarmersRoute = AuthenticatedFarmersRouteImport.update({
+  id: '/farmers',
+  path: '/farmers',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedEquipmentRoute = AuthenticatedEquipmentRouteImport.update({
+  id: '/equipment',
+  path: '/equipment',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDiseaseIdRoute = AuthenticatedDiseaseIdRouteImport.update({
+  id: '/disease-id',
+  path: '/disease-id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCommunityRoute = AuthenticatedCommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/chat': typeof ChatRoute
-  '/community': typeof CommunityRoute
-  '/disease-id': typeof DiseaseIdRoute
-  '/equipment': typeof EquipmentRoute
-  '/farmers': typeof FarmersRoute
-  '/financial-hub': typeof FinancialHubRoute
-  '/market-intelligence': typeof MarketIntelligenceRoute
-  '/marketplace': typeof MarketplaceRoute
-  '/shops': typeof ShopsRoute
-  '/transport': typeof TransportRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/chat': typeof AuthenticatedChatRoute
+  '/community': typeof AuthenticatedCommunityRoute
+  '/disease-id': typeof AuthenticatedDiseaseIdRoute
+  '/equipment': typeof AuthenticatedEquipmentRoute
+  '/farmers': typeof AuthenticatedFarmersRoute
+  '/financial-hub': typeof AuthenticatedFinancialHubRoute
+  '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
+  '/marketplace': typeof AuthenticatedMarketplaceRoute
+  '/shops': typeof AuthenticatedShopsRoute
+  '/transport': typeof AuthenticatedTransportRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/chat': typeof ChatRoute
-  '/community': typeof CommunityRoute
-  '/disease-id': typeof DiseaseIdRoute
-  '/equipment': typeof EquipmentRoute
-  '/farmers': typeof FarmersRoute
-  '/financial-hub': typeof FinancialHubRoute
-  '/market-intelligence': typeof MarketIntelligenceRoute
-  '/marketplace': typeof MarketplaceRoute
-  '/shops': typeof ShopsRoute
-  '/transport': typeof TransportRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/chat': typeof AuthenticatedChatRoute
+  '/community': typeof AuthenticatedCommunityRoute
+  '/disease-id': typeof AuthenticatedDiseaseIdRoute
+  '/equipment': typeof AuthenticatedEquipmentRoute
+  '/farmers': typeof AuthenticatedFarmersRoute
+  '/financial-hub': typeof AuthenticatedFinancialHubRoute
+  '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
+  '/marketplace': typeof AuthenticatedMarketplaceRoute
+  '/shops': typeof AuthenticatedShopsRoute
+  '/transport': typeof AuthenticatedTransportRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/chat': typeof ChatRoute
-  '/community': typeof CommunityRoute
-  '/disease-id': typeof DiseaseIdRoute
-  '/equipment': typeof EquipmentRoute
-  '/farmers': typeof FarmersRoute
-  '/financial-hub': typeof FinancialHubRoute
-  '/market-intelligence': typeof MarketIntelligenceRoute
-  '/marketplace': typeof MarketplaceRoute
-  '/shops': typeof ShopsRoute
-  '/transport': typeof TransportRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/community': typeof AuthenticatedCommunityRoute
+  '/_authenticated/disease-id': typeof AuthenticatedDiseaseIdRoute
+  '/_authenticated/equipment': typeof AuthenticatedEquipmentRoute
+  '/_authenticated/farmers': typeof AuthenticatedFarmersRoute
+  '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
+  '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
+  '/_authenticated/marketplace': typeof AuthenticatedMarketplaceRoute
+  '/_authenticated/shops': typeof AuthenticatedShopsRoute
+  '/_authenticated/transport': typeof AuthenticatedTransportRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/admin'
     | '/chat'
     | '/community'
@@ -143,7 +192,10 @@ export interface FileRouteTypes {
     | '/transport'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/admin'
     | '/chat'
     | '/community'
@@ -155,139 +207,200 @@ export interface FileRouteTypes {
     | '/marketplace'
     | '/shops'
     | '/transport'
+    | '/'
   id:
     | '__root__'
-    | '/'
-    | '/admin'
-    | '/chat'
-    | '/community'
-    | '/disease-id'
-    | '/equipment'
-    | '/farmers'
-    | '/financial-hub'
-    | '/market-intelligence'
-    | '/marketplace'
-    | '/shops'
-    | '/transport'
+    | '/_authenticated'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
+    | '/_authenticated/admin'
+    | '/_authenticated/chat'
+    | '/_authenticated/community'
+    | '/_authenticated/disease-id'
+    | '/_authenticated/equipment'
+    | '/_authenticated/farmers'
+    | '/_authenticated/financial-hub'
+    | '/_authenticated/market-intelligence'
+    | '/_authenticated/marketplace'
+    | '/_authenticated/shops'
+    | '/_authenticated/transport'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
-  ChatRoute: typeof ChatRoute
-  CommunityRoute: typeof CommunityRoute
-  DiseaseIdRoute: typeof DiseaseIdRoute
-  EquipmentRoute: typeof EquipmentRoute
-  FarmersRoute: typeof FarmersRoute
-  FinancialHubRoute: typeof FinancialHubRoute
-  MarketIntelligenceRoute: typeof MarketIntelligenceRoute
-  MarketplaceRoute: typeof MarketplaceRoute
-  ShopsRoute: typeof ShopsRoute
-  TransportRoute: typeof TransportRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/transport': {
-      id: '/transport'
-      path: '/transport'
-      fullPath: '/transport'
-      preLoaderRoute: typeof TransportRouteImport
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/shops': {
-      id: '/shops'
-      path: '/shops'
-      fullPath: '/shops'
-      preLoaderRoute: typeof ShopsRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/marketplace': {
-      id: '/marketplace'
-      path: '/marketplace'
-      fullPath: '/marketplace'
-      preLoaderRoute: typeof MarketplaceRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/market-intelligence': {
-      id: '/market-intelligence'
-      path: '/market-intelligence'
-      fullPath: '/market-intelligence'
-      preLoaderRoute: typeof MarketIntelligenceRouteImport
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/financial-hub': {
-      id: '/financial-hub'
-      path: '/financial-hub'
-      fullPath: '/financial-hub'
-      preLoaderRoute: typeof FinancialHubRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/farmers': {
-      id: '/farmers'
-      path: '/farmers'
-      fullPath: '/farmers'
-      preLoaderRoute: typeof FarmersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/equipment': {
-      id: '/equipment'
-      path: '/equipment'
-      fullPath: '/equipment'
-      preLoaderRoute: typeof EquipmentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/disease-id': {
-      id: '/disease-id'
-      path: '/disease-id'
-      fullPath: '/disease-id'
-      preLoaderRoute: typeof DiseaseIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/community': {
-      id: '/community'
-      path: '/community'
-      fullPath: '/community'
-      preLoaderRoute: typeof CommunityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat': {
-      id: '/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/transport': {
+      id: '/_authenticated/transport'
+      path: '/transport'
+      fullPath: '/transport'
+      preLoaderRoute: typeof AuthenticatedTransportRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/shops': {
+      id: '/_authenticated/shops'
+      path: '/shops'
+      fullPath: '/shops'
+      preLoaderRoute: typeof AuthenticatedShopsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/marketplace': {
+      id: '/_authenticated/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof AuthenticatedMarketplaceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/market-intelligence': {
+      id: '/_authenticated/market-intelligence'
+      path: '/market-intelligence'
+      fullPath: '/market-intelligence'
+      preLoaderRoute: typeof AuthenticatedMarketIntelligenceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/financial-hub': {
+      id: '/_authenticated/financial-hub'
+      path: '/financial-hub'
+      fullPath: '/financial-hub'
+      preLoaderRoute: typeof AuthenticatedFinancialHubRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/farmers': {
+      id: '/_authenticated/farmers'
+      path: '/farmers'
+      fullPath: '/farmers'
+      preLoaderRoute: typeof AuthenticatedFarmersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/equipment': {
+      id: '/_authenticated/equipment'
+      path: '/equipment'
+      fullPath: '/equipment'
+      preLoaderRoute: typeof AuthenticatedEquipmentRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/disease-id': {
+      id: '/_authenticated/disease-id'
+      path: '/disease-id'
+      fullPath: '/disease-id'
+      preLoaderRoute: typeof AuthenticatedDiseaseIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/community': {
+      id: '/_authenticated/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof AuthenticatedCommunityRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/chat': {
+      id: '/_authenticated/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AuthenticatedChatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRoute
+  AuthenticatedDiseaseIdRoute: typeof AuthenticatedDiseaseIdRoute
+  AuthenticatedEquipmentRoute: typeof AuthenticatedEquipmentRoute
+  AuthenticatedFarmersRoute: typeof AuthenticatedFarmersRoute
+  AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
+  AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
+  AuthenticatedMarketplaceRoute: typeof AuthenticatedMarketplaceRoute
+  AuthenticatedShopsRoute: typeof AuthenticatedShopsRoute
+  AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedCommunityRoute: AuthenticatedCommunityRoute,
+  AuthenticatedDiseaseIdRoute: AuthenticatedDiseaseIdRoute,
+  AuthenticatedEquipmentRoute: AuthenticatedEquipmentRoute,
+  AuthenticatedFarmersRoute: AuthenticatedFarmersRoute,
+  AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
+  AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
+  AuthenticatedMarketplaceRoute: AuthenticatedMarketplaceRoute,
+  AuthenticatedShopsRoute: AuthenticatedShopsRoute,
+  AuthenticatedTransportRoute: AuthenticatedTransportRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
-  ChatRoute: ChatRoute,
-  CommunityRoute: CommunityRoute,
-  DiseaseIdRoute: DiseaseIdRoute,
-  EquipmentRoute: EquipmentRoute,
-  FarmersRoute: FarmersRoute,
-  FinancialHubRoute: FinancialHubRoute,
-  MarketIntelligenceRoute: MarketIntelligenceRoute,
-  MarketplaceRoute: MarketplaceRoute,
-  ShopsRoute: ShopsRoute,
-  TransportRoute: TransportRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
