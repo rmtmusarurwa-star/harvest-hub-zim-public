@@ -1,11 +1,13 @@
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, Menu, Search, ShoppingCart } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
+import { useCart } from "@/lib/cart-context";
 
 type Props = { onOpenMobile: () => void };
 
 export function Topbar({ onOpenMobile }: Props) {
   const { profile, user } = useAuth();
+  const { count, open } = useCart();
   const displayName =
     profile?.full_name?.trim() || user?.email?.split("@")[0] || "Account";
   const initials = (displayName || "HH")
@@ -51,6 +53,19 @@ export function Topbar({ onOpenMobile }: Props) {
             </kbd>
           </div>
         </div>
+
+        <button
+          onClick={open}
+          className="relative grid h-9 w-9 place-items-center rounded-lg text-foreground/80 hover:bg-white/5 hover:text-foreground"
+          aria-label="Cart"
+        >
+          <ShoppingCart className="h-5 w-5" />
+          {count > 0 && (
+            <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-secondary px-1 text-[10px] font-semibold text-secondary-foreground">
+              {count}
+            </span>
+          )}
+        </button>
 
         <button
           className="relative grid h-9 w-9 place-items-center rounded-lg text-foreground/80 hover:bg-white/5 hover:text-foreground"
