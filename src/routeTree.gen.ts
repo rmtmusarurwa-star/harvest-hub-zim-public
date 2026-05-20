@@ -9,8 +9,74 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TransportRouteImport } from './routes/transport'
+import { Route as ShopsRouteImport } from './routes/shops'
+import { Route as MarketplaceRouteImport } from './routes/marketplace'
+import { Route as MarketIntelligenceRouteImport } from './routes/market-intelligence'
+import { Route as FinancialHubRouteImport } from './routes/financial-hub'
+import { Route as FarmersRouteImport } from './routes/farmers'
+import { Route as EquipmentRouteImport } from './routes/equipment'
+import { Route as DiseaseIdRouteImport } from './routes/disease-id'
+import { Route as CommunityRouteImport } from './routes/community'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TransportRoute = TransportRouteImport.update({
+  id: '/transport',
+  path: '/transport',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopsRoute = ShopsRouteImport.update({
+  id: '/shops',
+  path: '/shops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketplaceRoute = MarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketIntelligenceRoute = MarketIntelligenceRouteImport.update({
+  id: '/market-intelligence',
+  path: '/market-intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinancialHubRoute = FinancialHubRouteImport.update({
+  id: '/financial-hub',
+  path: '/financial-hub',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FarmersRoute = FarmersRouteImport.update({
+  id: '/farmers',
+  path: '/farmers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipmentRoute = EquipmentRouteImport.update({
+  id: '/equipment',
+  path: '/equipment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiseaseIdRoute = DiseaseIdRouteImport.update({
+  id: '/disease-id',
+  path: '/disease-id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +85,186 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/chat': typeof ChatRoute
+  '/community': typeof CommunityRoute
+  '/disease-id': typeof DiseaseIdRoute
+  '/equipment': typeof EquipmentRoute
+  '/farmers': typeof FarmersRoute
+  '/financial-hub': typeof FinancialHubRoute
+  '/market-intelligence': typeof MarketIntelligenceRoute
+  '/marketplace': typeof MarketplaceRoute
+  '/shops': typeof ShopsRoute
+  '/transport': typeof TransportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/chat': typeof ChatRoute
+  '/community': typeof CommunityRoute
+  '/disease-id': typeof DiseaseIdRoute
+  '/equipment': typeof EquipmentRoute
+  '/farmers': typeof FarmersRoute
+  '/financial-hub': typeof FinancialHubRoute
+  '/market-intelligence': typeof MarketIntelligenceRoute
+  '/marketplace': typeof MarketplaceRoute
+  '/shops': typeof ShopsRoute
+  '/transport': typeof TransportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/chat': typeof ChatRoute
+  '/community': typeof CommunityRoute
+  '/disease-id': typeof DiseaseIdRoute
+  '/equipment': typeof EquipmentRoute
+  '/farmers': typeof FarmersRoute
+  '/financial-hub': typeof FinancialHubRoute
+  '/market-intelligence': typeof MarketIntelligenceRoute
+  '/marketplace': typeof MarketplaceRoute
+  '/shops': typeof ShopsRoute
+  '/transport': typeof TransportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/chat'
+    | '/community'
+    | '/disease-id'
+    | '/equipment'
+    | '/farmers'
+    | '/financial-hub'
+    | '/market-intelligence'
+    | '/marketplace'
+    | '/shops'
+    | '/transport'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/chat'
+    | '/community'
+    | '/disease-id'
+    | '/equipment'
+    | '/farmers'
+    | '/financial-hub'
+    | '/market-intelligence'
+    | '/marketplace'
+    | '/shops'
+    | '/transport'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/chat'
+    | '/community'
+    | '/disease-id'
+    | '/equipment'
+    | '/farmers'
+    | '/financial-hub'
+    | '/market-intelligence'
+    | '/marketplace'
+    | '/shops'
+    | '/transport'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  ChatRoute: typeof ChatRoute
+  CommunityRoute: typeof CommunityRoute
+  DiseaseIdRoute: typeof DiseaseIdRoute
+  EquipmentRoute: typeof EquipmentRoute
+  FarmersRoute: typeof FarmersRoute
+  FinancialHubRoute: typeof FinancialHubRoute
+  MarketIntelligenceRoute: typeof MarketIntelligenceRoute
+  MarketplaceRoute: typeof MarketplaceRoute
+  ShopsRoute: typeof ShopsRoute
+  TransportRoute: typeof TransportRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/transport': {
+      id: '/transport'
+      path: '/transport'
+      fullPath: '/transport'
+      preLoaderRoute: typeof TransportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shops': {
+      id: '/shops'
+      path: '/shops'
+      fullPath: '/shops'
+      preLoaderRoute: typeof ShopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketplace': {
+      id: '/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof MarketplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/market-intelligence': {
+      id: '/market-intelligence'
+      path: '/market-intelligence'
+      fullPath: '/market-intelligence'
+      preLoaderRoute: typeof MarketIntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/financial-hub': {
+      id: '/financial-hub'
+      path: '/financial-hub'
+      fullPath: '/financial-hub'
+      preLoaderRoute: typeof FinancialHubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/farmers': {
+      id: '/farmers'
+      path: '/farmers'
+      fullPath: '/farmers'
+      preLoaderRoute: typeof FarmersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipment': {
+      id: '/equipment'
+      path: '/equipment'
+      fullPath: '/equipment'
+      preLoaderRoute: typeof EquipmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/disease-id': {
+      id: '/disease-id'
+      path: '/disease-id'
+      fullPath: '/disease-id'
+      preLoaderRoute: typeof DiseaseIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +277,17 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  ChatRoute: ChatRoute,
+  CommunityRoute: CommunityRoute,
+  DiseaseIdRoute: DiseaseIdRoute,
+  EquipmentRoute: EquipmentRoute,
+  FarmersRoute: FarmersRoute,
+  FinancialHubRoute: FinancialHubRoute,
+  MarketIntelligenceRoute: MarketIntelligenceRoute,
+  MarketplaceRoute: MarketplaceRoute,
+  ShopsRoute: ShopsRoute,
+  TransportRoute: TransportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
