@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      farmer_details: {
+        Row: {
+          bio: string
+          cover_url: string | null
+          created_at: string
+          follower_count: number
+          province: string
+          speciality: string
+          trust_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string
+          cover_url?: string | null
+          created_at?: string
+          follower_count?: number
+          province?: string
+          speciality?: string
+          trust_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string
+          cover_url?: string | null
+          created_at?: string
+          follower_count?: number
+          province?: string
+          speciality?: string
+          trust_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farmer_details_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farmer_follows: {
+        Row: {
+          created_at: string
+          farmer_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          farmer_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          farmer_id?: string
+          follower_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farmer_follows_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farmer_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farmer_reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          farmer_id: string
+          id: string
+          rating: number
+          reviewer_id: string
+        }
+        Insert: {
+          comment?: string
+          created_at?: string
+          farmer_id: string
+          id?: string
+          rating: number
+          reviewer_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          farmer_id?: string
+          id?: string
+          rating?: number
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farmer_reviews_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farmer_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           category: Database["public"]["Enums"]["listing_category"]
@@ -106,7 +225,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      recompute_trust_score: {
+        Args: { _farmer_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       listing_category:
