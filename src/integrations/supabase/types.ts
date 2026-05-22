@@ -14,6 +14,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversations: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          farmer_id: string
+          id: string
+          last_message_at: string
+          listing_id: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          farmer_id: string
+          id?: string
+          last_message_at?: string
+          listing_id: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          farmer_id?: string
+          id?: string
+          last_message_at?: string
+          listing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       farmer_details: {
         Row: {
           bio: string
@@ -193,6 +242,60 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          offer_price: number | null
+          offer_quantity: number | null
+          offer_status: Database["public"]["Enums"]["offer_status"] | null
+          read_at: string | null
+          sender_id: string
+          type: Database["public"]["Enums"]["message_type"]
+        }
+        Insert: {
+          content?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          offer_price?: number | null
+          offer_quantity?: number | null
+          offer_status?: Database["public"]["Enums"]["offer_status"] | null
+          read_at?: string | null
+          sender_id: string
+          type?: Database["public"]["Enums"]["message_type"]
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          offer_price?: number | null
+          offer_quantity?: number | null
+          offer_status?: Database["public"]["Enums"]["offer_status"] | null
+          read_at?: string | null
+          sender_id?: string
+          type?: Database["public"]["Enums"]["message_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -239,6 +342,8 @@ export type Database = {
         | "grain"
         | "other"
       listing_status: "active" | "sold" | "draft" | "archived"
+      message_type: "text" | "offer"
+      offer_status: "pending" | "accepted" | "declined"
       user_role: "farmer" | "buyer" | "supplier" | "transporter"
     }
     CompositeTypes: {
@@ -376,6 +481,8 @@ export const Constants = {
         "other",
       ],
       listing_status: ["active", "sold", "draft", "archived"],
+      message_type: ["text", "offer"],
+      offer_status: ["pending", "accepted", "declined"],
       user_role: ["farmer", "buyer", "supplier", "transporter"],
     },
   },
