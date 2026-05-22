@@ -250,8 +250,10 @@ function ListingDetailPage() {
                 >
                   <ShoppingCart className="h-4 w-4" /> Add to Cart
                 </Button>
-                <Button variant="outline" className="flex-1">
-                  <MessageCircle className="h-4 w-4" /> Contact Farmer
+                <Button variant="outline" className="flex-1" asChild>
+                  <Link to="/chat" search={{ listing: listing.id }}>
+                    <MessageCircle className="h-4 w-4" /> Contact Farmer
+                  </Link>
                 </Button>
               </div>
               <button
