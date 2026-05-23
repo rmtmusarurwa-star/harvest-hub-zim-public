@@ -591,6 +591,36 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string
+          message: string
+          read: boolean
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string
+          message?: string
+          read?: boolean
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string
+          message?: string
+          read?: boolean
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           buyer_id: string
@@ -1143,6 +1173,16 @@ export type Database = {
         | "other"
       listing_status: "active" | "sold" | "draft" | "archived"
       message_type: "text" | "offer"
+      notification_type:
+        | "message"
+        | "offer"
+        | "order"
+        | "order_status"
+        | "review"
+        | "transport"
+        | "equipment"
+        | "forum_reply"
+        | "announcement"
       offer_status: "pending" | "accepted" | "declined"
       payment_method:
         | "ecocash"
@@ -1352,6 +1392,17 @@ export const Constants = {
       ],
       listing_status: ["active", "sold", "draft", "archived"],
       message_type: ["text", "offer"],
+      notification_type: [
+        "message",
+        "offer",
+        "order",
+        "order_status",
+        "review",
+        "transport",
+        "equipment",
+        "forum_reply",
+        "announcement",
+      ],
       offer_status: ["pending", "accepted", "declined"],
       payment_method: [
         "ecocash",

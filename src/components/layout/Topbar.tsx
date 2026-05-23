@@ -1,4 +1,5 @@
-import { Bell, Menu, ShoppingCart } from "lucide-react";
+import { Menu, ShoppingCart } from "lucide-react";
+import { NotificationsBell } from "./NotificationsBell";
 import { GlobalSearch } from "./GlobalSearch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
@@ -56,13 +57,7 @@ export function Topbar({ onOpenMobile }: Props) {
           )}
         </button>
 
-        <button
-          className="relative grid h-9 w-9 place-items-center rounded-lg text-foreground/80 hover:bg-white/5 hover:text-foreground"
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-accent" />
-        </button>
+        <NotificationsBell />
 
         <div className="hidden sm:block text-right leading-tight">
           <div className="max-w-[140px] truncate text-sm text-foreground">
