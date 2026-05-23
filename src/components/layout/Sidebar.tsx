@@ -85,7 +85,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
       </Link>
 
       <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+        {navItems.map(({ to, label, icon: Icon }) => {
           const active =
             to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
