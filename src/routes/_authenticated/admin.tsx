@@ -17,7 +17,14 @@ import {
   XCircle,
   Loader2,
   DollarSign,
+  TrendingUp,
+  Wallet,
+  LayoutGrid,
+  Download,
+  RefreshCw,
 } from "lucide-react";
+import { jsPDF } from "jspdf";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABEL, type AppRole } from "@/lib/auth-context";
 import { useIsAdmin } from "@/lib/use-is-admin";
@@ -92,6 +99,9 @@ function AdminPage() {
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="verification">Verification</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="financial">Financial</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
@@ -102,12 +112,16 @@ function AdminPage() {
         <TabsContent value="orders"><OrdersTab /></TabsContent>
         <TabsContent value="verification"><VerificationTab /></TabsContent>
         <TabsContent value="reports"><ReportsTab /></TabsContent>
+        <TabsContent value="financial"><FinancialTab /></TabsContent>
+        <TabsContent value="analytics"><AnalyticsTab /></TabsContent>
+        <TabsContent value="categories"><CategoriesTab /></TabsContent>
         <TabsContent value="announcements"><AnnouncementsTab /></TabsContent>
         <TabsContent value="activity"><ActivityTab /></TabsContent>
       </Tabs>
     </section>
   );
 }
+
 
 // ============ Helper: log admin action ============
 async function logAction(action: string, target_type = "", target_id = "", details = "") {
@@ -131,60 +145,120 @@ function OverviewTab() {
     listings: 0,
     orders: 0,
     revenue: 0,
+    pendingVerifications: 0,
+    suspended: 0,
+    openReports: 0,
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+  async function load() {
+    setLoading(true);
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-      const [u, f, b, l, o, rev] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "farmer"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "buyer"),
-        supabase.from("listings").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("total_amount").gte("created_at", startOfMonth.toISOString()),
-      ]);
-      setStats({
-        users: u.count ?? 0,
-        farmers: f.count ?? 0,
-        buyers: b.count ?? 0,
-        listings: l.count ?? 0,
-        orders: o.count ?? 0,
-        revenue: (rev.data ?? []).reduce((s, r: any) => s + Number(r.total_amount ?? 0), 0),
-      });
-      setLoading(false);
-    })();
-  }, []);
+    const [u, f, b, l, o, rev, pv, susp, rep] = await Promise.all([
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "farmer"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "buyer"),
+      supabase.from("listings").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("orders").select("id", { count: "exact", head: true }).gte("created_at", startOfMonth.toISOString()),
+      supabase.from("orders").select("total_amount").gte("created_at", startOfMonth.toISOString()),
+      supabase.from("verification_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("suspended", true),
+      supabase.from("fraud_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+    ]);
+    const revenue = (rev.data ?? []).reduce((s, r: any) => s + Number(r.total_amount ?? 0), 0);
+    setStats({
+      users: u.count ?? 0,
+      farmers: f.count ?? 0,
+      buyers: b.count ?? 0,
+      listings: l.count ?? 0,
+      orders: o.count ?? 0,
+      revenue,
+      pendingVerifications: pv.count ?? 0,
+      suspended: susp.count ?? 0,
+      openReports: rep.count ?? 0,
+    });
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
 
   const cards = [
     { label: "Total Users", value: stats.users, icon: Users },
     { label: "Farmers", value: stats.farmers, icon: Users },
     { label: "Buyers", value: stats.buyers, icon: Users },
-    { label: "Listings", value: stats.listings, icon: Package },
-    { label: "Orders", value: stats.orders, icon: ShoppingCart },
+    { label: "Active Listings", value: stats.listings, icon: Package },
+    { label: "Orders (Month)", value: stats.orders, icon: ShoppingCart },
     { label: "Revenue (Month)", value: `$${stats.revenue.toFixed(2)}`, icon: DollarSign },
   ];
 
+  const commission = stats.revenue * 0.02;
+
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-      {cards.map((c) => (
-        <div key={c.label} className="glass rounded-2xl p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
-            <c.icon className="h-4 w-4 text-secondary" />
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        {cards.map((c) => (
+          <motion.div
+            key={c.label}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass rounded-2xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
+              <c.icon className="h-4 w-4 text-secondary" />
+            </div>
+            <div className="mt-2 font-display text-2xl">{loading ? "—" : c.value}</div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[
+          { label: "Commission (Month)", value: `$${commission.toFixed(2)}`, icon: Wallet },
+          { label: "Pending Verifications", value: stats.pendingVerifications, icon: BadgeCheck },
+          { label: "Suspended Accounts", value: stats.suspended, icon: Ban },
+          { label: "Open Fraud Reports", value: stats.openReports, icon: Flag },
+        ].map((c) => (
+          <div key={c.label} className="glass rounded-2xl p-4">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+              <c.icon className="h-3.5 w-3.5 text-secondary" />
+              {c.label}
+            </div>
+            <div className="mt-2 font-display text-xl">{loading ? "—" : c.value}</div>
           </div>
-          <div className="mt-2 font-display text-2xl">
-            {loading ? "—" : c.value}
-          </div>
+        ))}
+      </div>
+
+      <div className="glass rounded-2xl p-4">
+        <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">Quick Actions</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="announcements"]')?.click()}>
+            <Megaphone className="h-3.5 w-3.5 mr-1" /> Create Announcement
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="financial"]')?.click()}>
+            <Wallet className="h-3.5 w-3.5 mr-1" /> Financial Report
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="verification"]')?.click()}>
+            <BadgeCheck className="h-3.5 w-3.5 mr-1" /> Approve Sellers
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="reports"]')?.click()}>
+            <Flag className="h-3.5 w-3.5 mr-1" /> Review Reports
+          </Button>
         </div>
-      ))}
+      </div>
     </div>
   );
 }
+
 
 // ============ USERS ============
 type ProfileRow = {
@@ -765,3 +839,369 @@ function ActivityTab() {
     </div>
   );
 }
+
+// ============ FINANCIAL ============
+function FinancialTab() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("id, order_code, total_amount, payment_method, payment_status, listing_title, created_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      setOrders(data ?? []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthOrders = orders.filter((o) => new Date(o.created_at) >= startOfMonth);
+  const monthRevenue = monthOrders.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+  const commission = monthRevenue * 0.02;
+  const pendingPayouts = orders
+    .filter((o) => o.payment_status === "paid")
+    .reduce((s, o) => s + Number(o.total_amount ?? 0) * 0.98, 0);
+  const outstanding = orders
+    .filter((o) => o.payment_status === "pending")
+    .reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+
+  // By payment method
+  const byMethod = monthOrders.reduce((acc: Record<string, number>, o) => {
+    const k = o.payment_method ?? "other";
+    acc[k] = (acc[k] ?? 0) + Number(o.total_amount ?? 0);
+    return acc;
+  }, {});
+
+  // 12-month trend
+  const trend = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+    const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    const total = orders
+      .filter((o) => {
+        const c = new Date(o.created_at);
+        return c >= d && c < next;
+      })
+      .reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+    return { month: d.toLocaleString("default", { month: "short" }), total };
+  });
+  const maxTrend = Math.max(1, ...trend.map((t) => t.total));
+
+  function exportPDF() {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Harvest Hub — Financial Report", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 26);
+    doc.setFontSize(12);
+    doc.text(`Month Revenue: $${monthRevenue.toFixed(2)}`, 14, 40);
+    doc.text(`Commission (2%): $${commission.toFixed(2)}`, 14, 48);
+    doc.text(`Pending Payouts: $${pendingPayouts.toFixed(2)}`, 14, 56);
+    doc.text(`Outstanding: $${outstanding.toFixed(2)}`, 14, 64);
+    doc.text("By Payment Method:", 14, 78);
+    let y = 86;
+    Object.entries(byMethod).forEach(([k, v]) => {
+      doc.text(`  ${k}: $${v.toFixed(2)}`, 14, y);
+      y += 7;
+    });
+    doc.text("12-Month Trend:", 14, y + 6);
+    y += 14;
+    trend.forEach((t) => {
+      doc.text(`  ${t.month}: $${t.total.toFixed(2)}`, 14, y);
+      y += 6;
+    });
+    doc.save(`financial-report-${now.toISOString().slice(0, 10)}.pdf`);
+    toast.success("Report exported");
+  }
+
+  if (loading) return <div className="py-6 text-center text-muted-foreground">Loading...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[
+          { label: "Revenue (Month)", value: `$${monthRevenue.toFixed(2)}`, icon: DollarSign },
+          { label: "Commission", value: `$${commission.toFixed(2)}`, icon: Wallet },
+          { label: "Pending Payouts", value: `$${pendingPayouts.toFixed(2)}`, icon: TrendingUp },
+          { label: "Outstanding", value: `$${outstanding.toFixed(2)}`, icon: ShoppingCart },
+        ].map((c) => (
+          <div key={c.label} className="glass rounded-2xl p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
+              <c.icon className="h-4 w-4 text-secondary" />
+            </div>
+            <div className="mt-2 font-display text-xl">{c.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="glass rounded-2xl p-4">
+          <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">By Payment Method</h3>
+          {Object.keys(byMethod).length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">No data this month</div>
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(byMethod).map(([k, v]) => {
+                const pct = (v / monthRevenue) * 100;
+                return (
+                  <div key={k}>
+                    <div className="flex justify-between text-sm">
+                      <span className="capitalize">{k}</span>
+                      <span className="text-muted-foreground">${v.toFixed(2)}</span>
+                    </div>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/5">
+                      <div className="h-full bg-secondary" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="glass rounded-2xl p-4">
+          <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">12-Month Trend</h3>
+          <div className="flex h-32 items-end gap-1">
+            {trend.map((t, i) => (
+              <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                <div
+                  className="w-full rounded-t bg-secondary/70"
+                  style={{ height: `${(t.total / maxTrend) * 100}%`, minHeight: "2px" }}
+                  title={`$${t.total.toFixed(2)}`}
+                />
+                <span className="text-[10px] text-muted-foreground">{t.month}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={exportPDF}>
+          <Download className="h-4 w-4 mr-1" /> Export Monthly Report (PDF)
+        </Button>
+      </div>
+
+      <div className="glass overflow-hidden rounded-2xl">
+        <table className="w-full text-sm">
+          <thead className="border-b border-white/5 bg-white/[0.02] text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="p-3 text-left">Date</th>
+              <th className="p-3 text-left">Order</th>
+              <th className="p-3 text-left">Amount</th>
+              <th className="p-3 text-left">Method</th>
+              <th className="p-3 text-left">Commission</th>
+              <th className="p-3 text-left">Payout</th>
+              <th className="p-3 text-left">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.slice(0, 50).map((o) => (
+              <tr key={o.id} className="border-b border-white/5">
+                <td className="p-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</td>
+                <td className="p-3 font-mono text-xs">{o.order_code}</td>
+                <td className="p-3">${Number(o.total_amount).toFixed(2)}</td>
+                <td className="p-3 text-xs capitalize">{o.payment_method}</td>
+                <td className="p-3 text-xs">${(Number(o.total_amount) * 0.02).toFixed(2)}</td>
+                <td className="p-3 text-xs">${(Number(o.total_amount) * 0.98).toFixed(2)}</td>
+                <td className="p-3"><Badge variant="outline">{o.payment_status}</Badge></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ============ ANALYTICS ============
+function AnalyticsTab() {
+  const [data, setData] = useState<{ sellers: any[]; growth: { month: string; count: number }[] }>({
+    sellers: [],
+    growth: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const [profilesRes, listingsRes, ordersRes] = await Promise.all([
+        supabase.from("profiles").select("id, full_name, role, created_at").in("role", ["farmer", "supplier"]),
+        supabase.from("listings").select("id, farmer_id, rating"),
+        supabase.from("orders").select("farmer_id, total_amount, created_at"),
+      ]);
+
+      const profiles = profilesRes.data ?? [];
+      const listings = listingsRes.data ?? [];
+      const orders = ordersRes.data ?? [];
+
+      const sellers = profiles.map((p) => {
+        const myListings = listings.filter((l: any) => l.farmer_id === p.id);
+        const myOrders = orders.filter((o: any) => o.farmer_id === p.id);
+        const revenue = myOrders.reduce((s, o: any) => s + Number(o.total_amount ?? 0), 0);
+        const avgRating = myListings.length
+          ? myListings.reduce((s, l: any) => s + Number(l.rating ?? 0), 0) / myListings.length
+          : 0;
+        return {
+          id: p.id,
+          name: p.full_name || "Unnamed",
+          listings: myListings.length,
+          sales: myOrders.length,
+          revenue,
+          rating: avgRating,
+        };
+      }).sort((a, b) => b.revenue - a.revenue).slice(0, 20);
+
+      const now = new Date();
+      const growth = Array.from({ length: 12 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+        const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        const count = profiles.filter((p: any) => {
+          const c = new Date(p.created_at);
+          return c >= d && c < next;
+        }).length;
+        return { month: d.toLocaleString("default", { month: "short" }), count };
+      });
+
+      setData({ sellers, growth });
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <div className="py-6 text-center text-muted-foreground">Loading...</div>;
+
+  const maxGrowth = Math.max(1, ...data.growth.map((g) => g.count));
+
+  return (
+    <div className="space-y-6">
+      <div className="glass rounded-2xl p-4">
+        <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">New Sellers — 12 Month Trend</h3>
+        <div className="flex h-32 items-end gap-1">
+          {data.growth.map((g, i) => (
+            <div key={i} className="flex flex-1 flex-col items-center gap-1">
+              <div
+                className="w-full rounded-t bg-secondary/70"
+                style={{ height: `${(g.count / maxGrowth) * 100}%`, minHeight: "2px" }}
+                title={`${g.count} sellers`}
+              />
+              <span className="text-[10px] text-muted-foreground">{g.month}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass overflow-hidden rounded-2xl">
+        <div className="border-b border-white/5 p-3">
+          <h3 className="text-sm uppercase tracking-wider text-muted-foreground">Top Sellers</h3>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="border-b border-white/5 bg-white/[0.02] text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="p-3 text-left">#</th>
+              <th className="p-3 text-left">Seller</th>
+              <th className="p-3 text-right">Listings</th>
+              <th className="p-3 text-right">Sales</th>
+              <th className="p-3 text-right">Revenue</th>
+              <th className="p-3 text-right">Avg Rating</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.sellers.length === 0 ? (
+              <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No seller data yet</td></tr>
+            ) : data.sellers.map((s, i) => (
+              <tr key={s.id} className="border-b border-white/5">
+                <td className="p-3 font-mono text-xs text-secondary">{i + 1}</td>
+                <td className="p-3">{s.name}</td>
+                <td className="p-3 text-right">{s.listings}</td>
+                <td className="p-3 text-right">{s.sales}</td>
+                <td className="p-3 text-right">${s.revenue.toFixed(2)}</td>
+                <td className="p-3 text-right">{s.rating.toFixed(1)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ============ CATEGORIES ============
+function CategoriesTab() {
+  const [rows, setRows] = useState<{ category: string; count: number; revenue: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const [listingsRes, ordersRes] = await Promise.all([
+        supabase.from("listings").select("id, category"),
+        supabase.from("orders").select("listing_id, total_amount"),
+      ]);
+      const listings = listingsRes.data ?? [];
+      const orders = ordersRes.data ?? [];
+      const byCat = new Map<string, { count: number; revenue: number }>();
+      for (const l of listings as any[]) {
+        const c = byCat.get(l.category) ?? { count: 0, revenue: 0 };
+        c.count += 1;
+        byCat.set(l.category, c);
+      }
+      for (const o of orders as any[]) {
+        const l = (listings as any[]).find((x) => x.id === o.listing_id);
+        if (!l) continue;
+        const c = byCat.get(l.category) ?? { count: 0, revenue: 0 };
+        c.revenue += Number(o.total_amount ?? 0);
+        byCat.set(l.category, c);
+      }
+      setRows(
+        Array.from(byCat.entries())
+          .map(([category, v]) => ({ category, ...v }))
+          .sort((a, b) => b.count - a.count)
+      );
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <div className="py-6 text-center text-muted-foreground">Loading...</div>;
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4">
+        <div className="flex items-center gap-2">
+          <LayoutGrid className="h-4 w-4 text-secondary" />
+          <h3 className="font-display text-lg">Listing Categories</h3>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Categories are defined by the platform taxonomy. Default commission rate: 2%.
+        </p>
+      </div>
+
+      <div className="glass overflow-hidden rounded-2xl">
+        <table className="w-full text-sm">
+          <thead className="border-b border-white/5 bg-white/[0.02] text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="p-3 text-left">Category</th>
+              <th className="p-3 text-right">Listings</th>
+              <th className="p-3 text-right">Revenue</th>
+              <th className="p-3 text-right">Commission (2%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">No categories yet</td></tr>
+            ) : rows.map((r) => (
+              <tr key={r.category} className="border-b border-white/5">
+                <td className="p-3 capitalize">{r.category.replace(/_/g, " ")}</td>
+                <td className="p-3 text-right">{r.count}</td>
+                <td className="p-3 text-right">${r.revenue.toFixed(2)}</td>
+                <td className="p-3 text-right">${(r.revenue * 0.02).toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
