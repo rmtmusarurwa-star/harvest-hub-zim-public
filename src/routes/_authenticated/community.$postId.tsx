@@ -107,6 +107,22 @@ function PostDetailPage() {
 
   useEffect(() => {
     load();
+    const channel = supabase
+      .channel(`forum-post-${postId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "forum_comments", filter: `post_id=eq.${postId}` },
+        () => load()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "forum_reactions", filter: `post_id=eq.${postId}` },
+        () => load()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, user?.id]);
 

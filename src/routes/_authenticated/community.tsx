@@ -130,6 +130,15 @@ function CommunityPage() {
 
   useEffect(() => {
     load();
+    const channel = supabase
+      .channel("forum-feed")
+      .on("postgres_changes", { event: "*", schema: "public", table: "forum_posts" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "forum_comments" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "forum_reactions" }, () => load())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const filtered = useMemo(() => {
