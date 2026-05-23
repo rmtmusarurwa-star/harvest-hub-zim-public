@@ -31,6 +31,7 @@ import { Route as AuthenticatedTransportVehicleIdRouteImport } from './routes/_a
 import { Route as AuthenticatedShopsShopIdRouteImport } from './routes/_authenticated/shops/$shopId'
 import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
 import { Route as AuthenticatedFarmersFarmerIdRouteImport } from './routes/_authenticated/farmers/$farmerId'
+import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment/$equipmentId'
 import { Route as AuthenticatedCheckoutConfirmationRouteImport } from './routes/_authenticated/checkout.confirmation'
 
 const SignupRoute = SignupRouteImport.update({
@@ -152,6 +153,12 @@ const AuthenticatedFarmersFarmerIdRoute =
     path: '/farmers/$farmerId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedEquipmentEquipmentIdRoute =
+  AuthenticatedEquipmentEquipmentIdRouteImport.update({
+    id: '/equipment/$equipmentId',
+    path: '/equipment/$equipmentId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCheckoutConfirmationRoute =
   AuthenticatedCheckoutConfirmationRouteImport.update({
     id: '/confirmation',
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
@@ -197,6 +205,7 @@ export interface FileRoutesByTo {
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/': typeof AuthenticatedIndexRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
@@ -223,6 +232,7 @@ export interface FileRoutesById {
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/_authenticated/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/_authenticated/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/_authenticated/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/financial-hub'
     | '/market-intelligence'
     | '/checkout/confirmation'
+    | '/equipment/$equipmentId'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
     | '/shops/$shopId'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/market-intelligence'
     | '/'
     | '/checkout/confirmation'
+    | '/equipment/$equipmentId'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
     | '/shops/$shopId'
@@ -298,6 +310,7 @@ export interface FileRouteTypes {
     | '/_authenticated/market-intelligence'
     | '/_authenticated/'
     | '/_authenticated/checkout/confirmation'
+    | '/_authenticated/equipment/$equipmentId'
     | '/_authenticated/farmers/$farmerId'
     | '/_authenticated/marketplace/$listingId'
     | '/_authenticated/shops/$shopId'
@@ -473,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFarmersFarmerIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/equipment/$equipmentId': {
+      id: '/_authenticated/equipment/$equipmentId'
+      path: '/equipment/$equipmentId'
+      fullPath: '/equipment/$equipmentId'
+      preLoaderRoute: typeof AuthenticatedEquipmentEquipmentIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/checkout/confirmation': {
       id: '/_authenticated/checkout/confirmation'
       path: '/confirmation'
@@ -506,6 +526,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedEquipmentEquipmentIdRoute: typeof AuthenticatedEquipmentEquipmentIdRoute
   AuthenticatedFarmersFarmerIdRoute: typeof AuthenticatedFarmersFarmerIdRoute
   AuthenticatedMarketplaceListingIdRoute: typeof AuthenticatedMarketplaceListingIdRoute
   AuthenticatedShopsShopIdRoute: typeof AuthenticatedShopsShopIdRoute
@@ -526,6 +547,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedEquipmentEquipmentIdRoute:
+    AuthenticatedEquipmentEquipmentIdRoute,
   AuthenticatedFarmersFarmerIdRoute: AuthenticatedFarmersFarmerIdRoute,
   AuthenticatedMarketplaceListingIdRoute:
     AuthenticatedMarketplaceListingIdRoute,
