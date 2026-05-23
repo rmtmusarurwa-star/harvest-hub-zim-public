@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_activity_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: string
+          id: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -405,6 +435,48 @@ export type Database = {
           },
         ]
       }
+      fraud_reports: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          reporter_id: string
+          resolution_notes: string
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          target_listing_id: string | null
+          target_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          reporter_id: string
+          resolution_notes?: string
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          target_listing_id?: string | null
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          reporter_id?: string
+          resolution_notes?: string
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          target_listing_id?: string | null
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
           category: Database["public"]["Enums"]["listing_category"]
@@ -579,6 +651,39 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_announcements: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          created_by: string
+          id: string
+          level: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          level?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          level?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -586,6 +691,7 @@ export type Database = {
           full_name: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
+          suspended: boolean
           updated_at: string
         }
         Insert: {
@@ -594,6 +700,7 @@ export type Database = {
           full_name?: string
           id: string
           role?: Database["public"]["Enums"]["user_role"]
+          suspended?: boolean
           updated_at?: string
         }
         Update: {
@@ -602,6 +709,7 @@ export type Database = {
           full_name?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
+          suspended?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -852,6 +960,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           availability: Database["public"]["Enums"]["vehicle_availability"]
@@ -912,17 +1041,65 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_requests: {
+        Row: {
+          created_at: string
+          documents_url: string | null
+          entity_type: string
+          id: string
+          notes: string
+          review_notes: string
+          reviewer_id: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          documents_url?: string | null
+          entity_type?: string
+          id?: string
+          notes?: string
+          review_notes?: string
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          documents_url?: string | null
+          entity_type?: string
+          id?: string
+          notes?: string
+          review_notes?: string
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       recompute_trust_score: {
         Args: { _farmer_id: string }
         Returns: undefined
       }
     }
     Enums: {
+      app_role: "admin" | "moderator"
       booking_status:
         | "pending"
         | "confirmed"
@@ -979,6 +1156,7 @@ export type Database = {
         | "paid"
         | "failed"
         | "cancelled"
+      report_status: "open" | "reviewing" | "resolved" | "dismissed"
       request_status: "open" | "matched" | "closed"
       shop_category:
         | "agro_vets"
@@ -997,6 +1175,7 @@ export type Database = {
         | "refrigerated"
         | "van"
         | "lorry"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1124,6 +1303,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator"],
       booking_status: [
         "pending",
         "confirmed",
@@ -1187,6 +1367,7 @@ export const Constants = {
         "failed",
         "cancelled",
       ],
+      report_status: ["open", "reviewing", "resolved", "dismissed"],
       request_status: ["open", "matched", "closed"],
       shop_category: [
         "agro_vets",
@@ -1207,6 +1388,7 @@ export const Constants = {
         "van",
         "lorry",
       ],
+      verification_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
