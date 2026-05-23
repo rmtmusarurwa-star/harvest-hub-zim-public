@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
+import { useIsAdmin } from "@/lib/use-is-admin";
 
 export const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -32,8 +33,9 @@ export const NAV_ITEMS = [
   { to: "/market-intelligence", label: "Market Intelligence", icon: LineChart },
   { to: "/financial-hub", label: "Financial Hub", icon: Wallet },
   { to: "/community", label: "Community", icon: Globe2 },
-  { to: "/admin", label: "Admin", icon: Shield },
 ] as const;
+
+const ADMIN_ITEM = { to: "/admin", label: "Admin", icon: Shield } as const;
 
 type Props = {
   mobileOpen: boolean;
@@ -44,6 +46,8 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { profile, user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
+  const navItems = isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
 
   const displayName =
     profile?.full_name?.trim() || user?.email?.split("@")[0] || "Account";
@@ -81,7 +85,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
       </Link>
 
       <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+        {navItems.map(({ to, label, icon: Icon }) => {
           const active =
             to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
