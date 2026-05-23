@@ -808,3 +808,90 @@ function OfferCard({
     </div>
   );
 }
+
+function NewChatModal({
+  open,
+  onOpenChange,
+  currentUserId,
+  onPick,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  currentUserId: string;
+  onPick: (otherId: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<
+    Array<{ id: string; full_name: string; role: string; avatar_url: string | null }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const term = q.trim();
+    setLoading(true);
+    const t = setTimeout(async () => {
+      let query = supabase
+        .from("profiles")
+        .select("id, full_name, role, avatar_url")
+        .neq("id", currentUserId)
+        .limit(20);
+      if (term) query = query.ilike("full_name", `%${term}%`);
+      const { data, error } = await query;
+      if (!error) setResults((data ?? []) as any);
+      setLoading(false);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [q, open, currentUserId]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Start a new chat</DialogTitle>
+        </DialogHeader>
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search users to message..."
+            className="pl-9"
+          />
+        </div>
+        <div className="max-h-80 space-y-1 overflow-y-auto">
+          {loading && (
+            <div className="p-4 text-center text-xs text-muted-foreground">
+              Searching…
+            </div>
+          )}
+          {!loading && results.length === 0 && (
+            <div className="p-4 text-center text-xs text-muted-foreground">
+              No users found
+            </div>
+          )}
+          {results.map((u) => (
+            <button
+              key={u.id}
+              onClick={() => onPick(u.id)}
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition hover:bg-white/5"
+            >
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-secondary font-display text-sm ring-1 ring-secondary/30">
+                {initials(u.full_name || "?")}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm">
+                  {u.full_name || "Unnamed user"}
+                </div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {u.role}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
