@@ -315,7 +315,47 @@ function CommunityPage() {
   );
 }
 
-function PostCard({ post }: { post: PostWithMeta }) {
+function PostCard({ post, onChanged }: { post: PostWithMeta; onChanged: () => void }) {
+  const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [liked, setLiked] = useState(post.liked_by_me);
+  const [likeCount, setLikeCount] = useState(post.reaction_count);
+
+  useEffect(() => {
+    setLiked(post.liked_by_me);
+    setLikeCount(post.reaction_count);
+  }, [post.liked_by_me, post.reaction_count]);
+
+  const toggleLike = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) return toast.error("Sign in to react");
+    if (busy) return;
+    setBusy(true);
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount((c) => Math.max(0, c + (wasLiked ? -1 : 1)));
+    const { error } = wasLiked
+      ? await supabase
+          .from("forum_reactions")
+          .delete()
+          .eq("post_id", post.id)
+          .eq("user_id", user.id)
+          .eq("type", "like")
+      : await supabase
+          .from("forum_reactions")
+          .insert({ post_id: post.id, user_id: user.id, type: "like" });
+    setBusy(false);
+    if (error) {
+      // Revert
+      setLiked(wasLiked);
+      setLikeCount((c) => Math.max(0, c + (wasLiked ? 1 : -1)));
+      toast.error(error.message || "Could not update like");
+    } else {
+      onChanged();
+    }
+  };
+
   return (
     <Card className="hover:border-primary/40 transition">
       <CardContent className="p-4">
@@ -372,13 +412,28 @@ function PostCard({ post }: { post: PostWithMeta }) {
                 />
               </Link>
             )}
-            <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <MessageSquare className="h-3.5 w-3.5" /> {post.comment_count}
-              </span>
-              <span className="flex items-center gap-1">
-                <Heart className="h-3.5 w-3.5" /> {post.reaction_count}
-              </span>
+            <div className="flex items-center gap-1 mt-3 -ml-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleLike}
+                disabled={busy}
+                className={`gap-1.5 h-8 ${liked ? "text-primary" : "text-muted-foreground"}`}
+              >
+                <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
+                <span className="text-xs">{likeCount}</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="gap-1.5 h-8 text-muted-foreground"
+              >
+                <Link to="/community/$postId" params={{ postId: post.id }}>
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-xs">{post.comment_count}</span>
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -386,6 +441,7 @@ function PostCard({ post }: { post: PostWithMeta }) {
     </Card>
   );
 }
+
 
 function CreatePostDialog({ onCreated }: { onCreated: () => void }) {
   const { user } = useAuth();
