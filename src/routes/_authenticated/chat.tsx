@@ -58,10 +58,10 @@ function ChatPage() {
   const qc = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(search.c ?? null);
 
-  // Auto-create / open conversation when arriving with ?listing= or ?farmer=
+  // Auto-create / open conversation when arriving with ?listing=, ?farmer=, or ?user=
   useEffect(() => {
     if (!user) return;
-    if (!search.listing && !search.farmer) return;
+    if (!search.listing && !search.farmer && !search.user) return;
     (async () => {
       let listingId: string | null = null;
       let farmerId: string | null = null;
@@ -84,38 +84,37 @@ function ChatPage() {
         }
         listingId = listing.id;
         farmerId = listing.farmer_id;
-      } else if (search.farmer) {
-        if (search.farmer === user.id) {
+      } else if (search.farmer || search.user) {
+        const otherId = (search.farmer ?? search.user)!;
+        if (otherId === user.id) {
           toast.info("You can't message yourself");
           navigate({ to: "/chat", search: {} });
           return;
         }
-        // Pick this farmer's most recent active listing as the conversation anchor
+        // Try a recent listing for context, but it's optional now
         const { data: latest } = await supabase
           .from("listings")
           .select("id, farmer_id")
-          .eq("farmer_id", search.farmer)
+          .eq("farmer_id", otherId)
           .eq("status", "active")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (!latest) {
-          toast.error("This farmer has no active listings yet — try again once they post one.");
-          navigate({ to: "/chat", search: {} });
-          return;
-        }
-        listingId = latest.id;
-        farmerId = latest.farmer_id;
+        listingId = latest?.id ?? null;
+        farmerId = otherId;
       }
 
-      if (!listingId || !farmerId) return;
+      if (!farmerId) return;
 
-      const { data: existing } = await (db
-        .from("conversations")
-        .select("id") as any)
-        .eq("listing_id", listingId)
+      // Look for an existing conversation (with or without listing)
+      let existingQuery = (db.from("conversations").select("id") as any)
         .eq("buyer_id", user.id)
-        .maybeSingle();
+        .eq("farmer_id", farmerId);
+      existingQuery = listingId
+        ? existingQuery.eq("listing_id", listingId)
+        : existingQuery.is("listing_id", null);
+      const { data: existing } = await existingQuery.maybeSingle();
+
       let convoId = (existing as { id: string } | null)?.id;
       if (!convoId) {
         const { data: created, error } = await (db
@@ -138,7 +137,7 @@ function ChatPage() {
       setActiveId(convoId!);
       navigate({ to: "/chat", search: { c: convoId } });
     })();
-  }, [search.listing, search.farmer, user, navigate, qc]);
+  }, [search.listing, search.farmer, search.user, user, navigate, qc]);
 
   // Sync search.c -> activeId
   useEffect(() => {
