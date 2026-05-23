@@ -22,13 +22,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-type Search = { c?: string; listing?: string };
+type Search = { c?: string; listing?: string; farmer?: string };
 
 export const Route = createFileRoute("/_authenticated/chat")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     c: typeof s.c === "string" ? s.c : undefined,
     listing: typeof s.listing === "string" ? s.listing : undefined,
+    farmer: typeof s.farmer === "string" ? s.farmer : undefined,
   }),
   component: ChatPage,
 });
@@ -47,23 +49,62 @@ function ChatPage() {
   const qc = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(search.c ?? null);
 
-  // Auto-create / open conversation when arriving with ?listing=
+  // Auto-create / open conversation when arriving with ?listing= or ?farmer=
   useEffect(() => {
-    if (!user || !search.listing) return;
+    if (!user) return;
+    if (!search.listing && !search.farmer) return;
     (async () => {
-      const { data: listing } = await supabase
-        .from("listings")
-        .select("id, farmer_id")
-        .eq("id", search.listing!)
-        .maybeSingle();
-      if (!listing || listing.farmer_id === user.id) {
-        navigate({ to: "/chat", search: {} });
-        return;
+      let listingId: string | null = null;
+      let farmerId: string | null = null;
+
+      if (search.listing) {
+        const { data: listing } = await supabase
+          .from("listings")
+          .select("id, farmer_id")
+          .eq("id", search.listing!)
+          .maybeSingle();
+        if (!listing) {
+          toast.error("Listing not found");
+          navigate({ to: "/chat", search: {} });
+          return;
+        }
+        if (listing.farmer_id === user.id) {
+          toast.info("This is your own listing");
+          navigate({ to: "/chat", search: {} });
+          return;
+        }
+        listingId = listing.id;
+        farmerId = listing.farmer_id;
+      } else if (search.farmer) {
+        if (search.farmer === user.id) {
+          toast.info("You can't message yourself");
+          navigate({ to: "/chat", search: {} });
+          return;
+        }
+        // Pick this farmer's most recent active listing as the conversation anchor
+        const { data: latest } = await supabase
+          .from("listings")
+          .select("id, farmer_id")
+          .eq("farmer_id", search.farmer)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!latest) {
+          toast.error("This farmer has no active listings yet — try again once they post one.");
+          navigate({ to: "/chat", search: {} });
+          return;
+        }
+        listingId = latest.id;
+        farmerId = latest.farmer_id;
       }
+
+      if (!listingId || !farmerId) return;
+
       const { data: existing } = await (db
         .from("conversations")
         .select("id") as any)
-        .eq("listing_id", listing.id)
+        .eq("listing_id", listingId)
         .eq("buyer_id", user.id)
         .maybeSingle();
       let convoId = (existing as { id: string } | null)?.id;
@@ -71,14 +112,15 @@ function ChatPage() {
         const { data: created, error } = await (db
           .from("conversations")
           .insert({
-            listing_id: listing.id,
+            listing_id: listingId,
             buyer_id: user.id,
-            farmer_id: listing.farmer_id,
+            farmer_id: farmerId,
           })
           .select("id")
           .single() as any);
         if (error) {
           console.error(error);
+          toast.error("Could not start conversation: " + error.message);
           return;
         }
         convoId = (created as { id: string }).id;
@@ -87,7 +129,7 @@ function ChatPage() {
       setActiveId(convoId!);
       navigate({ to: "/chat", search: { c: convoId } });
     })();
-  }, [search.listing, user, navigate, qc]);
+  }, [search.listing, search.farmer, user, navigate, qc]);
 
   // Sync search.c -> activeId
   useEffect(() => {
@@ -413,6 +455,7 @@ function ChatThread({
     onSuccess: () => {
       setDraft("");
     },
+    onError: (e: Error) => toast.error("Could not send: " + e.message),
   });
 
   const sendOffer = useMutation({
@@ -432,6 +475,7 @@ function ChatThread({
       if (error) throw error;
     },
     onSuccess: () => setShowOffer(false),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const respondOffer = useMutation({
