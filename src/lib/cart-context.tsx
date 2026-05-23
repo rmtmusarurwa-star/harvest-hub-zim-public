@@ -95,6 +95,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
         setIsOpen(true);
       },
+      addItem: (item, qty = 1) => {
+        setItems((prev) => {
+          const ex = prev.find((p) => p.id === item.id);
+          if (ex) {
+            return prev.map((p) =>
+              p.id === item.id ? { ...p, quantity: p.quantity + qty } : p,
+            );
+          }
+          return [...prev, { ...item, quantity: qty }];
+        });
+        setIsOpen(true);
+      },
       remove: (id) => setItems((prev) => prev.filter((p) => p.id !== id)),
       setQty: (id, qty) =>
         setItems((prev) =>
