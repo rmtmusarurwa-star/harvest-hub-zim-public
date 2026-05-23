@@ -157,7 +157,9 @@ function ChatPage() {
       const rows = (data ?? []) as ConversationWithMeta[];
       if (rows.length === 0) return [];
 
-      const listingIds = Array.from(new Set(rows.map((r) => r.listing_id)));
+      const listingIds = Array.from(
+        new Set(rows.map((r) => r.listing_id).filter((x): x is string => !!x))
+      );
       const otherIds = Array.from(
         new Set(
           rows.map((r) => (r.buyer_id === user!.id ? r.farmer_id : r.buyer_id))
