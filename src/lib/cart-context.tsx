@@ -29,6 +29,7 @@ type CartContextValue = {
   close: () => void;
   toggle: () => void;
   add: (listing: ListingRow, qty?: number) => void;
+  addItem: (item: Omit<CartItem, "quantity">, qty?: number) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clear: () => void;
@@ -91,6 +92,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
             },
           ];
 
+        });
+        setIsOpen(true);
+      },
+      addItem: (item, qty = 1) => {
+        setItems((prev) => {
+          const ex = prev.find((p) => p.id === item.id);
+          if (ex) {
+            return prev.map((p) =>
+              p.id === item.id ? { ...p, quantity: p.quantity + qty } : p,
+            );
+          }
+          return [...prev, { ...item, quantity: qty }];
         });
         setIsOpen(true);
       },

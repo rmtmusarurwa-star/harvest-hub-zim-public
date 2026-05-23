@@ -383,6 +383,110 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_products: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          shop_id: string
+          stock_quantity: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          price?: number
+          shop_id: string
+          stock_quantity?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          shop_id?: string
+          stock_quantity?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops: {
+        Row: {
+          banner_url: string | null
+          category: Database["public"]["Enums"]["shop_category"]
+          created_at: string
+          description: string
+          email: string
+          id: string
+          location: string
+          logo_url: string | null
+          name: string
+          owner_id: string
+          phone: string
+          province: string
+          rating: number
+          updated_at: string
+          verified: boolean
+          whatsapp: string
+        }
+        Insert: {
+          banner_url?: string | null
+          category?: Database["public"]["Enums"]["shop_category"]
+          created_at?: string
+          description?: string
+          email?: string
+          id?: string
+          location?: string
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          phone?: string
+          province?: string
+          rating?: number
+          updated_at?: string
+          verified?: boolean
+          whatsapp?: string
+        }
+        Update: {
+          banner_url?: string | null
+          category?: Database["public"]["Enums"]["shop_category"]
+          created_at?: string
+          description?: string
+          email?: string
+          id?: string
+          location?: string
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          phone?: string
+          province?: string
+          rating?: number
+          updated_at?: string
+          verified?: boolean
+          whatsapp?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -416,6 +520,14 @@ export type Database = {
         | "paid"
         | "failed"
         | "cancelled"
+      shop_category:
+        | "agro_vets"
+        | "feed_suppliers"
+        | "fertilizer_chemicals"
+        | "irrigation_equipment"
+        | "farming_tools"
+        | "vaccines_medicine"
+        | "butcheries"
       user_role: "farmer" | "buyer" | "supplier" | "transporter"
     }
     CompositeTypes: {
@@ -568,6 +680,15 @@ export const Constants = {
         "paid",
         "failed",
         "cancelled",
+      ],
+      shop_category: [
+        "agro_vets",
+        "feed_suppliers",
+        "fertilizer_chemicals",
+        "irrigation_equipment",
+        "farming_tools",
+        "vaccines_medicine",
+        "butcheries",
       ],
       user_role: ["farmer", "buyer", "supplier", "transporter"],
     },
