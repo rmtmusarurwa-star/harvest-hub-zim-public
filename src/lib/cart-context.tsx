@@ -29,6 +29,7 @@ type CartContextValue = {
   close: () => void;
   toggle: () => void;
   add: (listing: ListingRow, qty?: number) => void;
+  addItem: (item: Omit<CartItem, "quantity">, qty?: number) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clear: () => void;
