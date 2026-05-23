@@ -1115,34 +1115,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_equipment_contact: {
-        Args: { _equipment_id: string }
-        Returns: {
-          phone: string
-          whatsapp: string
-        }[]
-      }
-      get_shop_contact: {
-        Args: { _shop_id: string }
-        Returns: {
-          email: string
-          phone: string
-          whatsapp: string
-        }[]
-      }
-      get_transport_request_contact: {
-        Args: { _request_id: string }
-        Returns: {
-          contact_phone: string
-        }[]
-      }
-      get_vehicle_contact: {
-        Args: { _vehicle_id: string }
-        Returns: {
-          phone: string
-          whatsapp: string
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
