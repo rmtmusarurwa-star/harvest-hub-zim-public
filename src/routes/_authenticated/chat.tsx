@@ -242,6 +242,8 @@ function ChatPage() {
     navigate({ to: "/chat", search: { c: id } });
   }
 
+  const [newChatOpen, setNewChatOpen] = useState(false);
+
   return (
     <section className="h-[calc(100vh-7rem)] -mx-3 lg:-mx-6">
       <div className="glass-strong mx-3 lg:mx-6 h-full overflow-hidden rounded-2xl">
@@ -249,17 +251,28 @@ function ChatPage() {
           {/* Conversation list */}
           <aside
             className={cn(
-              "h-full border-r border-white/5 bg-black/20",
-              activeId ? "hidden lg:block" : "block"
+              "h-full border-r border-white/5 bg-black/20 flex flex-col",
+              activeId ? "hidden lg:flex" : "flex"
             )}
           >
             <div className="border-b border-white/5 px-5 py-4">
-              <div className="font-display text-lg">Harvest Chat</div>
-              <p className="text-xs text-muted-foreground">
-                Conversations with farmers & buyers
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="font-display text-lg">Harvest Chat</div>
+                  <p className="text-xs text-muted-foreground">
+                    Conversations with farmers & buyers
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setNewChatOpen(true)}
+                className="mt-3 w-full bg-accent text-background hover:bg-accent/90"
+                size="sm"
+              >
+                <Plus className="h-4 w-4" /> Start New Chat
+              </Button>
             </div>
-            <div className="h-[calc(100%-65px)] overflow-y-auto">
+            <div className="flex-1 overflow-y-auto">
               {conversations.isLoading && (
                 <div className="p-6 text-xs text-muted-foreground">Loading…</div>
               )}
