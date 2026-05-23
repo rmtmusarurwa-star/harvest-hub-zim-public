@@ -307,6 +307,15 @@ function ChatPage() {
           </div>
         </div>
       </div>
+      <NewChatModal
+        open={newChatOpen}
+        onOpenChange={setNewChatOpen}
+        currentUserId={user?.id ?? ""}
+        onPick={(otherId) => {
+          setNewChatOpen(false);
+          navigate({ to: "/chat", search: { user: otherId } });
+        }}
+      />
     </section>
   );
 }
