@@ -342,7 +342,7 @@ function ListingsTab() {
   useEffect(() => { load(); }, []);
 
   async function setStatus(l: any, status: string) {
-    const { error } = await supabase.from("listings").update({ status }).eq("id", l.id);
+    const { error } = await supabase.from("listings").update({ status: status as any }).eq("id", l.id);
     if (error) return toast.error(error.message);
     await logAction(`listing_${status}`, "listing", l.id, l.title);
     toast.success(`Listing ${status}`);
@@ -426,7 +426,7 @@ function OrdersTab() {
   useEffect(() => { load(); }, []);
 
   async function updateStatus(o: any, payment_status: string) {
-    const { error } = await supabase.from("orders").update({ payment_status }).eq("id", o.id);
+    const { error } = await supabase.from("orders").update({ payment_status: payment_status as any }).eq("id", o.id);
     if (error) return toast.error(error.message);
     await logAction("update_order", "order", o.id, `${o.order_code} → ${payment_status}`);
     toast.success("Order updated");
@@ -584,7 +584,7 @@ function ReportsTab() {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("fraud_reports")
-      .update({ status, resolved_by: user?.id ?? null })
+      .update({ status: status as any, resolved_by: user?.id ?? null })
       .eq("id", r.id);
     if (error) return toast.error(error.message);
     await logAction(`report_${status}`, "report", r.id, r.category);
