@@ -17,7 +17,6 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
 import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
-import { Route as AuthenticatedEquipmentRouteImport } from './routes/_authenticated/equipment'
 import { Route as AuthenticatedDiseaseIdRouteImport } from './routes/_authenticated/disease-id'
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
@@ -74,11 +73,6 @@ const AuthenticatedFinancialHubRoute =
     path: '/financial-hub',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedEquipmentRoute = AuthenticatedEquipmentRouteImport.update({
-  id: '/equipment',
-  path: '/equipment',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedDiseaseIdRoute = AuthenticatedDiseaseIdRouteImport.update({
   id: '/disease-id',
   path: '/disease-id',
@@ -169,7 +163,6 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/community': typeof AuthenticatedCommunityRoute
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
-  '/equipment': typeof AuthenticatedEquipmentRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
@@ -192,7 +185,6 @@ export interface FileRoutesByTo {
   '/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/community': typeof AuthenticatedCommunityRoute
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
-  '/equipment': typeof AuthenticatedEquipmentRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/': typeof AuthenticatedIndexRoute
@@ -218,7 +210,6 @@ export interface FileRoutesById {
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/_authenticated/community': typeof AuthenticatedCommunityRoute
   '/_authenticated/disease-id': typeof AuthenticatedDiseaseIdRoute
-  '/_authenticated/equipment': typeof AuthenticatedEquipmentRoute
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -245,7 +236,6 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/community'
     | '/disease-id'
-    | '/equipment'
     | '/financial-hub'
     | '/market-intelligence'
     | '/checkout/confirmation'
@@ -268,7 +258,6 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/community'
     | '/disease-id'
-    | '/equipment'
     | '/financial-hub'
     | '/market-intelligence'
     | '/'
@@ -293,7 +282,6 @@ export interface FileRouteTypes {
     | '/_authenticated/checkout'
     | '/_authenticated/community'
     | '/_authenticated/disease-id'
-    | '/_authenticated/equipment'
     | '/_authenticated/financial-hub'
     | '/_authenticated/market-intelligence'
     | '/_authenticated/'
@@ -372,13 +360,6 @@ declare module '@tanstack/react-router' {
       path: '/financial-hub'
       fullPath: '/financial-hub'
       preLoaderRoute: typeof AuthenticatedFinancialHubRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/equipment': {
-      id: '/_authenticated/equipment'
-      path: '/equipment'
-      fullPath: '/equipment'
-      preLoaderRoute: typeof AuthenticatedEquipmentRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/disease-id': {
@@ -502,7 +483,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRouteWithChildren
   AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRoute
   AuthenticatedDiseaseIdRoute: typeof AuthenticatedDiseaseIdRoute
-  AuthenticatedEquipmentRoute: typeof AuthenticatedEquipmentRoute
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -522,7 +502,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRouteWithChildren,
   AuthenticatedCommunityRoute: AuthenticatedCommunityRoute,
   AuthenticatedDiseaseIdRoute: AuthenticatedDiseaseIdRoute,
-  AuthenticatedEquipmentRoute: AuthenticatedEquipmentRoute,
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
@@ -551,3 +530,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
