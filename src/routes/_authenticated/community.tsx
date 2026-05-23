@@ -145,7 +145,8 @@ function CommunityPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user?.id]);
+
 
   const filtered = useMemo(() => {
     let list = [...posts];
