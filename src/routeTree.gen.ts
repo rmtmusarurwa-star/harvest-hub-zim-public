@@ -16,7 +16,6 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTransportRouteImport } from './routes/_authenticated/transport'
-import { Route as AuthenticatedShopsRouteImport } from './routes/_authenticated/shops'
 import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
 import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
 import { Route as AuthenticatedEquipmentRouteImport } from './routes/_authenticated/equipment'
@@ -25,6 +24,7 @@ import { Route as AuthenticatedCommunityRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedShopsIndexRouteImport } from './routes/_authenticated/shops/index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedFarmersIndexRouteImport } from './routes/_authenticated/farmers/index'
 import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
@@ -63,11 +63,6 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedTransportRoute = AuthenticatedTransportRouteImport.update({
   id: '/transport',
   path: '/transport',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedShopsRoute = AuthenticatedShopsRouteImport.update({
-  id: '/shops',
-  path: '/shops',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMarketIntelligenceRoute =
@@ -110,6 +105,11 @@ const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedShopsIndexRoute = AuthenticatedShopsIndexRouteImport.update({
+  id: '/shops/',
+  path: '/shops/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMarketplaceIndexRoute =
@@ -157,13 +157,13 @@ export interface FileRoutesByFullPath {
   '/equipment': typeof AuthenticatedEquipmentRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/shops': typeof AuthenticatedShopsRoute
   '/transport': typeof AuthenticatedTransportRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/shops/': typeof AuthenticatedShopsIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -178,7 +178,6 @@ export interface FileRoutesByTo {
   '/equipment': typeof AuthenticatedEquipmentRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/shops': typeof AuthenticatedShopsRoute
   '/transport': typeof AuthenticatedTransportRoute
   '/': typeof AuthenticatedIndexRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
@@ -186,6 +185,7 @@ export interface FileRoutesByTo {
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/farmers': typeof AuthenticatedFarmersIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
+  '/shops': typeof AuthenticatedShopsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -202,7 +202,6 @@ export interface FileRoutesById {
   '/_authenticated/equipment': typeof AuthenticatedEquipmentRoute
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/_authenticated/shops': typeof AuthenticatedShopsRoute
   '/_authenticated/transport': typeof AuthenticatedTransportRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
@@ -210,6 +209,7 @@ export interface FileRoutesById {
   '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/_authenticated/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/_authenticated/shops/': typeof AuthenticatedShopsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -227,13 +227,13 @@ export interface FileRouteTypes {
     | '/equipment'
     | '/financial-hub'
     | '/market-intelligence'
-    | '/shops'
     | '/transport'
     | '/checkout/confirmation'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
     | '/farmers/'
     | '/marketplace/'
+    | '/shops/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -248,7 +248,6 @@ export interface FileRouteTypes {
     | '/equipment'
     | '/financial-hub'
     | '/market-intelligence'
-    | '/shops'
     | '/transport'
     | '/'
     | '/checkout/confirmation'
@@ -256,6 +255,7 @@ export interface FileRouteTypes {
     | '/marketplace/$listingId'
     | '/farmers'
     | '/marketplace'
+    | '/shops'
   id:
     | '__root__'
     | '/_authenticated'
@@ -271,7 +271,6 @@ export interface FileRouteTypes {
     | '/_authenticated/equipment'
     | '/_authenticated/financial-hub'
     | '/_authenticated/market-intelligence'
-    | '/_authenticated/shops'
     | '/_authenticated/transport'
     | '/_authenticated/'
     | '/_authenticated/checkout/confirmation'
@@ -279,6 +278,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketplace/$listingId'
     | '/_authenticated/farmers/'
     | '/_authenticated/marketplace/'
+    | '/_authenticated/shops/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -340,13 +340,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTransportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/shops': {
-      id: '/_authenticated/shops'
-      path: '/shops'
-      fullPath: '/shops'
-      preLoaderRoute: typeof AuthenticatedShopsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/market-intelligence': {
       id: '/_authenticated/market-intelligence'
       path: '/market-intelligence'
@@ -401,6 +394,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/shops/': {
+      id: '/_authenticated/shops/'
+      path: '/shops'
+      fullPath: '/shops/'
+      preLoaderRoute: typeof AuthenticatedShopsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/marketplace/': {
@@ -464,13 +464,13 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEquipmentRoute: typeof AuthenticatedEquipmentRoute
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
-  AuthenticatedShopsRoute: typeof AuthenticatedShopsRoute
   AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedFarmersFarmerIdRoute: typeof AuthenticatedFarmersFarmerIdRoute
   AuthenticatedMarketplaceListingIdRoute: typeof AuthenticatedMarketplaceListingIdRoute
   AuthenticatedFarmersIndexRoute: typeof AuthenticatedFarmersIndexRoute
   AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
+  AuthenticatedShopsIndexRoute: typeof AuthenticatedShopsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -482,7 +482,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEquipmentRoute: AuthenticatedEquipmentRoute,
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
-  AuthenticatedShopsRoute: AuthenticatedShopsRoute,
   AuthenticatedTransportRoute: AuthenticatedTransportRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedFarmersFarmerIdRoute: AuthenticatedFarmersFarmerIdRoute,
@@ -490,6 +489,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedMarketplaceListingIdRoute,
   AuthenticatedFarmersIndexRoute: AuthenticatedFarmersIndexRoute,
   AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
+  AuthenticatedShopsIndexRoute: AuthenticatedShopsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -506,3 +506,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
