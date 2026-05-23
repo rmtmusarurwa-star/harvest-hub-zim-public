@@ -308,6 +308,103 @@ export type Database = {
           },
         ]
       }
+      forum_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          content?: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_posts: {
+        Row: {
+          author_id: string
+          body: string
+          category: Database["public"]["Enums"]["forum_category"]
+          created_at: string
+          id: string
+          image_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body?: string
+          category?: Database["public"]["Enums"]["forum_category"]
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          category?: Database["public"]["Enums"]["forum_category"]
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      forum_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          type: Database["public"]["Enums"]["forum_reaction_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          type: Database["public"]["Enums"]["forum_reaction_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          type?: Database["public"]["Enums"]["forum_reaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           category: Database["public"]["Enums"]["listing_category"]
@@ -850,6 +947,16 @@ export type Database = {
         | "sprayers"
         | "tillage_equipment"
         | "other"
+      forum_category:
+        | "general"
+        | "livestock"
+        | "crops"
+        | "market"
+        | "equipment"
+        | "weather"
+        | "success"
+        | "help"
+      forum_reaction_type: "like" | "helpful" | "insightful"
       listing_category:
         | "produce"
         | "livestock"
@@ -1044,6 +1151,17 @@ export const Constants = {
         "tillage_equipment",
         "other",
       ],
+      forum_category: [
+        "general",
+        "livestock",
+        "crops",
+        "market",
+        "equipment",
+        "weather",
+        "success",
+        "help",
+      ],
+      forum_reaction_type: ["like", "helpful", "insightful"],
       listing_category: [
         "produce",
         "livestock",
