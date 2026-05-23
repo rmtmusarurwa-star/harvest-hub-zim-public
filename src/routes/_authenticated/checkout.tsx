@@ -90,7 +90,7 @@ function CheckoutPage() {
     const rows = items.map((it) => ({
       order_code: generateOrderCode(),
       buyer_id: user.id,
-      farmer_id: it.farmer_id === "mock" ? user.id : it.farmer_id,
+      farmer_id: !it.farmer_id || it.farmer_id === "mock" ? user.id : it.farmer_id,
       listing_id: it.id.startsWith("mock-") ? null : it.id,
       listing_title: it.title,
       quantity: it.quantity,
