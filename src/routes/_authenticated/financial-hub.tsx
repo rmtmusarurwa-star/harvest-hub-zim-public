@@ -142,13 +142,13 @@ const statusTone = (s: string) => {
 };
 
 function FinancialHubPage() {
-  const { user, role } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [buyerNames, setBuyerNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
-  const isFarmer = role === "farmer";
+  const isFarmer = profile?.role === "farmer";
   const userId = user?.id ?? "";
 
   useEffect(() => {
