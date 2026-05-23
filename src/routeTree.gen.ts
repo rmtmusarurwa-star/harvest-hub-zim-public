@@ -26,6 +26,7 @@ import { Route as AuthenticatedTransportIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedShopsIndexRouteImport } from './routes/_authenticated/shops/index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedFarmersIndexRouteImport } from './routes/_authenticated/farmers/index'
+import { Route as AuthenticatedEquipmentIndexRouteImport } from './routes/_authenticated/equipment/index'
 import { Route as AuthenticatedTransportVehicleIdRouteImport } from './routes/_authenticated/transport/$vehicleId'
 import { Route as AuthenticatedShopsShopIdRouteImport } from './routes/_authenticated/shops/$shopId'
 import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
@@ -121,6 +122,12 @@ const AuthenticatedFarmersIndexRoute =
     path: '/farmers/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedEquipmentIndexRoute =
+  AuthenticatedEquipmentIndexRouteImport.update({
+    id: '/equipment/',
+    path: '/equipment/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTransportVehicleIdRoute =
   AuthenticatedTransportVehicleIdRouteImport.update({
     id: '/transport/$vehicleId',
@@ -170,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
+  '/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/shops/': typeof AuthenticatedShopsIndexRoute
@@ -193,6 +201,7 @@ export interface FileRoutesByTo {
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
+  '/equipment': typeof AuthenticatedEquipmentIndexRoute
   '/farmers': typeof AuthenticatedFarmersIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
   '/shops': typeof AuthenticatedShopsIndexRoute
@@ -218,6 +227,7 @@ export interface FileRoutesById {
   '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/_authenticated/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/_authenticated/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
+  '/_authenticated/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/_authenticated/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/_authenticated/shops/': typeof AuthenticatedShopsIndexRoute
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/marketplace/$listingId'
     | '/shops/$shopId'
     | '/transport/$vehicleId'
+    | '/equipment/'
     | '/farmers/'
     | '/marketplace/'
     | '/shops/'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/marketplace/$listingId'
     | '/shops/$shopId'
     | '/transport/$vehicleId'
+    | '/equipment'
     | '/farmers'
     | '/marketplace'
     | '/shops'
@@ -290,6 +302,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketplace/$listingId'
     | '/_authenticated/shops/$shopId'
     | '/_authenticated/transport/$vehicleId'
+    | '/_authenticated/equipment/'
     | '/_authenticated/farmers/'
     | '/_authenticated/marketplace/'
     | '/_authenticated/shops/'
@@ -425,6 +438,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFarmersIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/equipment/': {
+      id: '/_authenticated/equipment/'
+      path: '/equipment'
+      fullPath: '/equipment/'
+      preLoaderRoute: typeof AuthenticatedEquipmentIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/transport/$vehicleId': {
       id: '/_authenticated/transport/$vehicleId'
       path: '/transport/$vehicleId'
@@ -490,6 +510,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMarketplaceListingIdRoute: typeof AuthenticatedMarketplaceListingIdRoute
   AuthenticatedShopsShopIdRoute: typeof AuthenticatedShopsShopIdRoute
   AuthenticatedTransportVehicleIdRoute: typeof AuthenticatedTransportVehicleIdRoute
+  AuthenticatedEquipmentIndexRoute: typeof AuthenticatedEquipmentIndexRoute
   AuthenticatedFarmersIndexRoute: typeof AuthenticatedFarmersIndexRoute
   AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
   AuthenticatedShopsIndexRoute: typeof AuthenticatedShopsIndexRoute
@@ -510,6 +531,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedMarketplaceListingIdRoute,
   AuthenticatedShopsShopIdRoute: AuthenticatedShopsShopIdRoute,
   AuthenticatedTransportVehicleIdRoute: AuthenticatedTransportVehicleIdRoute,
+  AuthenticatedEquipmentIndexRoute: AuthenticatedEquipmentIndexRoute,
   AuthenticatedFarmersIndexRoute: AuthenticatedFarmersIndexRoute,
   AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   AuthenticatedShopsIndexRoute: AuthenticatedShopsIndexRoute,
@@ -530,3 +552,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
