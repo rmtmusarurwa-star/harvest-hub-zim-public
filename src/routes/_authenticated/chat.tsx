@@ -455,6 +455,7 @@ function ChatThread({
     onSuccess: () => {
       setDraft("");
     },
+    onError: (e: Error) => toast.error("Could not send: " + e.message),
   });
 
   const sendOffer = useMutation({
@@ -474,6 +475,7 @@ function ChatThread({
       if (error) throw error;
     },
     onSuccess: () => setShowOffer(false),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const respondOffer = useMutation({
