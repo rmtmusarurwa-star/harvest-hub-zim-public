@@ -145,60 +145,120 @@ function OverviewTab() {
     listings: 0,
     orders: 0,
     revenue: 0,
+    pendingVerifications: 0,
+    suspended: 0,
+    openReports: 0,
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+  async function load() {
+    setLoading(true);
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-      const [u, f, b, l, o, rev] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "farmer"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "buyer"),
-        supabase.from("listings").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("total_amount").gte("created_at", startOfMonth.toISOString()),
-      ]);
-      setStats({
-        users: u.count ?? 0,
-        farmers: f.count ?? 0,
-        buyers: b.count ?? 0,
-        listings: l.count ?? 0,
-        orders: o.count ?? 0,
-        revenue: (rev.data ?? []).reduce((s, r: any) => s + Number(r.total_amount ?? 0), 0),
-      });
-      setLoading(false);
-    })();
-  }, []);
+    const [u, f, b, l, o, rev, pv, susp, rep] = await Promise.all([
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "farmer"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "buyer"),
+      supabase.from("listings").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("orders").select("id", { count: "exact", head: true }).gte("created_at", startOfMonth.toISOString()),
+      supabase.from("orders").select("total_amount").gte("created_at", startOfMonth.toISOString()),
+      supabase.from("verification_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("suspended", true),
+      supabase.from("fraud_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+    ]);
+    const revenue = (rev.data ?? []).reduce((s, r: any) => s + Number(r.total_amount ?? 0), 0);
+    setStats({
+      users: u.count ?? 0,
+      farmers: f.count ?? 0,
+      buyers: b.count ?? 0,
+      listings: l.count ?? 0,
+      orders: o.count ?? 0,
+      revenue,
+      pendingVerifications: pv.count ?? 0,
+      suspended: susp.count ?? 0,
+      openReports: rep.count ?? 0,
+    });
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
 
   const cards = [
     { label: "Total Users", value: stats.users, icon: Users },
     { label: "Farmers", value: stats.farmers, icon: Users },
     { label: "Buyers", value: stats.buyers, icon: Users },
-    { label: "Listings", value: stats.listings, icon: Package },
-    { label: "Orders", value: stats.orders, icon: ShoppingCart },
+    { label: "Active Listings", value: stats.listings, icon: Package },
+    { label: "Orders (Month)", value: stats.orders, icon: ShoppingCart },
     { label: "Revenue (Month)", value: `$${stats.revenue.toFixed(2)}`, icon: DollarSign },
   ];
 
+  const commission = stats.revenue * 0.02;
+
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-      {cards.map((c) => (
-        <div key={c.label} className="glass rounded-2xl p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
-            <c.icon className="h-4 w-4 text-secondary" />
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        {cards.map((c) => (
+          <motion.div
+            key={c.label}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass rounded-2xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
+              <c.icon className="h-4 w-4 text-secondary" />
+            </div>
+            <div className="mt-2 font-display text-2xl">{loading ? "—" : c.value}</div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[
+          { label: "Commission (Month)", value: `$${commission.toFixed(2)}`, icon: Wallet },
+          { label: "Pending Verifications", value: stats.pendingVerifications, icon: BadgeCheck },
+          { label: "Suspended Accounts", value: stats.suspended, icon: Ban },
+          { label: "Open Fraud Reports", value: stats.openReports, icon: Flag },
+        ].map((c) => (
+          <div key={c.label} className="glass rounded-2xl p-4">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+              <c.icon className="h-3.5 w-3.5 text-secondary" />
+              {c.label}
+            </div>
+            <div className="mt-2 font-display text-xl">{loading ? "—" : c.value}</div>
           </div>
-          <div className="mt-2 font-display text-2xl">
-            {loading ? "—" : c.value}
-          </div>
+        ))}
+      </div>
+
+      <div className="glass rounded-2xl p-4">
+        <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">Quick Actions</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="announcements"]')?.click()}>
+            <Megaphone className="h-3.5 w-3.5 mr-1" /> Create Announcement
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="financial"]')?.click()}>
+            <Wallet className="h-3.5 w-3.5 mr-1" /> Financial Report
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="verification"]')?.click()}>
+            <BadgeCheck className="h-3.5 w-3.5 mr-1" /> Approve Sellers
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="reports"]')?.click()}>
+            <Flag className="h-3.5 w-3.5 mr-1" /> Review Reports
+          </Button>
         </div>
-      ))}
+      </div>
     </div>
   );
 }
+
 
 // ============ USERS ============
 type ProfileRow = {
