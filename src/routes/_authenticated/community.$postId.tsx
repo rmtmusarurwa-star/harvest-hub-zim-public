@@ -1,0 +1,352 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import {
+  ArrowLeft,
+  MessageSquare,
+  Send,
+  ThumbsUp,
+  Sparkles,
+  Lightbulb,
+  Trash2,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import {
+  REACTION_TYPES,
+  categoryLabel,
+  type ForumCommentRow,
+  type ForumPostRow,
+  type ForumReactionType,
+} from "@/lib/forum-data";
+
+export const Route = createFileRoute("/_authenticated/community/$postId")({
+  component: PostDetailPage,
+});
+
+type Profile = { id: string; full_name: string; avatar_url: string | null };
+
+function PostDetailPage() {
+  const { postId } = Route.useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [post, setPost] = useState<ForumPostRow | null>(null);
+  const [author, setAuthor] = useState<Profile | null>(null);
+  const [comments, setComments] = useState<ForumCommentRow[]>([]);
+  const [commentAuthors, setCommentAuthors] = useState<Record<string, Profile>>({});
+  const [reactions, setReactions] = useState<
+    { type: ForumReactionType; count: number; mine: boolean }[]
+  >([]);
+  const [reply, setReply] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data: p, error } = await supabase
+      .from("forum_posts")
+      .select("*")
+      .eq("id", postId)
+      .maybeSingle();
+    if (error || !p) {
+      toast.error("Post not found");
+      setLoading(false);
+      return;
+    }
+    setPost(p as ForumPostRow);
+
+    const [{ data: authorProf }, { data: commentRows }, { data: reactRows }] =
+      await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .eq("id", (p as ForumPostRow).author_id)
+          .maybeSingle(),
+        supabase
+          .from("forum_comments")
+          .select("*")
+          .eq("post_id", postId)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("forum_reactions")
+          .select("type, user_id")
+          .eq("post_id", postId),
+      ]);
+
+    setAuthor((authorProf as Profile) ?? null);
+    const cmts = (commentRows ?? []) as ForumCommentRow[];
+    setComments(cmts);
+
+    const cmtAuthorIds = Array.from(new Set(cmts.map((c) => c.author_id)));
+    if (cmtAuthorIds.length) {
+      const { data: cmtProfs } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", cmtAuthorIds);
+      const map: Record<string, Profile> = {};
+      (cmtProfs ?? []).forEach((pp) => (map[pp.id] = pp as Profile));
+      setCommentAuthors(map);
+    }
+
+    const grouped = REACTION_TYPES.map((t) => {
+      const matching = (reactRows ?? []).filter((r) => r.type === t.value);
+      return {
+        type: t.value,
+        count: matching.length,
+        mine: !!user && matching.some((r) => r.user_id === user.id),
+      };
+    });
+    setReactions(grouped);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId, user?.id]);
+
+  const toggleReaction = async (type: ForumReactionType, mine: boolean) => {
+    if (!user) return toast.error("Sign in to react");
+    if (mine) {
+      await supabase
+        .from("forum_reactions")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", user.id)
+        .eq("type", type);
+    } else {
+      await supabase
+        .from("forum_reactions")
+        .insert({ post_id: postId, user_id: user.id, type });
+    }
+    load();
+  };
+
+  const submitComment = async () => {
+    if (!user || !reply.trim()) return;
+    if (reply.length > 2000) {
+      toast.error("Comment too long (max 2000)");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("forum_comments").insert({
+      post_id: postId,
+      author_id: user.id,
+      content: reply.trim(),
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error("Could not post comment");
+      return;
+    }
+    setReply("");
+    load();
+  };
+
+  const deleteComment = async (id: string) => {
+    const { error } = await supabase.from("forum_comments").delete().eq("id", id);
+    if (error) return toast.error("Could not delete");
+    load();
+  };
+
+  const reactionIcon = (t: ForumReactionType) =>
+    t === "like" ? (
+      <ThumbsUp className="h-4 w-4" />
+    ) : t === "helpful" ? (
+      <Sparkles className="h-4 w-4" />
+    ) : (
+      <Lightbulb className="h-4 w-4" />
+    );
+
+  if (loading) {
+    return (
+      <div className="container max-w-3xl mx-auto py-10 text-center text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
+  if (!post) {
+    return (
+      <div className="container max-w-3xl mx-auto py-10 text-center">
+        <p className="text-muted-foreground mb-4">Post not found.</p>
+        <Button onClick={() => navigate({ to: "/community" })}>
+          Back to forum
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container max-w-3xl mx-auto px-4 py-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mb-4 gap-1"
+        onClick={() => navigate({ to: "/community" })}
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to forum
+      </Button>
+
+      <Card>
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3 mb-3">
+            <Link
+              to="/farmers/$farmerId"
+              params={{ farmerId: post.author_id }}
+            >
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={author?.avatar_url ?? undefined} />
+                <AvatarFallback>
+                  {(author?.full_name ?? "U").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link
+                  to="/farmers/$farmerId"
+                  params={{ farmerId: post.author_id }}
+                  className="font-semibold hover:underline"
+                >
+                  {author?.full_name || "Farmer"}
+                </Link>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(post.created_at).toLocaleString()}
+                </span>
+                <Badge variant="secondary" className="ml-auto">
+                  {categoryLabel(post.category)}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
+          <div className="text-sm whitespace-pre-wrap leading-relaxed">
+            {post.body}
+          </div>
+          {post.image_url && (
+            <img
+              src={post.image_url}
+              alt=""
+              className="mt-4 rounded-lg max-h-[420px] object-cover w-full"
+            />
+          )}
+
+          <div className="flex items-center gap-2 mt-5 pt-4 border-t flex-wrap">
+            {reactions.map((r) => (
+              <Button
+                key={r.type}
+                variant={r.mine ? "default" : "outline"}
+                size="sm"
+                className="gap-1.5"
+                onClick={() => toggleReaction(r.type, r.mine)}
+              >
+                {reactionIcon(r.type)}
+                <span className="capitalize">{r.type}</span>
+                <span className="text-xs opacity-80">{r.count}</span>
+              </Button>
+            ))}
+            <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+              <MessageSquare className="h-3.5 w-3.5" /> {comments.length}{" "}
+              comments
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Reply input */}
+      {user && (
+        <Card className="mt-4">
+          <CardContent className="p-4 space-y-2">
+            <Textarea
+              placeholder="Add a thoughtful reply..."
+              value={reply}
+              maxLength={2000}
+              rows={3}
+              onChange={(e) => setReply(e.target.value)}
+            />
+            <div className="flex justify-end">
+              <Button
+                onClick={submitComment}
+                disabled={submitting || !reply.trim()}
+                className="gap-2"
+              >
+                <Send className="h-4 w-4" />
+                {submitting ? "Posting..." : "Reply"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Comments */}
+      <div className="mt-4 space-y-3">
+        <h2 className="font-semibold text-lg">
+          {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
+        </h2>
+        {comments.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              No comments yet — be the first to reply.
+            </CardContent>
+          </Card>
+        ) : (
+          comments.map((c) => {
+            const ca = commentAuthors[c.author_id];
+            return (
+              <Card key={c.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Link
+                      to="/farmers/$farmerId"
+                      params={{ farmerId: c.author_id }}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={ca?.avatar_url ?? undefined} />
+                        <AvatarFallback>
+                          {(ca?.full_name ?? "U").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-xs">
+                        <Link
+                          to="/farmers/$farmerId"
+                          params={{ farmerId: c.author_id }}
+                          className="font-semibold hover:underline"
+                        >
+                          {ca?.full_name || "Farmer"}
+                        </Link>
+                        <span className="text-muted-foreground">
+                          {new Date(c.created_at).toLocaleString()}
+                        </span>
+                        {user?.id === c.author_id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="ml-auto h-6 w-6"
+                            onClick={() => deleteComment(c.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-sm mt-1 whitespace-pre-wrap">
+                        {c.content}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
