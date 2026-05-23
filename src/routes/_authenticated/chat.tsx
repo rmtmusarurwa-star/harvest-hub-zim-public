@@ -32,13 +32,14 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-type Search = { c?: string; listing?: string; farmer?: string };
+type Search = { c?: string; listing?: string; farmer?: string; user?: string };
 
 export const Route = createFileRoute("/_authenticated/chat")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     c: typeof s.c === "string" ? s.c : undefined,
     listing: typeof s.listing === "string" ? s.listing : undefined,
     farmer: typeof s.farmer === "string" ? s.farmer : undefined,
+    user: typeof s.user === "string" ? s.user : undefined,
   }),
   component: ChatPage,
 });
