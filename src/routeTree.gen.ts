@@ -27,6 +27,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedShopsIndexRouteImport } from './routes/_authenticated/shops/index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedFarmersIndexRouteImport } from './routes/_authenticated/farmers/index'
+import { Route as AuthenticatedShopsShopIdRouteImport } from './routes/_authenticated/shops/$shopId'
 import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
 import { Route as AuthenticatedFarmersFarmerIdRouteImport } from './routes/_authenticated/farmers/$farmerId'
 import { Route as AuthenticatedCheckoutConfirmationRouteImport } from './routes/_authenticated/checkout.confirmation'
@@ -124,6 +125,12 @@ const AuthenticatedFarmersIndexRoute =
     path: '/farmers/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedShopsShopIdRoute =
+  AuthenticatedShopsShopIdRouteImport.update({
+    id: '/shops/$shopId',
+    path: '/shops/$shopId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMarketplaceListingIdRoute =
   AuthenticatedMarketplaceListingIdRouteImport.update({
     id: '/marketplace/$listingId',
@@ -161,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/shops/': typeof AuthenticatedShopsIndexRoute
@@ -183,6 +191,7 @@ export interface FileRoutesByTo {
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/farmers': typeof AuthenticatedFarmersIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
   '/shops': typeof AuthenticatedShopsIndexRoute
@@ -207,6 +216,7 @@ export interface FileRoutesById {
   '/_authenticated/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/_authenticated/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/_authenticated/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/_authenticated/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/_authenticated/shops/': typeof AuthenticatedShopsIndexRoute
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/checkout/confirmation'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
+    | '/shops/$shopId'
     | '/farmers/'
     | '/marketplace/'
     | '/shops/'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/checkout/confirmation'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
+    | '/shops/$shopId'
     | '/farmers'
     | '/marketplace'
     | '/shops'
@@ -276,6 +288,7 @@ export interface FileRouteTypes {
     | '/_authenticated/checkout/confirmation'
     | '/_authenticated/farmers/$farmerId'
     | '/_authenticated/marketplace/$listingId'
+    | '/_authenticated/shops/$shopId'
     | '/_authenticated/farmers/'
     | '/_authenticated/marketplace/'
     | '/_authenticated/shops/'
@@ -417,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFarmersIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/shops/$shopId': {
+      id: '/_authenticated/shops/$shopId'
+      path: '/shops/$shopId'
+      fullPath: '/shops/$shopId'
+      preLoaderRoute: typeof AuthenticatedShopsShopIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/marketplace/$listingId': {
       id: '/_authenticated/marketplace/$listingId'
       path: '/marketplace/$listingId'
@@ -468,6 +488,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedFarmersFarmerIdRoute: typeof AuthenticatedFarmersFarmerIdRoute
   AuthenticatedMarketplaceListingIdRoute: typeof AuthenticatedMarketplaceListingIdRoute
+  AuthenticatedShopsShopIdRoute: typeof AuthenticatedShopsShopIdRoute
   AuthenticatedFarmersIndexRoute: typeof AuthenticatedFarmersIndexRoute
   AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
   AuthenticatedShopsIndexRoute: typeof AuthenticatedShopsIndexRoute
@@ -487,6 +508,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFarmersFarmerIdRoute: AuthenticatedFarmersFarmerIdRoute,
   AuthenticatedMarketplaceListingIdRoute:
     AuthenticatedMarketplaceListingIdRoute,
+  AuthenticatedShopsShopIdRoute: AuthenticatedShopsShopIdRoute,
   AuthenticatedFarmersIndexRoute: AuthenticatedFarmersIndexRoute,
   AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   AuthenticatedShopsIndexRoute: AuthenticatedShopsIndexRoute,
