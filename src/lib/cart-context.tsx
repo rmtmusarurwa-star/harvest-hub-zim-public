@@ -16,7 +16,9 @@ export type CartItem = {
   quantity: number;
   location: string;
   image_url: string | null;
+  farmer_id: string;
 };
+
 
 type CartContextValue = {
   items: CartItem[];
@@ -85,8 +87,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
               quantity: qty,
               location: l.location,
               image_url: l.image_url,
+              farmer_id: l.farmer_id,
             },
           ];
+
         });
         setIsOpen(true);
       },
