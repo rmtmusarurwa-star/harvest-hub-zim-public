@@ -256,7 +256,7 @@ function CommunityPage() {
               </CardContent>
             </Card>
           ) : (
-            filtered.map((p) => <PostCard key={p.id} post={p} />)
+            filtered.map((p) => <PostCard key={p.id} post={p} onChanged={load} />)
           )}
         </div>
 
