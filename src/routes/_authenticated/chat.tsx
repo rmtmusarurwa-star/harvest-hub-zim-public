@@ -169,10 +169,12 @@ function ChatPage() {
 
       const [{ data: listings }, { data: profiles }, { data: lastMsgs }, { data: unread }] =
         await Promise.all([
-          supabase
-            .from("listings")
-            .select("id, title, price, unit, image_url, status")
-            .in("id", listingIds),
+          listingIds.length > 0
+            ? supabase
+                .from("listings")
+                .select("id, title, price, unit, image_url, status")
+                .in("id", listingIds)
+            : Promise.resolve({ data: [] as any[] }),
           supabase
             .from("profiles")
             .select("id, full_name, avatar_url")
