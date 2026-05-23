@@ -112,19 +112,28 @@ function PostDetailPage() {
 
   const toggleReaction = async (type: ForumReactionType, mine: boolean) => {
     if (!user) return toast.error("Sign in to react");
-    if (mine) {
-      await supabase
-        .from("forum_reactions")
-        .delete()
-        .eq("post_id", postId)
-        .eq("user_id", user.id)
-        .eq("type", type);
-    } else {
-      await supabase
-        .from("forum_reactions")
-        .insert({ post_id: postId, user_id: user.id, type });
+    // Optimistic update
+    setReactions((prev) =>
+      prev.map((r) =>
+        r.type === type
+          ? { ...r, mine: !mine, count: Math.max(0, r.count + (mine ? -1 : 1)) }
+          : r
+      )
+    );
+    const { error } = mine
+      ? await supabase
+          .from("forum_reactions")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", user.id)
+          .eq("type", type)
+      : await supabase
+          .from("forum_reactions")
+          .insert({ post_id: postId, user_id: user.id, type });
+    if (error) {
+      toast.error(error.message || "Could not update reaction");
+      load();
     }
-    load();
   };
 
   const submitComment = async () => {
