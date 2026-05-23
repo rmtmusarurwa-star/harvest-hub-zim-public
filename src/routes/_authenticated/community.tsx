@@ -102,7 +102,7 @@ function CommunityPage() {
           .in("post_id", postIds.length ? postIds : ["00000000-0000-0000-0000-000000000000"]),
         supabase
           .from("forum_reactions")
-          .select("post_id")
+          .select("post_id, user_id, type")
           .in("post_id", postIds.length ? postIds : ["00000000-0000-0000-0000-000000000000"]),
       ]);
 
@@ -114,9 +114,11 @@ function CommunityPage() {
       commentCounts.set(c.post_id, (commentCounts.get(c.post_id) ?? 0) + 1)
     );
     const reactionCounts = new Map<string, number>();
-    (reacts ?? []).forEach((r) =>
-      reactionCounts.set(r.post_id, (reactionCounts.get(r.post_id) ?? 0) + 1)
-    );
+    const likedByMe = new Set<string>();
+    (reacts ?? []).forEach((r) => {
+      reactionCounts.set(r.post_id, (reactionCounts.get(r.post_id) ?? 0) + 1);
+      if (user && r.user_id === user.id && r.type === "like") likedByMe.add(r.post_id);
+    });
 
     setPosts(
       rows.map((p) => ({
@@ -125,10 +127,12 @@ function CommunityPage() {
         author_avatar: profMap.get(p.author_id)?.avatar ?? null,
         comment_count: commentCounts.get(p.id) ?? 0,
         reaction_count: reactionCounts.get(p.id) ?? 0,
+        liked_by_me: likedByMe.has(p.id),
       }))
     );
     setLoading(false);
   };
+
 
   useEffect(() => {
     load();
