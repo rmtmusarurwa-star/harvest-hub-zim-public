@@ -46,6 +46,8 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { profile, user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
+  const navItems = isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
 
   const displayName =
     profile?.full_name?.trim() || user?.email?.split("@")[0] || "Account";
