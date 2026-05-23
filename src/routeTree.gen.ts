@@ -32,6 +32,7 @@ import { Route as AuthenticatedShopsShopIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
 import { Route as AuthenticatedFarmersFarmerIdRouteImport } from './routes/_authenticated/farmers/$farmerId'
 import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment/$equipmentId'
+import { Route as AuthenticatedCommunityPostIdRouteImport } from './routes/_authenticated/community.$postId'
 import { Route as AuthenticatedCheckoutConfirmationRouteImport } from './routes/_authenticated/checkout.confirmation'
 
 const SignupRoute = SignupRouteImport.update({
@@ -159,6 +160,12 @@ const AuthenticatedEquipmentEquipmentIdRoute =
     path: '/equipment/$equipmentId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCommunityPostIdRoute =
+  AuthenticatedCommunityPostIdRouteImport.update({
+    id: '/$postId',
+    path: '/$postId',
+    getParentRoute: () => AuthenticatedCommunityRoute,
+  } as any)
 const AuthenticatedCheckoutConfirmationRoute =
   AuthenticatedCheckoutConfirmationRouteImport.update({
     id: '/confirmation',
@@ -175,11 +182,12 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/chat': typeof AuthenticatedChatRoute
   '/checkout': typeof AuthenticatedCheckoutRouteWithChildren
-  '/community': typeof AuthenticatedCommunityRoute
+  '/community': typeof AuthenticatedCommunityRouteWithChildren
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/community/$postId': typeof AuthenticatedCommunityPostIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
@@ -199,12 +207,13 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/chat': typeof AuthenticatedChatRoute
   '/checkout': typeof AuthenticatedCheckoutRouteWithChildren
-  '/community': typeof AuthenticatedCommunityRoute
+  '/community': typeof AuthenticatedCommunityRouteWithChildren
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/': typeof AuthenticatedIndexRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/community/$postId': typeof AuthenticatedCommunityPostIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
@@ -226,12 +235,13 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRouteWithChildren
-  '/_authenticated/community': typeof AuthenticatedCommunityRoute
+  '/_authenticated/community': typeof AuthenticatedCommunityRouteWithChildren
   '/_authenticated/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/_authenticated/community/$postId': typeof AuthenticatedCommunityPostIdRoute
   '/_authenticated/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/_authenticated/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/financial-hub'
     | '/market-intelligence'
     | '/checkout/confirmation'
+    | '/community/$postId'
     | '/equipment/$equipmentId'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/market-intelligence'
     | '/'
     | '/checkout/confirmation'
+    | '/community/$postId'
     | '/equipment/$equipmentId'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
@@ -310,6 +322,7 @@ export interface FileRouteTypes {
     | '/_authenticated/market-intelligence'
     | '/_authenticated/'
     | '/_authenticated/checkout/confirmation'
+    | '/_authenticated/community/$postId'
     | '/_authenticated/equipment/$equipmentId'
     | '/_authenticated/farmers/$farmerId'
     | '/_authenticated/marketplace/$listingId'
@@ -493,6 +506,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEquipmentEquipmentIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/community/$postId': {
+      id: '/_authenticated/community/$postId'
+      path: '/$postId'
+      fullPath: '/community/$postId'
+      preLoaderRoute: typeof AuthenticatedCommunityPostIdRouteImport
+      parentRoute: typeof AuthenticatedCommunityRoute
+    }
     '/_authenticated/checkout/confirmation': {
       id: '/_authenticated/checkout/confirmation'
       path: '/confirmation'
@@ -517,11 +537,25 @@ const AuthenticatedCheckoutRouteWithChildren =
     AuthenticatedCheckoutRouteChildren,
   )
 
+interface AuthenticatedCommunityRouteChildren {
+  AuthenticatedCommunityPostIdRoute: typeof AuthenticatedCommunityPostIdRoute
+}
+
+const AuthenticatedCommunityRouteChildren: AuthenticatedCommunityRouteChildren =
+  {
+    AuthenticatedCommunityPostIdRoute: AuthenticatedCommunityPostIdRoute,
+  }
+
+const AuthenticatedCommunityRouteWithChildren =
+  AuthenticatedCommunityRoute._addFileChildren(
+    AuthenticatedCommunityRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRouteWithChildren
-  AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRoute
+  AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRouteWithChildren
   AuthenticatedDiseaseIdRoute: typeof AuthenticatedDiseaseIdRoute
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
@@ -542,7 +576,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRouteWithChildren,
-  AuthenticatedCommunityRoute: AuthenticatedCommunityRoute,
+  AuthenticatedCommunityRoute: AuthenticatedCommunityRouteWithChildren,
   AuthenticatedDiseaseIdRoute: AuthenticatedDiseaseIdRoute,
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
