@@ -99,6 +99,9 @@ function AdminPage() {
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="verification">Verification</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="financial">Financial</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
@@ -109,12 +112,16 @@ function AdminPage() {
         <TabsContent value="orders"><OrdersTab /></TabsContent>
         <TabsContent value="verification"><VerificationTab /></TabsContent>
         <TabsContent value="reports"><ReportsTab /></TabsContent>
+        <TabsContent value="financial"><FinancialTab /></TabsContent>
+        <TabsContent value="analytics"><AnalyticsTab /></TabsContent>
+        <TabsContent value="categories"><CategoriesTab /></TabsContent>
         <TabsContent value="announcements"><AnnouncementsTab /></TabsContent>
         <TabsContent value="activity"><ActivityTab /></TabsContent>
       </Tabs>
     </section>
   );
 }
+
 
 // ============ Helper: log admin action ============
 async function logAction(action: string, target_type = "", target_id = "", details = "") {
