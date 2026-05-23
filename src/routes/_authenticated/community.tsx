@@ -62,7 +62,9 @@ type PostWithMeta = ForumPostRow & {
   author_avatar: string | null;
   comment_count: number;
   reaction_count: number;
+  liked_by_me: boolean;
 };
+
 
 function CommunityPage() {
   const { user } = useAuth();
