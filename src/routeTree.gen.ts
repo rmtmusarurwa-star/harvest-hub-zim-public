@@ -23,6 +23,7 @@ import { Route as AuthenticatedCommunityRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedTransportIndexRouteImport } from './routes/_authenticated/transport/index'
 import { Route as AuthenticatedShopsIndexRouteImport } from './routes/_authenticated/shops/index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedFarmersIndexRouteImport } from './routes/_authenticated/farmers/index'
@@ -102,6 +103,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedTransportIndexRoute =
+  AuthenticatedTransportIndexRouteImport.update({
+    id: '/transport/',
+    path: '/transport/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedShopsIndexRoute = AuthenticatedShopsIndexRouteImport.update({
   id: '/shops/',
   path: '/shops/',
@@ -165,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/shops/': typeof AuthenticatedShopsIndexRoute
+  '/transport/': typeof AuthenticatedTransportIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -187,6 +195,7 @@ export interface FileRoutesByTo {
   '/farmers': typeof AuthenticatedFarmersIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
   '/shops': typeof AuthenticatedShopsIndexRoute
+  '/transport': typeof AuthenticatedTransportIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -211,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/_authenticated/shops/': typeof AuthenticatedShopsIndexRoute
+  '/_authenticated/transport/': typeof AuthenticatedTransportIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/farmers/'
     | '/marketplace/'
     | '/shops/'
+    | '/transport/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/farmers'
     | '/marketplace'
     | '/shops'
+    | '/transport'
   id:
     | '__root__'
     | '/_authenticated'
@@ -280,6 +292,7 @@ export interface FileRouteTypes {
     | '/_authenticated/farmers/'
     | '/_authenticated/marketplace/'
     | '/_authenticated/shops/'
+    | '/_authenticated/transport/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -390,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/transport/': {
+      id: '/_authenticated/transport/'
+      path: '/transport'
+      fullPath: '/transport/'
+      preLoaderRoute: typeof AuthenticatedTransportIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/shops/': {
       id: '/_authenticated/shops/'
       path: '/shops'
@@ -472,6 +492,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFarmersIndexRoute: typeof AuthenticatedFarmersIndexRoute
   AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
   AuthenticatedShopsIndexRoute: typeof AuthenticatedShopsIndexRoute
+  AuthenticatedTransportIndexRoute: typeof AuthenticatedTransportIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -491,6 +512,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFarmersIndexRoute: AuthenticatedFarmersIndexRoute,
   AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   AuthenticatedShopsIndexRoute: AuthenticatedShopsIndexRoute,
+  AuthenticatedTransportIndexRoute: AuthenticatedTransportIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -507,3 +529,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
