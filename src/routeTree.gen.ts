@@ -15,7 +15,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedTransportRouteImport } from './routes/_authenticated/transport'
 import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
 import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
 import { Route as AuthenticatedEquipmentRouteImport } from './routes/_authenticated/equipment'
@@ -24,9 +23,11 @@ import { Route as AuthenticatedCommunityRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedTransportIndexRouteImport } from './routes/_authenticated/transport/index'
 import { Route as AuthenticatedShopsIndexRouteImport } from './routes/_authenticated/shops/index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedFarmersIndexRouteImport } from './routes/_authenticated/farmers/index'
+import { Route as AuthenticatedTransportVehicleIdRouteImport } from './routes/_authenticated/transport/$vehicleId'
 import { Route as AuthenticatedShopsShopIdRouteImport } from './routes/_authenticated/shops/$shopId'
 import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
 import { Route as AuthenticatedFarmersFarmerIdRouteImport } from './routes/_authenticated/farmers/$farmerId'
@@ -59,11 +60,6 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedTransportRoute = AuthenticatedTransportRouteImport.update({
-  id: '/transport',
-  path: '/transport',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMarketIntelligenceRoute =
@@ -108,6 +104,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedTransportIndexRoute =
+  AuthenticatedTransportIndexRouteImport.update({
+    id: '/transport/',
+    path: '/transport/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedShopsIndexRoute = AuthenticatedShopsIndexRouteImport.update({
   id: '/shops/',
   path: '/shops/',
@@ -123,6 +125,12 @@ const AuthenticatedFarmersIndexRoute =
   AuthenticatedFarmersIndexRouteImport.update({
     id: '/farmers/',
     path: '/farmers/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTransportVehicleIdRoute =
+  AuthenticatedTransportVehicleIdRouteImport.update({
+    id: '/transport/$vehicleId',
+    path: '/transport/$vehicleId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedShopsShopIdRoute =
@@ -164,14 +172,15 @@ export interface FileRoutesByFullPath {
   '/equipment': typeof AuthenticatedEquipmentRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/transport': typeof AuthenticatedTransportRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
+  '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/shops/': typeof AuthenticatedShopsIndexRoute
+  '/transport/': typeof AuthenticatedTransportIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -186,15 +195,16 @@ export interface FileRoutesByTo {
   '/equipment': typeof AuthenticatedEquipmentRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/transport': typeof AuthenticatedTransportRoute
   '/': typeof AuthenticatedIndexRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
+  '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/farmers': typeof AuthenticatedFarmersIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
   '/shops': typeof AuthenticatedShopsIndexRoute
+  '/transport': typeof AuthenticatedTransportIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -211,15 +221,16 @@ export interface FileRoutesById {
   '/_authenticated/equipment': typeof AuthenticatedEquipmentRoute
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
-  '/_authenticated/transport': typeof AuthenticatedTransportRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/_authenticated/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/_authenticated/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
+  '/_authenticated/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/_authenticated/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/_authenticated/shops/': typeof AuthenticatedShopsIndexRoute
+  '/_authenticated/transport/': typeof AuthenticatedTransportIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -237,14 +248,15 @@ export interface FileRouteTypes {
     | '/equipment'
     | '/financial-hub'
     | '/market-intelligence'
-    | '/transport'
     | '/checkout/confirmation'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
     | '/shops/$shopId'
+    | '/transport/$vehicleId'
     | '/farmers/'
     | '/marketplace/'
     | '/shops/'
+    | '/transport/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -259,15 +271,16 @@ export interface FileRouteTypes {
     | '/equipment'
     | '/financial-hub'
     | '/market-intelligence'
-    | '/transport'
     | '/'
     | '/checkout/confirmation'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
     | '/shops/$shopId'
+    | '/transport/$vehicleId'
     | '/farmers'
     | '/marketplace'
     | '/shops'
+    | '/transport'
   id:
     | '__root__'
     | '/_authenticated'
@@ -283,15 +296,16 @@ export interface FileRouteTypes {
     | '/_authenticated/equipment'
     | '/_authenticated/financial-hub'
     | '/_authenticated/market-intelligence'
-    | '/_authenticated/transport'
     | '/_authenticated/'
     | '/_authenticated/checkout/confirmation'
     | '/_authenticated/farmers/$farmerId'
     | '/_authenticated/marketplace/$listingId'
     | '/_authenticated/shops/$shopId'
+    | '/_authenticated/transport/$vehicleId'
     | '/_authenticated/farmers/'
     | '/_authenticated/marketplace/'
     | '/_authenticated/shops/'
+    | '/_authenticated/transport/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -344,13 +358,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/transport': {
-      id: '/_authenticated/transport'
-      path: '/transport'
-      fullPath: '/transport'
-      preLoaderRoute: typeof AuthenticatedTransportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/market-intelligence': {
@@ -409,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/transport/': {
+      id: '/_authenticated/transport/'
+      path: '/transport'
+      fullPath: '/transport/'
+      preLoaderRoute: typeof AuthenticatedTransportIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/shops/': {
       id: '/_authenticated/shops/'
       path: '/shops'
@@ -428,6 +442,13 @@ declare module '@tanstack/react-router' {
       path: '/farmers'
       fullPath: '/farmers/'
       preLoaderRoute: typeof AuthenticatedFarmersIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/transport/$vehicleId': {
+      id: '/_authenticated/transport/$vehicleId'
+      path: '/transport/$vehicleId'
+      fullPath: '/transport/$vehicleId'
+      preLoaderRoute: typeof AuthenticatedTransportVehicleIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/shops/$shopId': {
@@ -484,14 +505,15 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEquipmentRoute: typeof AuthenticatedEquipmentRoute
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
-  AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedFarmersFarmerIdRoute: typeof AuthenticatedFarmersFarmerIdRoute
   AuthenticatedMarketplaceListingIdRoute: typeof AuthenticatedMarketplaceListingIdRoute
   AuthenticatedShopsShopIdRoute: typeof AuthenticatedShopsShopIdRoute
+  AuthenticatedTransportVehicleIdRoute: typeof AuthenticatedTransportVehicleIdRoute
   AuthenticatedFarmersIndexRoute: typeof AuthenticatedFarmersIndexRoute
   AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
   AuthenticatedShopsIndexRoute: typeof AuthenticatedShopsIndexRoute
+  AuthenticatedTransportIndexRoute: typeof AuthenticatedTransportIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -503,15 +525,16 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEquipmentRoute: AuthenticatedEquipmentRoute,
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
-  AuthenticatedTransportRoute: AuthenticatedTransportRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedFarmersFarmerIdRoute: AuthenticatedFarmersFarmerIdRoute,
   AuthenticatedMarketplaceListingIdRoute:
     AuthenticatedMarketplaceListingIdRoute,
   AuthenticatedShopsShopIdRoute: AuthenticatedShopsShopIdRoute,
+  AuthenticatedTransportVehicleIdRoute: AuthenticatedTransportVehicleIdRoute,
   AuthenticatedFarmersIndexRoute: AuthenticatedFarmersIndexRoute,
   AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   AuthenticatedShopsIndexRoute: AuthenticatedShopsIndexRoute,
+  AuthenticatedTransportIndexRoute: AuthenticatedTransportIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

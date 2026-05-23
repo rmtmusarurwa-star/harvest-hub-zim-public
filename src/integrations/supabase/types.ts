@@ -487,6 +487,208 @@ export type Database = {
         }
         Relationships: []
       }
+      transport_bookings: {
+        Row: {
+          buyer_id: string
+          cargo: string
+          contact_phone: string
+          created_at: string
+          destination: string
+          estimated_weight_kg: number
+          id: string
+          notes: string
+          owner_id: string
+          pickup: string
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          buyer_id: string
+          cargo?: string
+          contact_phone?: string
+          created_at?: string
+          destination?: string
+          estimated_weight_kg?: number
+          id?: string
+          notes?: string
+          owner_id: string
+          pickup?: string
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          buyer_id?: string
+          cargo?: string
+          contact_phone?: string
+          created_at?: string
+          destination?: string
+          estimated_weight_kg?: number
+          id?: string
+          notes?: string
+          owner_id?: string
+          pickup?: string
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_bookings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_request_responses: {
+        Row: {
+          contact_phone: string
+          created_at: string
+          id: string
+          message: string
+          quoted_price: number
+          request_id: string
+          responder_id: string
+        }
+        Insert: {
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          message?: string
+          quoted_price?: number
+          request_id: string
+          responder_id: string
+        }
+        Update: {
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          message?: string
+          quoted_price?: number
+          request_id?: string
+          responder_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_request_responses_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "transport_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_requests: {
+        Row: {
+          budget: number
+          cargo: string
+          contact_phone: string
+          created_at: string
+          destination: string
+          estimated_weight_kg: number
+          id: string
+          pickup: string
+          poster_id: string
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          updated_at: string
+        }
+        Insert: {
+          budget?: number
+          cargo?: string
+          contact_phone?: string
+          created_at?: string
+          destination?: string
+          estimated_weight_kg?: number
+          id?: string
+          pickup?: string
+          poster_id: string
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Update: {
+          budget?: number
+          cargo?: string
+          contact_phone?: string
+          created_at?: string
+          destination?: string
+          estimated_weight_kg?: number
+          id?: string
+          pickup?: string
+          poster_id?: string
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          availability: Database["public"]["Enums"]["vehicle_availability"]
+          capacity_kg: number
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          location: string
+          name: string
+          owner_id: string
+          phone: string
+          price_per_km: number
+          price_per_trip: number
+          province: string
+          rating: number
+          type: Database["public"]["Enums"]["vehicle_type"]
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          availability?: Database["public"]["Enums"]["vehicle_availability"]
+          capacity_kg?: number
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          name?: string
+          owner_id: string
+          phone?: string
+          price_per_km?: number
+          price_per_trip?: number
+          province?: string
+          rating?: number
+          type?: Database["public"]["Enums"]["vehicle_type"]
+          updated_at?: string
+          whatsapp?: string
+        }
+        Update: {
+          availability?: Database["public"]["Enums"]["vehicle_availability"]
+          capacity_kg?: number
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          name?: string
+          owner_id?: string
+          phone?: string
+          price_per_km?: number
+          price_per_trip?: number
+          province?: string
+          rating?: number
+          type?: Database["public"]["Enums"]["vehicle_type"]
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -498,6 +700,12 @@ export type Database = {
       }
     }
     Enums: {
+      booking_status:
+        | "pending"
+        | "confirmed"
+        | "in_transit"
+        | "completed"
+        | "cancelled"
       listing_category:
         | "produce"
         | "livestock"
@@ -520,6 +728,7 @@ export type Database = {
         | "paid"
         | "failed"
         | "cancelled"
+      request_status: "open" | "matched" | "closed"
       shop_category:
         | "agro_vets"
         | "feed_suppliers"
@@ -529,6 +738,14 @@ export type Database = {
         | "vaccines_medicine"
         | "butcheries"
       user_role: "farmer" | "buyer" | "supplier" | "transporter"
+      vehicle_availability: "available" | "busy" | "offline"
+      vehicle_type:
+        | "truck"
+        | "tractor"
+        | "pickup"
+        | "refrigerated"
+        | "van"
+        | "lorry"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -656,6 +873,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      booking_status: [
+        "pending",
+        "confirmed",
+        "in_transit",
+        "completed",
+        "cancelled",
+      ],
       listing_category: [
         "produce",
         "livestock",
@@ -681,6 +905,7 @@ export const Constants = {
         "failed",
         "cancelled",
       ],
+      request_status: ["open", "matched", "closed"],
       shop_category: [
         "agro_vets",
         "feed_suppliers",
@@ -691,6 +916,15 @@ export const Constants = {
         "butcheries",
       ],
       user_role: ["farmer", "buyer", "supplier", "transporter"],
+      vehicle_availability: ["available", "busy", "offline"],
+      vehicle_type: [
+        "truck",
+        "tractor",
+        "pickup",
+        "refrigerated",
+        "van",
+        "lorry",
+      ],
     },
   },
 } as const
