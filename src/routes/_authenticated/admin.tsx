@@ -17,7 +17,14 @@ import {
   XCircle,
   Loader2,
   DollarSign,
+  TrendingUp,
+  Wallet,
+  LayoutGrid,
+  Download,
+  RefreshCw,
 } from "lucide-react";
+import { jsPDF } from "jspdf";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABEL, type AppRole } from "@/lib/auth-context";
 import { useIsAdmin } from "@/lib/use-is-admin";
