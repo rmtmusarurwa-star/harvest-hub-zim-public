@@ -63,6 +63,132 @@ export type Database = {
           },
         ]
       }
+      equipment: {
+        Row: {
+          availability: Database["public"]["Enums"]["equipment_availability"]
+          category: Database["public"]["Enums"]["equipment_category"]
+          created_at: string
+          delivery_available: boolean
+          deposit: number
+          description: string
+          id: string
+          image_url: string | null
+          location: string
+          name: string
+          owner_id: string
+          phone: string
+          price_per_day: number
+          price_per_month: number
+          price_per_week: number
+          province: string
+          rating: number
+          specs: string
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          availability?: Database["public"]["Enums"]["equipment_availability"]
+          category?: Database["public"]["Enums"]["equipment_category"]
+          created_at?: string
+          delivery_available?: boolean
+          deposit?: number
+          description?: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          name: string
+          owner_id: string
+          phone?: string
+          price_per_day?: number
+          price_per_month?: number
+          price_per_week?: number
+          province?: string
+          rating?: number
+          specs?: string
+          updated_at?: string
+          whatsapp?: string
+        }
+        Update: {
+          availability?: Database["public"]["Enums"]["equipment_availability"]
+          category?: Database["public"]["Enums"]["equipment_category"]
+          created_at?: string
+          delivery_available?: boolean
+          deposit?: number
+          description?: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          name?: string
+          owner_id?: string
+          phone?: string
+          price_per_day?: number
+          price_per_month?: number
+          price_per_week?: number
+          province?: string
+          rating?: number
+          specs?: string
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      equipment_bookings: {
+        Row: {
+          contact_phone: string
+          created_at: string
+          delivery: boolean
+          delivery_address: string
+          deposit: number
+          end_date: string
+          equipment_id: string | null
+          equipment_name: string
+          id: string
+          notes: string
+          owner_id: string
+          renter_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["equipment_booking_status"]
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          contact_phone?: string
+          created_at?: string
+          delivery?: boolean
+          delivery_address?: string
+          deposit?: number
+          end_date: string
+          equipment_id?: string | null
+          equipment_name?: string
+          id?: string
+          notes?: string
+          owner_id: string
+          renter_id: string
+          start_date: string
+          status?: Database["public"]["Enums"]["equipment_booking_status"]
+          total_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          contact_phone?: string
+          created_at?: string
+          delivery?: boolean
+          delivery_address?: string
+          deposit?: number
+          end_date?: string
+          equipment_id?: string | null
+          equipment_name?: string
+          id?: string
+          notes?: string
+          owner_id?: string
+          renter_id?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["equipment_booking_status"]
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       farmer_details: {
         Row: {
           bio: string
@@ -706,6 +832,24 @@ export type Database = {
         | "in_transit"
         | "completed"
         | "cancelled"
+      equipment_availability: "available" | "unavailable" | "maintenance"
+      equipment_booking_status:
+        | "pending"
+        | "confirmed"
+        | "active"
+        | "completed"
+        | "cancelled"
+        | "rejected"
+      equipment_category:
+        | "tractors"
+        | "combine_harvesters"
+        | "irrigation_systems"
+        | "generators"
+        | "balers"
+        | "planters"
+        | "sprayers"
+        | "tillage_equipment"
+        | "other"
       listing_category:
         | "produce"
         | "livestock"
@@ -879,6 +1023,26 @@ export const Constants = {
         "in_transit",
         "completed",
         "cancelled",
+      ],
+      equipment_availability: ["available", "unavailable", "maintenance"],
+      equipment_booking_status: [
+        "pending",
+        "confirmed",
+        "active",
+        "completed",
+        "cancelled",
+        "rejected",
+      ],
+      equipment_category: [
+        "tractors",
+        "combine_harvesters",
+        "irrigation_systems",
+        "generators",
+        "balers",
+        "planters",
+        "sprayers",
+        "tillage_equipment",
+        "other",
       ],
       listing_category: [
         "produce",

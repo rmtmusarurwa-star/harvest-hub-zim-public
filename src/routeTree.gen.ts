@@ -17,7 +17,6 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
 import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
-import { Route as AuthenticatedEquipmentRouteImport } from './routes/_authenticated/equipment'
 import { Route as AuthenticatedDiseaseIdRouteImport } from './routes/_authenticated/disease-id'
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
@@ -27,10 +26,12 @@ import { Route as AuthenticatedTransportIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedShopsIndexRouteImport } from './routes/_authenticated/shops/index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedFarmersIndexRouteImport } from './routes/_authenticated/farmers/index'
+import { Route as AuthenticatedEquipmentIndexRouteImport } from './routes/_authenticated/equipment/index'
 import { Route as AuthenticatedTransportVehicleIdRouteImport } from './routes/_authenticated/transport/$vehicleId'
 import { Route as AuthenticatedShopsShopIdRouteImport } from './routes/_authenticated/shops/$shopId'
 import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
 import { Route as AuthenticatedFarmersFarmerIdRouteImport } from './routes/_authenticated/farmers/$farmerId'
+import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment/$equipmentId'
 import { Route as AuthenticatedCheckoutConfirmationRouteImport } from './routes/_authenticated/checkout.confirmation'
 
 const SignupRoute = SignupRouteImport.update({
@@ -74,11 +75,6 @@ const AuthenticatedFinancialHubRoute =
     path: '/financial-hub',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedEquipmentRoute = AuthenticatedEquipmentRouteImport.update({
-  id: '/equipment',
-  path: '/equipment',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedDiseaseIdRoute = AuthenticatedDiseaseIdRouteImport.update({
   id: '/disease-id',
   path: '/disease-id',
@@ -127,6 +123,12 @@ const AuthenticatedFarmersIndexRoute =
     path: '/farmers/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedEquipmentIndexRoute =
+  AuthenticatedEquipmentIndexRouteImport.update({
+    id: '/equipment/',
+    path: '/equipment/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTransportVehicleIdRoute =
   AuthenticatedTransportVehicleIdRouteImport.update({
     id: '/transport/$vehicleId',
@@ -151,6 +153,12 @@ const AuthenticatedFarmersFarmerIdRoute =
     path: '/farmers/$farmerId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedEquipmentEquipmentIdRoute =
+  AuthenticatedEquipmentEquipmentIdRouteImport.update({
+    id: '/equipment/$equipmentId',
+    path: '/equipment/$equipmentId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCheckoutConfirmationRoute =
   AuthenticatedCheckoutConfirmationRouteImport.update({
     id: '/confirmation',
@@ -169,14 +177,15 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/community': typeof AuthenticatedCommunityRoute
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
-  '/equipment': typeof AuthenticatedEquipmentRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
+  '/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/shops/': typeof AuthenticatedShopsIndexRoute
@@ -192,15 +201,16 @@ export interface FileRoutesByTo {
   '/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/community': typeof AuthenticatedCommunityRoute
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
-  '/equipment': typeof AuthenticatedEquipmentRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/': typeof AuthenticatedIndexRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
+  '/equipment': typeof AuthenticatedEquipmentIndexRoute
   '/farmers': typeof AuthenticatedFarmersIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
   '/shops': typeof AuthenticatedShopsIndexRoute
@@ -218,15 +228,16 @@ export interface FileRoutesById {
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/_authenticated/community': typeof AuthenticatedCommunityRoute
   '/_authenticated/disease-id': typeof AuthenticatedDiseaseIdRoute
-  '/_authenticated/equipment': typeof AuthenticatedEquipmentRoute
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
+  '/_authenticated/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/_authenticated/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
   '/_authenticated/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
   '/_authenticated/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
+  '/_authenticated/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/_authenticated/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/_authenticated/shops/': typeof AuthenticatedShopsIndexRoute
@@ -245,14 +256,15 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/community'
     | '/disease-id'
-    | '/equipment'
     | '/financial-hub'
     | '/market-intelligence'
     | '/checkout/confirmation'
+    | '/equipment/$equipmentId'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
     | '/shops/$shopId'
     | '/transport/$vehicleId'
+    | '/equipment/'
     | '/farmers/'
     | '/marketplace/'
     | '/shops/'
@@ -268,15 +280,16 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/community'
     | '/disease-id'
-    | '/equipment'
     | '/financial-hub'
     | '/market-intelligence'
     | '/'
     | '/checkout/confirmation'
+    | '/equipment/$equipmentId'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
     | '/shops/$shopId'
     | '/transport/$vehicleId'
+    | '/equipment'
     | '/farmers'
     | '/marketplace'
     | '/shops'
@@ -293,15 +306,16 @@ export interface FileRouteTypes {
     | '/_authenticated/checkout'
     | '/_authenticated/community'
     | '/_authenticated/disease-id'
-    | '/_authenticated/equipment'
     | '/_authenticated/financial-hub'
     | '/_authenticated/market-intelligence'
     | '/_authenticated/'
     | '/_authenticated/checkout/confirmation'
+    | '/_authenticated/equipment/$equipmentId'
     | '/_authenticated/farmers/$farmerId'
     | '/_authenticated/marketplace/$listingId'
     | '/_authenticated/shops/$shopId'
     | '/_authenticated/transport/$vehicleId'
+    | '/_authenticated/equipment/'
     | '/_authenticated/farmers/'
     | '/_authenticated/marketplace/'
     | '/_authenticated/shops/'
@@ -374,13 +388,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinancialHubRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/equipment': {
-      id: '/_authenticated/equipment'
-      path: '/equipment'
-      fullPath: '/equipment'
-      preLoaderRoute: typeof AuthenticatedEquipmentRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/disease-id': {
       id: '/_authenticated/disease-id'
       path: '/disease-id'
@@ -444,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFarmersIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/equipment/': {
+      id: '/_authenticated/equipment/'
+      path: '/equipment'
+      fullPath: '/equipment/'
+      preLoaderRoute: typeof AuthenticatedEquipmentIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/transport/$vehicleId': {
       id: '/_authenticated/transport/$vehicleId'
       path: '/transport/$vehicleId'
@@ -470,6 +484,13 @@ declare module '@tanstack/react-router' {
       path: '/farmers/$farmerId'
       fullPath: '/farmers/$farmerId'
       preLoaderRoute: typeof AuthenticatedFarmersFarmerIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/equipment/$equipmentId': {
+      id: '/_authenticated/equipment/$equipmentId'
+      path: '/equipment/$equipmentId'
+      fullPath: '/equipment/$equipmentId'
+      preLoaderRoute: typeof AuthenticatedEquipmentEquipmentIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/checkout/confirmation': {
@@ -502,14 +523,15 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRouteWithChildren
   AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRoute
   AuthenticatedDiseaseIdRoute: typeof AuthenticatedDiseaseIdRoute
-  AuthenticatedEquipmentRoute: typeof AuthenticatedEquipmentRoute
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedEquipmentEquipmentIdRoute: typeof AuthenticatedEquipmentEquipmentIdRoute
   AuthenticatedFarmersFarmerIdRoute: typeof AuthenticatedFarmersFarmerIdRoute
   AuthenticatedMarketplaceListingIdRoute: typeof AuthenticatedMarketplaceListingIdRoute
   AuthenticatedShopsShopIdRoute: typeof AuthenticatedShopsShopIdRoute
   AuthenticatedTransportVehicleIdRoute: typeof AuthenticatedTransportVehicleIdRoute
+  AuthenticatedEquipmentIndexRoute: typeof AuthenticatedEquipmentIndexRoute
   AuthenticatedFarmersIndexRoute: typeof AuthenticatedFarmersIndexRoute
   AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
   AuthenticatedShopsIndexRoute: typeof AuthenticatedShopsIndexRoute
@@ -522,15 +544,17 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRouteWithChildren,
   AuthenticatedCommunityRoute: AuthenticatedCommunityRoute,
   AuthenticatedDiseaseIdRoute: AuthenticatedDiseaseIdRoute,
-  AuthenticatedEquipmentRoute: AuthenticatedEquipmentRoute,
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedEquipmentEquipmentIdRoute:
+    AuthenticatedEquipmentEquipmentIdRoute,
   AuthenticatedFarmersFarmerIdRoute: AuthenticatedFarmersFarmerIdRoute,
   AuthenticatedMarketplaceListingIdRoute:
     AuthenticatedMarketplaceListingIdRoute,
   AuthenticatedShopsShopIdRoute: AuthenticatedShopsShopIdRoute,
   AuthenticatedTransportVehicleIdRoute: AuthenticatedTransportVehicleIdRoute,
+  AuthenticatedEquipmentIndexRoute: AuthenticatedEquipmentIndexRoute,
   AuthenticatedFarmersIndexRoute: AuthenticatedFarmersIndexRoute,
   AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   AuthenticatedShopsIndexRoute: AuthenticatedShopsIndexRoute,
