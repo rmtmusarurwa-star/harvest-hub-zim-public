@@ -166,7 +166,8 @@ function PostDetailPage() {
     });
     setSubmitting(false);
     if (error) {
-      toast.error("Could not post comment");
+      console.error("Comment insert failed:", error);
+      toast.error(error.message || "Could not post comment");
       return;
     }
     setReply("");
