@@ -1,0 +1,19 @@
+
+GRANT EXECUTE ON FUNCTION public.notify_announcement() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_new_message() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_offer_status() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_order_insert() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_order_status() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_new_review() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_transport_booking() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_equipment_booking() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.notify_forum_reply() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.handle_offer_accepted() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.bump_conversation_timestamp() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.recompute_trust_score(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.trigger_recompute_trust_listings() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.trigger_recompute_trust_reviews() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.trigger_recompute_trust_follows() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_updated_at() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.prevent_role_change() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.handle_new_farmer_profile() TO authenticated;

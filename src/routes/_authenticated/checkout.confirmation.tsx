@@ -135,6 +135,11 @@ function ConfirmationPage() {
         >
           <Download className="h-4 w-4" /> Download Receipt (PDF)
         </Button>
+        <Button asChild>
+          <Link to="/financial-hub">
+            <Package className="h-4 w-4" /> View My Orders
+          </Link>
+        </Button>
         <Button asChild variant="outline">
           <Link to="/marketplace">Keep shopping</Link>
         </Button>
