@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -317,6 +317,7 @@ function CommunityPage() {
 
 function PostCard({ post, onChanged }: { post: PostWithMeta; onChanged: () => void }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [liked, setLiked] = useState(post.liked_by_me);
   const [likeCount, setLikeCount] = useState(post.reaction_count);
@@ -426,13 +427,17 @@ function PostCard({ post, onChanged }: { post: PostWithMeta; onChanged: () => vo
               <Button
                 variant="ghost"
                 size="sm"
-                asChild
+                onClick={() =>
+                  navigate({
+                    to: "/community/$postId",
+                    params: { postId: post.id },
+                    hash: "comments",
+                  })
+                }
                 className="gap-1.5 h-8 text-muted-foreground"
               >
-                <Link to="/community/$postId" params={{ postId: post.id }}>
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="text-xs">{post.comment_count}</span>
-                </Link>
+                <MessageSquare className="h-4 w-4" />
+                <span className="text-xs">{post.comment_count}</span>
               </Button>
             </div>
           </div>

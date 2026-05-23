@@ -287,7 +287,7 @@ function PostDetailPage() {
 
       {/* Reply input */}
       {user && (
-        <Card className="mt-4">
+        <Card id="comments" className="mt-4 scroll-mt-24">
           <CardContent className="p-4 space-y-2">
             <Textarea
               placeholder="Add a thoughtful reply..."
