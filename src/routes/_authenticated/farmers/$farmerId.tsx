@@ -224,8 +224,8 @@ function FarmerProfilePage() {
                 />
                 {isFollowing ? "Following" : "Follow"}
               </Button>
-              <Button asChild>
-                <Link to="/chat">
+              <Button asChild disabled={isSelf || isMock}>
+                <Link to="/chat" search={{ farmer: farmer.id }}>
                   <MessageCircle className="h-4 w-4" /> Contact
                 </Link>
               </Button>
