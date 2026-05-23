@@ -1,4 +1,5 @@
-import { Bell, Menu, Search, ShoppingCart } from "lucide-react";
+import { Bell, Menu, ShoppingCart } from "lucide-react";
+import { GlobalSearch } from "./GlobalSearch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
@@ -39,20 +40,8 @@ export function Topbar({ onOpenMobile }: Props) {
           </span>
         </div>
 
-        <div className="flex-1">
-          <div
-            className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2 text-sm text-muted-foreground"
-            aria-disabled
-          >
-            <Search className="h-4 w-4" />
-            <span className="truncate">
-              Search farmers, produce, shops, equipment…
-            </span>
-            <kbd className="ml-auto hidden sm:inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 text-[10px] text-muted-foreground">
-              ⌘K
-            </kbd>
-          </div>
-        </div>
+        <GlobalSearch />
+
 
         <button
           onClick={open}
