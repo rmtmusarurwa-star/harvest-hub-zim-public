@@ -296,6 +296,66 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          farmer_id: string
+          id: string
+          listing_id: string | null
+          listing_title: string
+          notes: string | null
+          order_code: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_reference: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          proof_url: string | null
+          quantity: number
+          total_amount: number
+          unit: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          farmer_id: string
+          id?: string
+          listing_id?: string | null
+          listing_title?: string
+          notes?: string | null
+          order_code: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_reference?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          proof_url?: string | null
+          quantity?: number
+          total_amount?: number
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          farmer_id?: string
+          id?: string
+          listing_id?: string | null
+          listing_title?: string
+          notes?: string | null
+          order_code?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_reference?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          proof_url?: string | null
+          quantity?: number
+          total_amount?: number
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -344,6 +404,18 @@ export type Database = {
       listing_status: "active" | "sold" | "draft" | "archived"
       message_type: "text" | "offer"
       offer_status: "pending" | "accepted" | "declined"
+      payment_method:
+        | "ecocash"
+        | "onemoney"
+        | "zipit"
+        | "cash_on_delivery"
+        | "card"
+      payment_status:
+        | "pending"
+        | "awaiting_confirmation"
+        | "paid"
+        | "failed"
+        | "cancelled"
       user_role: "farmer" | "buyer" | "supplier" | "transporter"
     }
     CompositeTypes: {
@@ -483,6 +555,20 @@ export const Constants = {
       listing_status: ["active", "sold", "draft", "archived"],
       message_type: ["text", "offer"],
       offer_status: ["pending", "accepted", "declined"],
+      payment_method: [
+        "ecocash",
+        "onemoney",
+        "zipit",
+        "cash_on_delivery",
+        "card",
+      ],
+      payment_status: [
+        "pending",
+        "awaiting_confirmation",
+        "paid",
+        "failed",
+        "cancelled",
+      ],
       user_role: ["farmer", "buyer", "supplier", "transporter"],
     },
   },

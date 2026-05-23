@@ -126,9 +126,12 @@ export function CartDrawer() {
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   Delivery and fees calculated at checkout.
                 </p>
-                <Button className="mt-4 w-full" size="lg" variant="secondary">
-                  Proceed to Checkout
+                <Button asChild className="mt-4 w-full" size="lg" variant="secondary">
+                  <Link to="/checkout" onClick={close}>
+                    Proceed to Checkout
+                  </Link>
                 </Button>
+
                 <button
                   onClick={clear}
                   className="mt-2 w-full text-center text-xs text-muted-foreground hover:text-foreground"
