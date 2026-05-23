@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import type { Database } from "@/integrations/supabase/types";
 
 export type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
