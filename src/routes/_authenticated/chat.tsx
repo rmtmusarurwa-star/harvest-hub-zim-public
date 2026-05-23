@@ -8,9 +8,17 @@ import {
   CheckCheck,
   HandCoins,
   MessageSquare,
+  Plus,
+  Search as SearchIcon,
   Send,
   X,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -24,13 +32,14 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-type Search = { c?: string; listing?: string; farmer?: string };
+type Search = { c?: string; listing?: string; farmer?: string; user?: string };
 
 export const Route = createFileRoute("/_authenticated/chat")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     c: typeof s.c === "string" ? s.c : undefined,
     listing: typeof s.listing === "string" ? s.listing : undefined,
     farmer: typeof s.farmer === "string" ? s.farmer : undefined,
+    user: typeof s.user === "string" ? s.user : undefined,
   }),
   component: ChatPage,
 });
@@ -49,10 +58,10 @@ function ChatPage() {
   const qc = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(search.c ?? null);
 
-  // Auto-create / open conversation when arriving with ?listing= or ?farmer=
+  // Auto-create / open conversation when arriving with ?listing=, ?farmer=, or ?user=
   useEffect(() => {
     if (!user) return;
-    if (!search.listing && !search.farmer) return;
+    if (!search.listing && !search.farmer && !search.user) return;
     (async () => {
       let listingId: string | null = null;
       let farmerId: string | null = null;
@@ -75,38 +84,37 @@ function ChatPage() {
         }
         listingId = listing.id;
         farmerId = listing.farmer_id;
-      } else if (search.farmer) {
-        if (search.farmer === user.id) {
+      } else if (search.farmer || search.user) {
+        const otherId = (search.farmer ?? search.user)!;
+        if (otherId === user.id) {
           toast.info("You can't message yourself");
           navigate({ to: "/chat", search: {} });
           return;
         }
-        // Pick this farmer's most recent active listing as the conversation anchor
+        // Try a recent listing for context, but it's optional now
         const { data: latest } = await supabase
           .from("listings")
           .select("id, farmer_id")
-          .eq("farmer_id", search.farmer)
+          .eq("farmer_id", otherId)
           .eq("status", "active")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (!latest) {
-          toast.error("This farmer has no active listings yet — try again once they post one.");
-          navigate({ to: "/chat", search: {} });
-          return;
-        }
-        listingId = latest.id;
-        farmerId = latest.farmer_id;
+        listingId = latest?.id ?? null;
+        farmerId = otherId;
       }
 
-      if (!listingId || !farmerId) return;
+      if (!farmerId) return;
 
-      const { data: existing } = await (db
-        .from("conversations")
-        .select("id") as any)
-        .eq("listing_id", listingId)
+      // Look for an existing conversation (with or without listing)
+      let existingQuery = (db.from("conversations").select("id") as any)
         .eq("buyer_id", user.id)
-        .maybeSingle();
+        .eq("farmer_id", farmerId);
+      existingQuery = listingId
+        ? existingQuery.eq("listing_id", listingId)
+        : existingQuery.is("listing_id", null);
+      const { data: existing } = await existingQuery.maybeSingle();
+
       let convoId = (existing as { id: string } | null)?.id;
       if (!convoId) {
         const { data: created, error } = await (db
@@ -129,7 +137,7 @@ function ChatPage() {
       setActiveId(convoId!);
       navigate({ to: "/chat", search: { c: convoId } });
     })();
-  }, [search.listing, search.farmer, user, navigate, qc]);
+  }, [search.listing, search.farmer, search.user, user, navigate, qc]);
 
   // Sync search.c -> activeId
   useEffect(() => {
@@ -149,7 +157,9 @@ function ChatPage() {
       const rows = (data ?? []) as ConversationWithMeta[];
       if (rows.length === 0) return [];
 
-      const listingIds = Array.from(new Set(rows.map((r) => r.listing_id)));
+      const listingIds = Array.from(
+        new Set(rows.map((r) => r.listing_id).filter((x): x is string => !!x))
+      );
       const otherIds = Array.from(
         new Set(
           rows.map((r) => (r.buyer_id === user!.id ? r.farmer_id : r.buyer_id))
@@ -159,10 +169,12 @@ function ChatPage() {
 
       const [{ data: listings }, { data: profiles }, { data: lastMsgs }, { data: unread }] =
         await Promise.all([
-          supabase
-            .from("listings")
-            .select("id, title, price, unit, image_url, status")
-            .in("id", listingIds),
+          listingIds.length > 0
+            ? supabase
+                .from("listings")
+                .select("id, title, price, unit, image_url, status")
+                .in("id", listingIds)
+            : Promise.resolve({ data: [] as any[] }),
           supabase
             .from("profiles")
             .select("id, full_name, avatar_url")
@@ -230,6 +242,8 @@ function ChatPage() {
     navigate({ to: "/chat", search: { c: id } });
   }
 
+  const [newChatOpen, setNewChatOpen] = useState(false);
+
   return (
     <section className="h-[calc(100vh-7rem)] -mx-3 lg:-mx-6">
       <div className="glass-strong mx-3 lg:mx-6 h-full overflow-hidden rounded-2xl">
@@ -237,17 +251,28 @@ function ChatPage() {
           {/* Conversation list */}
           <aside
             className={cn(
-              "h-full border-r border-white/5 bg-black/20",
-              activeId ? "hidden lg:block" : "block"
+              "h-full border-r border-white/5 bg-black/20 flex flex-col",
+              activeId ? "hidden lg:flex" : "flex"
             )}
           >
             <div className="border-b border-white/5 px-5 py-4">
-              <div className="font-display text-lg">Harvest Chat</div>
-              <p className="text-xs text-muted-foreground">
-                Conversations with farmers & buyers
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="font-display text-lg">Harvest Chat</div>
+                  <p className="text-xs text-muted-foreground">
+                    Conversations with farmers & buyers
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setNewChatOpen(true)}
+                className="mt-3 w-full bg-accent text-background hover:bg-accent/90"
+                size="sm"
+              >
+                <Plus className="h-4 w-4" /> Start New Chat
+              </Button>
             </div>
-            <div className="h-[calc(100%-65px)] overflow-y-auto">
+            <div className="flex-1 overflow-y-auto">
               {conversations.isLoading && (
                 <div className="p-6 text-xs text-muted-foreground">Loading…</div>
               )}
@@ -282,6 +307,15 @@ function ChatPage() {
           </div>
         </div>
       </div>
+      <NewChatModal
+        open={newChatOpen}
+        onOpenChange={setNewChatOpen}
+        currentUserId={user?.id ?? ""}
+        onPick={(otherId) => {
+          setNewChatOpen(false);
+          navigate({ to: "/chat", search: { user: otherId } });
+        }}
+      />
     </section>
   );
 }
@@ -772,5 +806,92 @@ function OfferCard({
         )}
       </div>
     </div>
+  );
+}
+
+function NewChatModal({
+  open,
+  onOpenChange,
+  currentUserId,
+  onPick,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  currentUserId: string;
+  onPick: (otherId: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<
+    Array<{ id: string; full_name: string; role: string; avatar_url: string | null }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const term = q.trim();
+    setLoading(true);
+    const t = setTimeout(async () => {
+      let query = supabase
+        .from("profiles")
+        .select("id, full_name, role, avatar_url")
+        .neq("id", currentUserId)
+        .limit(20);
+      if (term) query = query.ilike("full_name", `%${term}%`);
+      const { data, error } = await query;
+      if (!error) setResults((data ?? []) as any);
+      setLoading(false);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [q, open, currentUserId]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Start a new chat</DialogTitle>
+        </DialogHeader>
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search users to message..."
+            className="pl-9"
+          />
+        </div>
+        <div className="max-h-80 space-y-1 overflow-y-auto">
+          {loading && (
+            <div className="p-4 text-center text-xs text-muted-foreground">
+              Searching…
+            </div>
+          )}
+          {!loading && results.length === 0 && (
+            <div className="p-4 text-center text-xs text-muted-foreground">
+              No users found
+            </div>
+          )}
+          {results.map((u) => (
+            <button
+              key={u.id}
+              onClick={() => onPick(u.id)}
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition hover:bg-white/5"
+            >
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-secondary font-display text-sm ring-1 ring-secondary/30">
+                {initials(u.full_name || "?")}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm">
+                  {u.full_name || "Unnamed user"}
+                </div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {u.role}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

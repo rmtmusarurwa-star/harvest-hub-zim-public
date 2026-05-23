@@ -51,7 +51,7 @@ export type Database = {
           farmer_id: string
           id: string
           last_message_at: string
-          listing_id: string
+          listing_id: string | null
         }
         Insert: {
           buyer_id: string
@@ -59,7 +59,7 @@ export type Database = {
           farmer_id: string
           id?: string
           last_message_at?: string
-          listing_id: string
+          listing_id?: string | null
         }
         Update: {
           buyer_id?: string
@@ -67,7 +67,7 @@ export type Database = {
           farmer_id?: string
           id?: string
           last_message_at?: string
-          listing_id?: string
+          listing_id?: string | null
         }
         Relationships: [
           {
