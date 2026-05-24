@@ -48,6 +48,8 @@ export type Database = {
         Row: {
           buyer_id: string
           created_at: string
+          deleted_for_buyer: boolean
+          deleted_for_farmer: boolean
           farmer_id: string
           id: string
           last_message_at: string
@@ -56,6 +58,8 @@ export type Database = {
         Insert: {
           buyer_id: string
           created_at?: string
+          deleted_for_buyer?: boolean
+          deleted_for_farmer?: boolean
           farmer_id: string
           id?: string
           last_message_at?: string
@@ -64,6 +68,8 @@ export type Database = {
         Update: {
           buyer_id?: string
           created_at?: string
+          deleted_for_buyer?: boolean
+          deleted_for_farmer?: boolean
           farmer_id?: string
           id?: string
           last_message_at?: string
@@ -549,6 +555,8 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          media_duration_seconds: number | null
+          media_url: string | null
           offer_price: number | null
           offer_quantity: number | null
           offer_status: Database["public"]["Enums"]["offer_status"] | null
@@ -561,6 +569,8 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          media_duration_seconds?: number | null
+          media_url?: string | null
           offer_price?: number | null
           offer_quantity?: number | null
           offer_status?: Database["public"]["Enums"]["offer_status"] | null
@@ -573,6 +583,8 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          media_duration_seconds?: number | null
+          media_url?: string | null
           offer_price?: number | null
           offer_quantity?: number | null
           offer_status?: Database["public"]["Enums"]["offer_status"] | null
@@ -1178,7 +1190,7 @@ export type Database = {
         | "grain"
         | "other"
       listing_status: "active" | "sold" | "draft" | "archived"
-      message_type: "text" | "offer"
+      message_type: "text" | "offer" | "image" | "voice"
       notification_type:
         | "message"
         | "offer"
@@ -1397,7 +1409,7 @@ export const Constants = {
         "other",
       ],
       listing_status: ["active", "sold", "draft", "archived"],
-      message_type: ["text", "offer"],
+      message_type: ["text", "offer", "image", "voice"],
       notification_type: [
         "message",
         "offer",
