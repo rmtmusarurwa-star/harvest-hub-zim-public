@@ -345,10 +345,15 @@ function ConversationRow({
 }) {
   const title = convo.listing?.title ?? "Listing";
   const name = convo.counterpart?.full_name?.trim() || "Harvest Hub Member";
-  const preview = convo.last_message
-    ? convo.last_message.type === "offer"
-      ? `💰 Offer · $${Number(convo.last_message.offer_price ?? 0).toFixed(2)}`
-      : convo.last_message.content
+  const lm = convo.last_message;
+  const preview = lm
+    ? lm.type === "offer"
+      ? `💰 Offer · $${Number(lm.offer_price ?? 0).toFixed(2)}`
+      : lm.type === "image"
+      ? "📷 Photo"
+      : lm.type === "voice"
+      ? "🎤 Voice note"
+      : lm.content
     : "No messages yet";
   return (
     <button
