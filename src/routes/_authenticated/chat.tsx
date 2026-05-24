@@ -825,27 +825,83 @@ function ChatThread({
         onSubmit={submitText}
         className="flex items-center gap-2 border-t border-white/5 bg-black/20 px-3 py-3"
       >
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowOffer((v) => !v)}
-        >
-          <HandCoins className="h-4 w-4" /> Offer
-        </Button>
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Message…"
-          className="flex-1"
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onPickImage}
         />
-        <Button type="submit" disabled={!draft.trim() || sendText.isPending}>
-          <Send className="h-4 w-4" />
-        </Button>
+        {recording ? (
+          <div className="flex flex-1 items-center gap-2 rounded-md bg-rose-500/10 px-3 py-2 text-xs text-rose-200 ring-1 ring-rose-500/30">
+            <span className="grid h-2 w-2 animate-pulse rounded-full bg-rose-400" />
+            Recording… {recordSeconds}s
+            <div className="ml-auto flex gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => stopRecording(true)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => stopRecording(false)}
+              >
+                <Square className="h-3 w-3" /> Send
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setShowOffer((v) => !v)}
+              title="Make offer"
+            >
+              <HandCoins className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingMedia}
+              title="Send photo"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={startRecording}
+              disabled={uploadingMedia}
+              title="Record voice note"
+            >
+              <Mic className="h-4 w-4" />
+            </Button>
+            <Input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Message…"
+              className="flex-1"
+            />
+            <Button type="submit" disabled={!draft.trim() || sendText.isPending}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </>
+        )}
       </form>
     </div>
   );
 }
+
 
 function MessageBubble({
   message,
