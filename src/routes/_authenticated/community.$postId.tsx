@@ -10,6 +10,9 @@ import {
   Sparkles,
   Lightbulb,
   Trash2,
+  Pencil,
+  X,
+  Check,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +74,7 @@ function PostDetailPage() {
           .from("forum_comments")
           .select("*")
           .eq("post_id", postId)
+          .eq("deleted", false)
           .order("created_at", { ascending: true }),
         supabase
           .from("forum_reactions")
@@ -175,9 +179,41 @@ function PostDetailPage() {
   };
 
   const deleteComment = async (id: string) => {
-    const { error } = await supabase.from("forum_comments").delete().eq("id", id);
-    if (error) return toast.error("Could not delete");
-    load();
+    if (!confirm("Delete this comment?")) return;
+    // Optimistic remove
+    setComments((prev) => prev.filter((c) => c.id !== id));
+    const { error } = await supabase
+      .from("forum_comments")
+      .update({ deleted: true })
+      .eq("id", id);
+    if (error) {
+      toast.error("Could not delete");
+      load();
+    }
+  };
+
+  const saveCommentEdit = async (id: string, content: string): Promise<boolean> => {
+    const trimmed = content.trim();
+    if (!trimmed) {
+      toast.error("Comment cannot be empty");
+      return false;
+    }
+    if (trimmed.length > 2000) {
+      toast.error("Comment too long (max 2000)");
+      return false;
+    }
+    const { error } = await supabase
+      .from("forum_comments")
+      .update({ content: trimmed })
+      .eq("id", id);
+    if (error) {
+      toast.error(error.message || "Could not save edit");
+      return false;
+    }
+    setComments((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, content: trimmed } : c))
+    );
+    return true;
   };
 
   const reactionIcon = (t: ForumReactionType) =>
@@ -325,54 +361,124 @@ function PostDetailPage() {
           comments.map((c) => {
             const ca = commentAuthors[c.author_id];
             return (
-              <Card key={c.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Link
-                      to="/farmers/$farmerId"
-                      params={{ farmerId: c.author_id }}
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={ca?.avatar_url ?? undefined} />
-                        <AvatarFallback>
-                          {(ca?.full_name ?? "U").slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Link>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 text-xs">
-                        <Link
-                          to="/farmers/$farmerId"
-                          params={{ farmerId: c.author_id }}
-                          className="font-semibold hover:underline"
-                        >
-                          {ca?.full_name || "Farmer"}
-                        </Link>
-                        <span className="text-muted-foreground">
-                          {new Date(c.created_at).toLocaleString()}
-                        </span>
-                        {user?.id === c.author_id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="ml-auto h-6 w-6"
-                            onClick={() => deleteComment(c.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                      <p className="text-sm mt-1 whitespace-pre-wrap">
-                        {c.content}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <CommentItem
+                key={c.id}
+                comment={c}
+                profile={ca}
+                isOwn={user?.id === c.author_id}
+                onDelete={() => deleteComment(c.id)}
+                onSave={(val) => saveCommentEdit(c.id, val)}
+              />
             );
           })
         )}
       </div>
     </div>
+  );
+}
+
+function CommentItem({
+  comment,
+  profile,
+  isOwn,
+  onDelete,
+  onSave,
+}: {
+  comment: ForumCommentRow;
+  profile: Profile | undefined;
+  isOwn: boolean;
+  onDelete: () => void;
+  onSave: (val: string) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.content);
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <Link to="/farmers/$farmerId" params={{ farmerId: comment.author_id }}>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={profile?.avatar_url ?? undefined} />
+              <AvatarFallback>
+                {(profile?.full_name ?? "U").slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-xs">
+              <Link
+                to="/farmers/$farmerId"
+                params={{ farmerId: comment.author_id }}
+                className="font-semibold hover:underline"
+              >
+                {profile?.full_name || "Farmer"}
+              </Link>
+              <span className="text-muted-foreground">
+                {new Date(comment.created_at).toLocaleString()}
+              </span>
+              {isOwn && !editing && (
+                <div className="ml-auto flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => {
+                      setDraft(comment.content);
+                      setEditing(true);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={onDelete}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            {editing ? (
+              <div className="mt-2 space-y-2">
+                <Textarea
+                  value={draft}
+                  rows={3}
+                  maxLength={2000}
+                  onChange={(e) => setDraft(e.target.value)}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditing(false)}
+                    disabled={saving}
+                  >
+                    <X className="h-3.5 w-3.5" /> Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      setSaving(true);
+                      const ok = await onSave(draft);
+                      setSaving(false);
+                      if (ok) setEditing(false);
+                    }}
+                    disabled={saving || !draft.trim()}
+                  >
+                    <Check className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm mt-1 whitespace-pre-wrap">{comment.content}</p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
