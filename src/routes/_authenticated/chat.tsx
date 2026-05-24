@@ -7,10 +7,15 @@ import {
   Check,
   CheckCheck,
   HandCoins,
+  Image as ImageIcon,
   MessageSquare,
+  Mic,
+  MoreVertical,
   Plus,
   Search as SearchIcon,
   Send,
+  Square,
+  Trash2,
   X,
 } from "lucide-react";
 import {
