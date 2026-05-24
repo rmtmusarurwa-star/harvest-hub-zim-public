@@ -490,6 +490,16 @@ function ChatThread({
     });
   }, [messages.data?.length]);
 
+  // Whenever the current user sends something, undo any prior soft-delete
+  // by the OTHER side so the conversation reappears for them.
+  async function resurrectForOther() {
+    const otherIsBuyer = currentUserId === convo.farmer_id;
+    const patch = otherIsBuyer
+      ? { deleted_for_buyer: false }
+      : { deleted_for_farmer: false };
+    await (db.from("conversations").update(patch) as any).eq("id", convo.id);
+  }
+
   const sendText = useMutation({
     mutationFn: async (content: string) => {
       const { error } = await (db.from("messages").insert({
@@ -499,6 +509,7 @@ function ChatThread({
         content,
       }) as any);
       if (error) throw error;
+      await resurrectForOther();
     },
     onSuccess: () => {
       setDraft("");
@@ -521,6 +532,7 @@ function ChatThread({
         offer_status: "pending",
       }) as any);
       if (error) throw error;
+      await resurrectForOther();
     },
     onSuccess: () => setShowOffer(false),
     onError: (e: Error) => toast.error(e.message),
@@ -542,12 +554,138 @@ function ChatThread({
     },
   });
 
+  // Image upload
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  async function uploadAndSendMedia(
+    file: Blob,
+    ext: string,
+    type: "image" | "voice",
+    durationSeconds?: number
+  ) {
+    setUploadingMedia(true);
+    try {
+      const path = `${convo.id}/${currentUserId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("chat-media")
+        .upload(path, file, { contentType: file.type || undefined });
+      if (upErr) throw upErr;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("chat-media")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (signErr) throw signErr;
+      const { error } = await (db.from("messages").insert({
+        conversation_id: convo.id,
+        sender_id: currentUserId,
+        type,
+        content: type === "image" ? "📷 Photo" : "🎤 Voice note",
+        media_url: signed.signedUrl,
+        media_duration_seconds: durationSeconds ?? null,
+      }) as any);
+      if (error) throw error;
+      await resurrectForOther();
+    } catch (e) {
+      toast.error("Upload failed: " + (e as Error).message);
+    } finally {
+      setUploadingMedia(false);
+    }
+  }
+
+  function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    if (!f.type.startsWith("image/")) {
+      toast.error("Please choose an image");
+      return;
+    }
+    if (f.size > 8 * 1024 * 1024) {
+      toast.error("Image must be under 8MB");
+      return;
+    }
+    const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+    uploadAndSendMedia(f, ext, "image");
+  }
+
+  // Voice recording
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordStartRef = useRef<number>(0);
+  const recordTimerRef = useRef<number | null>(null);
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      recordChunksRef.current = [];
+      mr.ondataavailable = (ev) => {
+        if (ev.data.size > 0) recordChunksRef.current.push(ev.data);
+      };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(recordChunksRef.current, { type: "audio/webm" });
+        const dur = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
+        await uploadAndSendMedia(blob, "webm", "voice", dur);
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      recordStartRef.current = Date.now();
+      setRecordSeconds(0);
+      setRecording(true);
+      recordTimerRef.current = window.setInterval(() => {
+        setRecordSeconds(Math.round((Date.now() - recordStartRef.current) / 1000));
+      }, 500);
+    } catch (e) {
+      toast.error("Microphone access denied");
+    }
+  }
+  function stopRecording(cancel = false) {
+    const mr = mediaRecorderRef.current;
+    if (recordTimerRef.current) {
+      clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+    setRecording(false);
+    if (!mr) return;
+    if (cancel) {
+      mr.onstop = () => {
+        mr.stream.getTracks().forEach((t) => t.stop());
+      };
+    }
+    mr.stop();
+    mediaRecorderRef.current = null;
+  }
+
+  // Delete (soft) this conversation for current user
+  const deleteConvo = useMutation({
+    mutationFn: async () => {
+      const patch =
+        currentUserId === convo.buyer_id
+          ? { deleted_for_buyer: true }
+          : { deleted_for_farmer: true };
+      const { error } = await (db.from("conversations").update(patch) as any).eq(
+        "id",
+        convo.id
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Conversation deleted");
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      onBack();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   function submitText(e: React.FormEvent) {
     e.preventDefault();
     const v = draft.trim();
     if (!v) return;
     sendText.mutate(v);
   }
+
 
   return (
     <div className="flex h-full flex-col">
