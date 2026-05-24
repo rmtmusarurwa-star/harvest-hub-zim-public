@@ -7,10 +7,15 @@ import {
   Check,
   CheckCheck,
   HandCoins,
+  Image as ImageIcon,
   MessageSquare,
+  Mic,
+  MoreVertical,
   Plus,
   Search as SearchIcon,
   Send,
+  Square,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -19,6 +24,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -154,7 +165,10 @@ function ChatPage() {
         .or(`buyer_id.eq.${user!.id},farmer_id.eq.${user!.id}`)
         .order("last_message_at", { ascending: false });
       if (error) throw error;
-      const rows = (data ?? []) as ConversationWithMeta[];
+      const allRows = (data ?? []) as ConversationWithMeta[];
+      const rows = allRows.filter((r) =>
+        r.buyer_id === user!.id ? !r.deleted_for_buyer : !r.deleted_for_farmer
+      );
       if (rows.length === 0) return [];
 
       const listingIds = Array.from(
@@ -331,10 +345,15 @@ function ConversationRow({
 }) {
   const title = convo.listing?.title ?? "Listing";
   const name = convo.counterpart?.full_name?.trim() || "Harvest Hub Member";
-  const preview = convo.last_message
-    ? convo.last_message.type === "offer"
-      ? `💰 Offer · $${Number(convo.last_message.offer_price ?? 0).toFixed(2)}`
-      : convo.last_message.content
+  const lm = convo.last_message;
+  const preview = lm
+    ? lm.type === "offer"
+      ? `💰 Offer · $${Number(lm.offer_price ?? 0).toFixed(2)}`
+      : lm.type === "image"
+      ? "📷 Photo"
+      : lm.type === "voice"
+      ? "🎤 Voice note"
+      : lm.content
     : "No messages yet";
   return (
     <button
@@ -476,6 +495,16 @@ function ChatThread({
     });
   }, [messages.data?.length]);
 
+  // Whenever the current user sends something, undo any prior soft-delete
+  // by the OTHER side so the conversation reappears for them.
+  async function resurrectForOther() {
+    const otherIsBuyer = currentUserId === convo.farmer_id;
+    const patch = otherIsBuyer
+      ? { deleted_for_buyer: false }
+      : { deleted_for_farmer: false };
+    await (db.from("conversations").update(patch) as any).eq("id", convo.id);
+  }
+
   const sendText = useMutation({
     mutationFn: async (content: string) => {
       const { error } = await (db.from("messages").insert({
@@ -485,6 +514,7 @@ function ChatThread({
         content,
       }) as any);
       if (error) throw error;
+      await resurrectForOther();
     },
     onSuccess: () => {
       setDraft("");
@@ -507,6 +537,7 @@ function ChatThread({
         offer_status: "pending",
       }) as any);
       if (error) throw error;
+      await resurrectForOther();
     },
     onSuccess: () => setShowOffer(false),
     onError: (e: Error) => toast.error(e.message),
@@ -528,12 +559,138 @@ function ChatThread({
     },
   });
 
+  // Image upload
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  async function uploadAndSendMedia(
+    file: Blob,
+    ext: string,
+    type: "image" | "voice",
+    durationSeconds?: number
+  ) {
+    setUploadingMedia(true);
+    try {
+      const path = `${convo.id}/${currentUserId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("chat-media")
+        .upload(path, file, { contentType: file.type || undefined });
+      if (upErr) throw upErr;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("chat-media")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (signErr) throw signErr;
+      const { error } = await (db.from("messages").insert({
+        conversation_id: convo.id,
+        sender_id: currentUserId,
+        type,
+        content: type === "image" ? "📷 Photo" : "🎤 Voice note",
+        media_url: signed.signedUrl,
+        media_duration_seconds: durationSeconds ?? null,
+      }) as any);
+      if (error) throw error;
+      await resurrectForOther();
+    } catch (e) {
+      toast.error("Upload failed: " + (e as Error).message);
+    } finally {
+      setUploadingMedia(false);
+    }
+  }
+
+  function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    if (!f.type.startsWith("image/")) {
+      toast.error("Please choose an image");
+      return;
+    }
+    if (f.size > 8 * 1024 * 1024) {
+      toast.error("Image must be under 8MB");
+      return;
+    }
+    const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+    uploadAndSendMedia(f, ext, "image");
+  }
+
+  // Voice recording
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordStartRef = useRef<number>(0);
+  const recordTimerRef = useRef<number | null>(null);
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      recordChunksRef.current = [];
+      mr.ondataavailable = (ev) => {
+        if (ev.data.size > 0) recordChunksRef.current.push(ev.data);
+      };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(recordChunksRef.current, { type: "audio/webm" });
+        const dur = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
+        await uploadAndSendMedia(blob, "webm", "voice", dur);
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      recordStartRef.current = Date.now();
+      setRecordSeconds(0);
+      setRecording(true);
+      recordTimerRef.current = window.setInterval(() => {
+        setRecordSeconds(Math.round((Date.now() - recordStartRef.current) / 1000));
+      }, 500);
+    } catch (e) {
+      toast.error("Microphone access denied");
+    }
+  }
+  function stopRecording(cancel = false) {
+    const mr = mediaRecorderRef.current;
+    if (recordTimerRef.current) {
+      clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+    setRecording(false);
+    if (!mr) return;
+    if (cancel) {
+      mr.onstop = () => {
+        mr.stream.getTracks().forEach((t) => t.stop());
+      };
+    }
+    mr.stop();
+    mediaRecorderRef.current = null;
+  }
+
+  // Delete (soft) this conversation for current user
+  const deleteConvo = useMutation({
+    mutationFn: async () => {
+      const patch =
+        currentUserId === convo.buyer_id
+          ? { deleted_for_buyer: true }
+          : { deleted_for_farmer: true };
+      const { error } = await (db.from("conversations").update(patch) as any).eq(
+        "id",
+        convo.id
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Conversation deleted");
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      onBack();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   function submitText(e: React.FormEvent) {
     e.preventDefault();
     const v = draft.trim();
     if (!v) return;
     sendText.mutate(v);
   }
+
 
   return (
     <div className="flex h-full flex-col">
@@ -565,6 +722,25 @@ function ChatThread({
             )}
           </div>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-white/5 hover:text-foreground">
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                if (confirm("Delete this conversation? It will be removed from your inbox.")) {
+                  deleteConvo.mutate();
+                }
+              }}
+              className="text-rose-300 focus:text-rose-200"
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Delete chat
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Messages */}
@@ -654,27 +830,83 @@ function ChatThread({
         onSubmit={submitText}
         className="flex items-center gap-2 border-t border-white/5 bg-black/20 px-3 py-3"
       >
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowOffer((v) => !v)}
-        >
-          <HandCoins className="h-4 w-4" /> Offer
-        </Button>
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Message…"
-          className="flex-1"
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onPickImage}
         />
-        <Button type="submit" disabled={!draft.trim() || sendText.isPending}>
-          <Send className="h-4 w-4" />
-        </Button>
+        {recording ? (
+          <div className="flex flex-1 items-center gap-2 rounded-md bg-rose-500/10 px-3 py-2 text-xs text-rose-200 ring-1 ring-rose-500/30">
+            <span className="grid h-2 w-2 animate-pulse rounded-full bg-rose-400" />
+            Recording… {recordSeconds}s
+            <div className="ml-auto flex gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => stopRecording(true)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => stopRecording(false)}
+              >
+                <Square className="h-3 w-3" /> Send
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setShowOffer((v) => !v)}
+              title="Make offer"
+            >
+              <HandCoins className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingMedia}
+              title="Send photo"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={startRecording}
+              disabled={uploadingMedia}
+              title="Record voice note"
+            >
+              <Mic className="h-4 w-4" />
+            </Button>
+            <Input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Message…"
+              className="flex-1"
+            />
+            <Button type="submit" disabled={!draft.trim() || sendText.isPending}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </>
+        )}
       </form>
     </div>
   );
 }
+
 
 function MessageBubble({
   message,
@@ -711,13 +943,27 @@ function MessageBubble({
             {counterpartName}
           </div>
         )}
-        {isOffer ? (
+        {message.type === "offer" ? (
           <OfferCard
             message={message}
             mine={mine}
             canRespond={!mine && isFarmer && message.offer_status === "pending"}
             onRespond={onRespond}
             unit={unit}
+          />
+        ) : message.type === "image" && message.media_url ? (
+          <a href={message.media_url} target="_blank" rel="noreferrer">
+            <img
+              src={message.media_url}
+              alt="Photo"
+              className="max-h-72 max-w-full rounded-lg object-cover"
+            />
+          </a>
+        ) : message.type === "voice" && message.media_url ? (
+          <audio
+            src={message.media_url}
+            controls
+            className="h-10 w-56 max-w-full"
           />
         ) : (
           <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>

@@ -1,4 +1,4 @@
-export type MessageType = "text" | "offer";
+export type MessageType = "text" | "offer" | "image" | "voice";
 export type OfferStatus = "pending" | "accepted" | "declined";
 
 export type ChatMessage = {
@@ -10,6 +10,8 @@ export type ChatMessage = {
   offer_price: number | null;
   offer_quantity: number | null;
   offer_status: OfferStatus | null;
+  media_url: string | null;
+  media_duration_seconds: number | null;
   read_at: string | null;
   created_at: string;
 };
@@ -21,6 +23,8 @@ export type ChatConversation = {
   farmer_id: string;
   last_message_at: string;
   created_at: string;
+  deleted_for_buyer: boolean;
+  deleted_for_farmer: boolean;
 };
 
 export type ConversationWithMeta = ChatConversation & {
