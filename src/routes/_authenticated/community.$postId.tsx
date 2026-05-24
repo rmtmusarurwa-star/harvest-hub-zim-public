@@ -355,50 +355,14 @@ function PostDetailPage() {
           comments.map((c) => {
             const ca = commentAuthors[c.author_id];
             return (
-              <Card key={c.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <Link
-                      to="/farmers/$farmerId"
-                      params={{ farmerId: c.author_id }}
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={ca?.avatar_url ?? undefined} />
-                        <AvatarFallback>
-                          {(ca?.full_name ?? "U").slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Link>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 text-xs">
-                        <Link
-                          to="/farmers/$farmerId"
-                          params={{ farmerId: c.author_id }}
-                          className="font-semibold hover:underline"
-                        >
-                          {ca?.full_name || "Farmer"}
-                        </Link>
-                        <span className="text-muted-foreground">
-                          {new Date(c.created_at).toLocaleString()}
-                        </span>
-                        {user?.id === c.author_id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="ml-auto h-6 w-6"
-                            onClick={() => deleteComment(c.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                      <p className="text-sm mt-1 whitespace-pre-wrap">
-                        {c.content}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <CommentItem
+                key={c.id}
+                comment={c}
+                profile={ca}
+                isOwn={user?.id === c.author_id}
+                onDelete={() => deleteComment(c.id)}
+                onSave={(val) => saveCommentEdit(c.id, val)}
+              />
             );
           })
         )}
