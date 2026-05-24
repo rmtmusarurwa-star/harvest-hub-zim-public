@@ -938,13 +938,27 @@ function MessageBubble({
             {counterpartName}
           </div>
         )}
-        {isOffer ? (
+        {message.type === "offer" ? (
           <OfferCard
             message={message}
             mine={mine}
             canRespond={!mine && isFarmer && message.offer_status === "pending"}
             onRespond={onRespond}
             unit={unit}
+          />
+        ) : message.type === "image" && message.media_url ? (
+          <a href={message.media_url} target="_blank" rel="noreferrer">
+            <img
+              src={message.media_url}
+              alt="Photo"
+              className="max-h-72 max-w-full rounded-lg object-cover"
+            />
+          </a>
+        ) : message.type === "voice" && message.media_url ? (
+          <audio
+            src={message.media_url}
+            controls
+            className="h-10 w-56 max-w-full"
           />
         ) : (
           <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
