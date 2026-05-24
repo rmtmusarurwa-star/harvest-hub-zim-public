@@ -192,10 +192,16 @@ function PostDetailPage() {
     }
   };
 
-  const saveCommentEdit = async (id: string, content: string) => {
+  const saveCommentEdit = async (id: string, content: string): Promise<boolean> => {
     const trimmed = content.trim();
-    if (!trimmed) return toast.error("Comment cannot be empty");
-    if (trimmed.length > 2000) return toast.error("Comment too long (max 2000)");
+    if (!trimmed) {
+      toast.error("Comment cannot be empty");
+      return false;
+    }
+    if (trimmed.length > 2000) {
+      toast.error("Comment too long (max 2000)");
+      return false;
+    }
     const { error } = await supabase
       .from("forum_comments")
       .update({ content: trimmed })
