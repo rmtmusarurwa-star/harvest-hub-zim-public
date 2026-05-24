@@ -10,6 +10,9 @@ import {
   Sparkles,
   Lightbulb,
   Trash2,
+  Pencil,
+  X,
+  Check,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +74,7 @@ function PostDetailPage() {
           .from("forum_comments")
           .select("*")
           .eq("post_id", postId)
+          .eq("deleted", false)
           .order("created_at", { ascending: true }),
         supabase
           .from("forum_reactions")
@@ -175,9 +179,35 @@ function PostDetailPage() {
   };
 
   const deleteComment = async (id: string) => {
-    const { error } = await supabase.from("forum_comments").delete().eq("id", id);
-    if (error) return toast.error("Could not delete");
-    load();
+    if (!confirm("Delete this comment?")) return;
+    // Optimistic remove
+    setComments((prev) => prev.filter((c) => c.id !== id));
+    const { error } = await supabase
+      .from("forum_comments")
+      .update({ deleted: true })
+      .eq("id", id);
+    if (error) {
+      toast.error("Could not delete");
+      load();
+    }
+  };
+
+  const saveCommentEdit = async (id: string, content: string) => {
+    const trimmed = content.trim();
+    if (!trimmed) return toast.error("Comment cannot be empty");
+    if (trimmed.length > 2000) return toast.error("Comment too long (max 2000)");
+    const { error } = await supabase
+      .from("forum_comments")
+      .update({ content: trimmed })
+      .eq("id", id);
+    if (error) {
+      toast.error(error.message || "Could not save edit");
+      return false;
+    }
+    setComments((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, content: trimmed } : c))
+    );
+    return true;
   };
 
   const reactionIcon = (t: ForumReactionType) =>
