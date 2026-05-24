@@ -621,30 +621,84 @@ function ChatThread({
   const recordTimerRef = useRef<number | null>(null);
 
   async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
-      recordChunksRef.current = [];
-      mr.ondataavailable = (ev) => {
-        if (ev.data.size > 0) recordChunksRef.current.push(ev.data);
-      };
-      mr.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(recordChunksRef.current, { type: "audio/webm" });
-        const dur = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
-        await uploadAndSendMedia(blob, "webm", "voice", dur);
-      };
-      mr.start();
-      mediaRecorderRef.current = mr;
-      recordStartRef.current = Date.now();
-      setRecordSeconds(0);
-      setRecording(true);
-      recordTimerRef.current = window.setInterval(() => {
-        setRecordSeconds(Math.round((Date.now() - recordStartRef.current) / 1000));
-      }, 500);
-    } catch (e) {
-      toast.error("Microphone access denied");
+    if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      toast.error("Voice recording isn't supported in this browser");
+      return;
     }
+    // Pick a mime type this browser actually supports (iOS Safari needs mp4)
+    const candidates = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4;codecs=mp4a.40.2",
+      "audio/mp4",
+      "audio/aac",
+      "audio/ogg;codecs=opus",
+    ];
+    const mimeType = candidates.find((t) => {
+      try {
+        return MediaRecorder.isTypeSupported(t);
+      } catch {
+        return false;
+      }
+    });
+    const ext = mimeType?.includes("mp4")
+      ? "m4a"
+      : mimeType?.includes("ogg")
+      ? "ogg"
+      : mimeType?.includes("aac")
+      ? "aac"
+      : "webm";
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      const err = e as DOMException;
+      if (err.name === "NotAllowedError") {
+        toast.error("Microphone access denied. Enable it in your browser settings.");
+      } else if (err.name === "NotFoundError") {
+        toast.error("No microphone found on this device");
+      } else {
+        toast.error("Could not access microphone: " + err.message);
+      }
+      return;
+    }
+    let mr: MediaRecorder;
+    try {
+      mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    } catch (e) {
+      stream.getTracks().forEach((t) => t.stop());
+      toast.error("Recorder error: " + (e as Error).message);
+      return;
+    }
+    recordChunksRef.current = [];
+    mr.ondataavailable = (ev) => {
+      if (ev.data.size > 0) recordChunksRef.current.push(ev.data);
+    };
+    mr.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      const blob = new Blob(recordChunksRef.current, {
+        type: mimeType || "audio/webm",
+      });
+      const dur = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
+      await uploadAndSendMedia(blob, ext, "voice", dur);
+    };
+    mr.onerror = (ev) => {
+      toast.error("Recorder error: " + ((ev as any).error?.message || "unknown"));
+    };
+    try {
+      mr.start();
+    } catch (e) {
+      stream.getTracks().forEach((t) => t.stop());
+      toast.error("Could not start recorder: " + (e as Error).message);
+      return;
+    }
+    mediaRecorderRef.current = mr;
+    recordStartRef.current = Date.now();
+    setRecordSeconds(0);
+    setRecording(true);
+    recordTimerRef.current = window.setInterval(() => {
+      setRecordSeconds(Math.round((Date.now() - recordStartRef.current) / 1000));
+    }, 500);
   }
   function stopRecording(cancel = false) {
     const mr = mediaRecorderRef.current;
