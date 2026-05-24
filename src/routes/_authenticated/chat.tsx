@@ -717,6 +717,25 @@ function ChatThread({
             )}
           </div>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-white/5 hover:text-foreground">
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                if (confirm("Delete this conversation? It will be removed from your inbox.")) {
+                  deleteConvo.mutate();
+                }
+              }}
+              className="text-rose-300 focus:text-rose-200"
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Delete chat
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Messages */}
