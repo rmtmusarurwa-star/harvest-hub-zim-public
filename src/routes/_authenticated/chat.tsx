@@ -165,7 +165,10 @@ function ChatPage() {
         .or(`buyer_id.eq.${user!.id},farmer_id.eq.${user!.id}`)
         .order("last_message_at", { ascending: false });
       if (error) throw error;
-      const rows = (data ?? []) as ConversationWithMeta[];
+      const allRows = (data ?? []) as ConversationWithMeta[];
+      const rows = allRows.filter((r) =>
+        r.buyer_id === user!.id ? !r.deleted_for_buyer : !r.deleted_for_farmer
+      );
       if (rows.length === 0) return [];
 
       const listingIds = Array.from(
