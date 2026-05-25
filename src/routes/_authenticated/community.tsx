@@ -360,10 +360,10 @@ function PostCard({ post, onChanged }: { post: PostWithMeta; onChanged: () => vo
       setLiked(wasLiked);
       setLikeCount((c) => Math.max(0, c + (wasLiked ? 1 : -1)));
       toast.error(error.message || "Could not update like");
-    } else {
-      onChanged();
     }
+    // Realtime subscription will reconcile counts; no need to force a reload here.
   };
+
 
   return (
     <Card className="hover:border-primary/40 transition">
