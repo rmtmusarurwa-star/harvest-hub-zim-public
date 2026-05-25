@@ -111,24 +111,31 @@ function PostDetailPage() {
 
   useEffect(() => {
     load();
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => load(), 500);
+    };
     const channel = supabase
       .channel(`forum-post-${postId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "forum_comments", filter: `post_id=eq.${postId}` },
-        () => load()
+        schedule
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "forum_reactions", filter: `post_id=eq.${postId}` },
-        () => load()
+        schedule
       )
       .subscribe();
     return () => {
+      if (t) clearTimeout(t);
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, user?.id]);
+
 
   const toggleReaction = async (type: ForumReactionType, mine: boolean) => {
     if (!user) return toast.error("Sign in to react");
