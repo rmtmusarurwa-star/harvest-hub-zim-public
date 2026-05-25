@@ -136,16 +136,24 @@ function CommunityPage() {
 
   useEffect(() => {
     load();
+    // Debounce realtime bursts so a flurry of likes/comments doesn't re-fetch repeatedly
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => load(), 600);
+    };
     const channel = supabase
       .channel("forum-feed")
-      .on("postgres_changes", { event: "*", schema: "public", table: "forum_posts" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "forum_comments" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "forum_reactions" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "forum_posts" }, schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "forum_comments" }, schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "forum_reactions" }, schedule)
       .subscribe();
     return () => {
+      if (t) clearTimeout(t);
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
+
 
 
   const filtered = useMemo(() => {
@@ -352,10 +360,10 @@ function PostCard({ post, onChanged }: { post: PostWithMeta; onChanged: () => vo
       setLiked(wasLiked);
       setLikeCount((c) => Math.max(0, c + (wasLiked ? 1 : -1)));
       toast.error(error.message || "Could not update like");
-    } else {
-      onChanged();
     }
+    // Realtime subscription will reconcile counts; no need to force a reload here.
   };
+
 
   return (
     <Card className="hover:border-primary/40 transition">

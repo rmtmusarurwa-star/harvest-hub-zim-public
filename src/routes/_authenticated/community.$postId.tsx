@@ -111,24 +111,31 @@ function PostDetailPage() {
 
   useEffect(() => {
     load();
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => load(), 500);
+    };
     const channel = supabase
       .channel(`forum-post-${postId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "forum_comments", filter: `post_id=eq.${postId}` },
-        () => load()
+        schedule
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "forum_reactions", filter: `post_id=eq.${postId}` },
-        () => load()
+        schedule
       )
       .subscribe();
     return () => {
+      if (t) clearTimeout(t);
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, user?.id]);
+
 
   const toggleReaction = async (type: ForumReactionType, mine: boolean) => {
     if (!user) return toast.error("Sign in to react");
@@ -163,20 +170,47 @@ function PostDetailPage() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("forum_comments").insert({
+    const content = reply.trim();
+    // Optimistic insert so the comment appears instantly
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const optimistic: ForumCommentRow = {
+      id: tempId,
       post_id: postId,
       author_id: user.id,
-      content: reply.trim(),
-    });
-    setSubmitting(false);
-    if (error) {
-      console.error("Comment insert failed:", error);
-      toast.error(error.message || "Could not post comment");
-      return;
+      content,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      deleted: false,
+    };
+    setComments((prev) => [...prev, optimistic]);
+    if (user.id && !commentAuthors[user.id]) {
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (me) setCommentAuthors((m) => ({ ...m, [user.id]: me as Profile }));
     }
     setReply("");
-    load();
+    const { data, error } = await supabase
+      .from("forum_comments")
+      .insert({ post_id: postId, author_id: user.id, content })
+      .select("*")
+      .single();
+    setSubmitting(false);
+    if (error || !data) {
+      console.error("Comment insert failed:", error);
+      toast.error(error?.message || "Could not post comment");
+      setComments((prev) => prev.filter((c) => c.id !== tempId));
+      setReply(content);
+      return;
+    }
+    // Swap the optimistic row for the real one
+    setComments((prev) =>
+      prev.map((c) => (c.id === tempId ? (data as ForumCommentRow) : c))
+    );
   };
+
 
   const deleteComment = async (id: string) => {
     if (!confirm("Delete this comment?")) return;
