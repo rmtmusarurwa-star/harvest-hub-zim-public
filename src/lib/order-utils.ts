@@ -133,13 +133,21 @@ export async function downloadReceiptPDF(orders: OrderRow[], buyerName: string) 
   rgb(doc, BRAND_GREEN);
   doc.rect(0, 0, W, 110, "F");
 
-  // Logo circle
-  rgb(doc, BRAND_GOLD);
-  doc.circle(M + 22, 52, 22, "F");
-  text(doc, BRAND_GREEN);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("HH", M + 22, 56, { align: "center" });
+  // Logo
+  if (brandLogo) {
+    // Draw light backing for visibility on dark band
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(M, 22, 60, 60, 8, 8, "F");
+    doc.addImage(brandLogo, "PNG", M + 4, 26, 52, 52);
+  } else {
+    rgb(doc, BRAND_GOLD);
+    doc.circle(M + 22, 52, 22, "F");
+    text(doc, BRAND_GREEN);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("HH", M + 22, 56, { align: "center" });
+  }
+
 
   // Wordmark
   text(doc, [255, 255, 255]);
