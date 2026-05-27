@@ -10,6 +10,7 @@ type Props = { onOpenMobile: () => void };
 export function Topbar({ onOpenMobile }: Props) {
   const { profile, user } = useAuth();
   const { count, open } = useCart();
+  const { theme, toggle } = useTheme();
   const displayName =
     profile?.full_name?.trim() || user?.email?.split("@")[0] || "Account";
   const initials = (displayName || "HH")
@@ -57,7 +58,18 @@ export function Topbar({ onOpenMobile }: Props) {
           )}
         </button>
 
+        <button
+          onClick={toggle}
+          className="grid h-9 w-9 place-items-center rounded-lg text-foreground/80 hover:bg-foreground/5 hover:text-foreground"
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          title={theme === "dark" ? "Light mode" : "Dark mode"}
+        >
+          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </button>
+
         <NotificationsBell />
+
+
 
         <div className="hidden sm:block text-right leading-tight">
           <div className="max-w-[140px] truncate text-sm text-foreground">
