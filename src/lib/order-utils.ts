@@ -560,7 +560,7 @@ export async function downloadReceiptPDF(orders: OrderRow[], buyerName: string) 
   doc.setFontSize(7.5);
   doc.text(
     "The Agricultural Commerce Engine of Zimbabwe",
-    M + 36,
+    M + 44,
     H - footerH + 36,
   );
 
