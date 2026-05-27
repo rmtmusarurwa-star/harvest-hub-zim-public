@@ -153,11 +153,12 @@ export async function downloadReceiptPDF(orders: OrderRow[], buyerName: string) 
   text(doc, [255, 255, 255]);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("HARVEST HUB", M + 56, 50);
+  doc.text("HARVEST HUB", M + 72, 50);
   text(doc, BRAND_GOLD);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Connect  •  Trade  •  Grow", M + 58, 66);
+  doc.text("Connect  •  Trade  •  Grow", M + 74, 66);
+
 
   // Receipt info (right)
   text(doc, BRAND_GOLD);
