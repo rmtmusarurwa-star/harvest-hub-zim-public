@@ -15,6 +15,7 @@ import {
   Receipt,
   Shield,
   Sprout,
+  UserCircle,
   X,
   LogOut,
 } from "lucide-react";
@@ -117,17 +118,31 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
       </nav>
 
       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-secondary font-display ring-1 ring-secondary/40">
-            {initials}
-          </div>
+        <Link
+          to="/profile/$userId"
+          params={{ userId: user?.id ?? "" }}
+          onClick={onCloseMobile}
+          className="flex items-center gap-3 rounded-lg p-1 -m-1 hover:bg-white/[0.03] transition"
+        >
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt={displayName}
+              className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-secondary/40"
+            />
+          ) : (
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-secondary font-display ring-1 ring-secondary/40">
+              {initials}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm text-foreground">{displayName}</div>
             <div className="truncate text-[11px] uppercase tracking-wider text-secondary/80">
               {roleLabel}
             </div>
           </div>
-        </div>
+          <UserCircle className="h-4 w-4 text-muted-foreground" />
+        </Link>
         <button
           onClick={handleLogout}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-foreground/80 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-foreground"

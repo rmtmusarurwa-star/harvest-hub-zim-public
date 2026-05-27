@@ -16,6 +16,10 @@ export type Profile = {
   full_name: string;
   role: AppRole;
   avatar_url: string | null;
+  bio?: string;
+  location?: string;
+  phone?: string;
+  phone_verified?: boolean;
 };
 
 type AuthContextValue = {
@@ -61,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function fetchProfile(userId: string) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, role, avatar_url")
+      .select("id, full_name, role, avatar_url, bio, location, phone, phone_verified")
       .eq("id", userId)
       .maybeSingle();
     if (!error && data) setProfile(data as Profile);
