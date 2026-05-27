@@ -126,6 +126,8 @@ export async function downloadReceiptPDF(orders: OrderRow[], buyerName: string) 
   ]);
   const sellerAvatar = await urlToDataURL(seller?.avatar_url ?? null);
   const buyerAvatar = await urlToDataURL(buyer?.avatar_url ?? null);
+  const brandLogo = await urlToDataURL(logoUrl);
+
 
   // ============ HEADER (dark green band) ============
   rgb(doc, BRAND_GREEN);
