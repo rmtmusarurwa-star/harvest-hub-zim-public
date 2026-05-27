@@ -15,7 +15,7 @@ import { ThemeProvider } from "@/lib/theme-context";
 import { CartDrawer } from "@/components/marketplace/CartDrawer";
 import { Toaster } from "@/components/ui/sonner";
 
-const themeBootstrap = `(function(){try{var s=localStorage.getItem('hh-theme');var t=(s==='light'||s==='dark')?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');var r=document.documentElement;r.classList.remove('dark','light');r.classList.add(t);r.style.colorScheme=t;}catch(e){document.documentElement.classList.add('dark');}})();`;
+
 
 
 function NotFoundComponent() {
