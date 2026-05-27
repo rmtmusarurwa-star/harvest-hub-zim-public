@@ -16,6 +16,10 @@ export type Profile = {
   full_name: string;
   role: AppRole;
   avatar_url: string | null;
+  bio?: string;
+  location?: string;
+  phone?: string;
+  phone_verified?: boolean;
 };
 
 type AuthContextValue = {
