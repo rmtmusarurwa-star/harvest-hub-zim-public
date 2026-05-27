@@ -538,17 +538,23 @@ export async function downloadReceiptPDF(orders: OrderRow[], buyerName: string) 
   const footerH = 60;
   rgb(doc, BRAND_GREEN);
   doc.rect(0, H - footerH, W, footerH, "F");
-  rgb(doc, BRAND_GOLD);
-  doc.circle(M + 16, H - footerH / 2, 12, "F");
-  text(doc, BRAND_GREEN);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text("HH", M + 16, H - footerH / 2 + 3, { align: "center" });
+  if (brandLogo) {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(M, H - footerH + 12, 36, 36, 4, 4, "F");
+    doc.addImage(brandLogo, "PNG", M + 3, H - footerH + 15, 30, 30);
+  } else {
+    rgb(doc, BRAND_GOLD);
+    doc.circle(M + 16, H - footerH / 2, 12, "F");
+    text(doc, BRAND_GREEN);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("HH", M + 16, H - footerH / 2 + 3, { align: "center" });
+  }
 
   text(doc, [255, 255, 255]);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("HARVEST HUB", M + 36, H - footerH + 24);
+  doc.text("HARVEST HUB", M + 44, H - footerH + 24);
   text(doc, [210, 220, 210]);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
