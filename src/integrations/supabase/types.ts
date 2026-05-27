@@ -230,6 +230,8 @@ export type Database = {
           bio: string
           cover_url: string | null
           created_at: string
+          farm_location: string
+          farm_name: string
           follower_count: number
           province: string
           speciality: string
@@ -241,6 +243,8 @@ export type Database = {
           bio?: string
           cover_url?: string | null
           created_at?: string
+          farm_location?: string
+          farm_name?: string
           follower_count?: number
           province?: string
           speciality?: string
@@ -252,6 +256,8 @@ export type Database = {
           bio?: string
           cover_url?: string | null
           created_at?: string
+          farm_location?: string
+          farm_name?: string
           follower_count?: number
           province?: string
           speciality?: string
@@ -735,27 +741,39 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string
           created_at: string
           full_name: string
           id: string
+          location: string
+          phone: string
+          phone_verified: boolean
           role: Database["public"]["Enums"]["user_role"]
           suspended: boolean
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string
           created_at?: string
           full_name?: string
           id: string
+          location?: string
+          phone?: string
+          phone_verified?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           suspended?: boolean
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          bio?: string
           created_at?: string
           full_name?: string
           id?: string
+          location?: string
+          phone?: string
+          phone_verified?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           suspended?: boolean
           updated_at?: string
