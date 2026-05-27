@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import logoUrl from "@/assets/harvest-hub-logo-transparent.png";
 
 export type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
