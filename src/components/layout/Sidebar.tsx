@@ -15,6 +15,7 @@ import {
   Receipt,
   Shield,
   Sprout,
+  UserCircle,
   X,
   LogOut,
 } from "lucide-react";
