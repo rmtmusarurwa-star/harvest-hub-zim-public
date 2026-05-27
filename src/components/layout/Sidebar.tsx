@@ -12,6 +12,7 @@ import {
   LineChart,
   Wallet,
   Globe2,
+  Receipt,
   Shield,
   Sprout,
   X,
@@ -33,6 +34,7 @@ export const NAV_ITEMS = [
   { to: "/market-intelligence", label: "Market Intelligence", icon: LineChart },
   { to: "/financial-hub", label: "Financial Hub", icon: Wallet },
   { to: "/community", label: "Community", icon: Globe2 },
+  { to: "/receipts", label: "Receipts", icon: Receipt },
 ] as const;
 
 const ADMIN_ITEM = { to: "/admin", label: "Admin", icon: Shield } as const;

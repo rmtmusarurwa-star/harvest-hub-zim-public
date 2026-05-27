@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { Receipt } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
 import { MarketTicker } from "@/components/dashboard/MarketTicker";
 import { StatCards } from "@/components/dashboard/StatCards";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
@@ -41,6 +43,11 @@ function DashboardPage() {
             Here's what's moving across Zimbabwe's farms and markets today.
           </p>
         </div>
+        <Button asChild variant="outline" size="sm" className="self-start sm:self-auto">
+          <Link to="/receipts">
+            <Receipt className="h-4 w-4" /> View All Receipts
+          </Link>
+        </Button>
       </motion.div>
 
       <MarketTicker />
