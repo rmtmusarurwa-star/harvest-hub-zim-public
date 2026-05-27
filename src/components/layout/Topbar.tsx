@@ -1,9 +1,10 @@
-import { Menu, ShoppingCart } from "lucide-react";
+import { Menu, Moon, ShoppingCart, Sun } from "lucide-react";
 import { NotificationsBell } from "./NotificationsBell";
 import { GlobalSearch } from "./GlobalSearch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
+import { useTheme } from "@/lib/theme-context";
 
 type Props = { onOpenMobile: () => void };
 
