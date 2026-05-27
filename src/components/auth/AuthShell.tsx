@@ -63,6 +63,12 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
           className="flex items-center"
         >
           <div className="glass-strong w-full rounded-3xl p-7 lg:p-9">
+            <div className="mb-6 flex flex-col items-center gap-2 lg:hidden">
+              <img src={logoUrl} alt="Harvest Hub" className="h-12 w-auto" />
+              <div className="text-[10px] uppercase tracking-[0.28em] text-secondary/80">
+                Connect · Trade · Grow
+              </div>
+            </div>
             <div className="mb-7">
               <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-secondary/80">
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
