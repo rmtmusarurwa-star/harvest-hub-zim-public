@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import logoUrl from "@/assets/harvest-hub-logo-transparent.png";
 
 export type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
@@ -125,28 +126,39 @@ export async function downloadReceiptPDF(orders: OrderRow[], buyerName: string) 
   ]);
   const sellerAvatar = await urlToDataURL(seller?.avatar_url ?? null);
   const buyerAvatar = await urlToDataURL(buyer?.avatar_url ?? null);
+  const brandLogo = await urlToDataURL(logoUrl);
+
 
   // ============ HEADER (dark green band) ============
   rgb(doc, BRAND_GREEN);
   doc.rect(0, 0, W, 110, "F");
 
-  // Logo circle
-  rgb(doc, BRAND_GOLD);
-  doc.circle(M + 22, 52, 22, "F");
-  text(doc, BRAND_GREEN);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("HH", M + 22, 56, { align: "center" });
+  // Logo
+  if (brandLogo) {
+    // Draw light backing for visibility on dark band
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(M, 22, 60, 60, 8, 8, "F");
+    doc.addImage(brandLogo, "PNG", M + 4, 26, 52, 52);
+  } else {
+    rgb(doc, BRAND_GOLD);
+    doc.circle(M + 22, 52, 22, "F");
+    text(doc, BRAND_GREEN);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("HH", M + 22, 56, { align: "center" });
+  }
+
 
   // Wordmark
   text(doc, [255, 255, 255]);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("HARVEST HUB", M + 56, 50);
+  doc.text("HARVEST HUB", M + 72, 50);
   text(doc, BRAND_GOLD);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Connect  •  Trade  •  Grow", M + 58, 66);
+  doc.text("Connect  •  Trade  •  Grow", M + 74, 66);
+
 
   // Receipt info (right)
   text(doc, BRAND_GOLD);
@@ -526,23 +538,29 @@ export async function downloadReceiptPDF(orders: OrderRow[], buyerName: string) 
   const footerH = 60;
   rgb(doc, BRAND_GREEN);
   doc.rect(0, H - footerH, W, footerH, "F");
-  rgb(doc, BRAND_GOLD);
-  doc.circle(M + 16, H - footerH / 2, 12, "F");
-  text(doc, BRAND_GREEN);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text("HH", M + 16, H - footerH / 2 + 3, { align: "center" });
+  if (brandLogo) {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(M, H - footerH + 12, 36, 36, 4, 4, "F");
+    doc.addImage(brandLogo, "PNG", M + 3, H - footerH + 15, 30, 30);
+  } else {
+    rgb(doc, BRAND_GOLD);
+    doc.circle(M + 16, H - footerH / 2, 12, "F");
+    text(doc, BRAND_GREEN);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("HH", M + 16, H - footerH / 2 + 3, { align: "center" });
+  }
 
   text(doc, [255, 255, 255]);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("HARVEST HUB", M + 36, H - footerH + 24);
+  doc.text("HARVEST HUB", M + 44, H - footerH + 24);
   text(doc, [210, 220, 210]);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.text(
     "The Agricultural Commerce Engine of Zimbabwe",
-    M + 36,
+    M + 44,
     H - footerH + 36,
   );
 

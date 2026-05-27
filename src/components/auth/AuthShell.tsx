@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { Sprout } from "lucide-react";
 import type { ReactNode } from "react";
+import logoUrl from "@/assets/harvest-hub-logo-transparent.png";
 
 type Props = {
   eyebrow: string;
@@ -26,15 +26,10 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="hidden lg:flex flex-col justify-between"
         >
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary ring-1 ring-secondary/40">
-              <Sprout className="h-5 w-5 text-secondary" />
-            </div>
-            <div className="leading-tight">
-              <div className="font-display text-xl">Harvest Hub</div>
-              <div className="text-[10px] uppercase tracking-[0.22em] text-secondary/80">
-                Zimbabwe
-              </div>
+          <div className="flex flex-col gap-2">
+            <img src={logoUrl} alt="Harvest Hub" className="h-14 w-auto" />
+            <div className="text-[11px] uppercase tracking-[0.28em] text-secondary/80">
+              Connect · Trade · Grow
             </div>
           </div>
 
@@ -68,6 +63,12 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
           className="flex items-center"
         >
           <div className="glass-strong w-full rounded-3xl p-7 lg:p-9">
+            <div className="mb-6 flex flex-col items-center gap-2 lg:hidden">
+              <img src={logoUrl} alt="Harvest Hub" className="h-12 w-auto" />
+              <div className="text-[10px] uppercase tracking-[0.28em] text-secondary/80">
+                Connect · Trade · Grow
+              </div>
+            </div>
             <div className="mb-7">
               <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-secondary/80">
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary" />

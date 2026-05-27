@@ -75,14 +75,17 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
         to="/"
         onClick={onCloseMobile}
         className="flex items-center gap-3 px-2 py-1"
+        aria-label="Harvest Hub home"
       >
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary ring-1 ring-secondary/40">
-          <Sprout className="h-5 w-5 text-secondary" />
-        </div>
+        <img
+          src="/harvest-hub-logo.png"
+          alt="Harvest Hub"
+          className="h-11 w-auto rounded-md bg-white p-1 ring-1 ring-secondary/30"
+        />
         <div className="leading-tight">
           <div className="font-display text-lg tracking-tight">Harvest Hub</div>
           <div className="text-[10px] uppercase tracking-[0.18em] text-secondary/80">
-            Zimbabwe
+            Connect · Trade · Grow
           </div>
         </div>
       </Link>
