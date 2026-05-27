@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedReceiptsRouteImport } from './routes/_authenticated/receipts'
 import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
 import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
 import { Route as AuthenticatedDiseaseIdRouteImport } from './routes/_authenticated/disease-id'
@@ -62,6 +63,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReceiptsRoute = AuthenticatedReceiptsRouteImport.update({
+  id: '/receipts',
+  path: '/receipts',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMarketIntelligenceRoute =
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
+  '/receipts': typeof AuthenticatedReceiptsRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/community/$postId': typeof AuthenticatedCommunityPostIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
+  '/receipts': typeof AuthenticatedReceiptsRoute
   '/': typeof AuthenticatedIndexRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/community/$postId': typeof AuthenticatedCommunityPostIdRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
+  '/_authenticated/receipts': typeof AuthenticatedReceiptsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/_authenticated/community/$postId': typeof AuthenticatedCommunityPostIdRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/disease-id'
     | '/financial-hub'
     | '/market-intelligence'
+    | '/receipts'
     | '/checkout/confirmation'
     | '/community/$postId'
     | '/equipment/$equipmentId'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/disease-id'
     | '/financial-hub'
     | '/market-intelligence'
+    | '/receipts'
     | '/'
     | '/checkout/confirmation'
     | '/community/$postId'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/_authenticated/disease-id'
     | '/_authenticated/financial-hub'
     | '/_authenticated/market-intelligence'
+    | '/_authenticated/receipts'
     | '/_authenticated/'
     | '/_authenticated/checkout/confirmation'
     | '/_authenticated/community/$postId'
@@ -385,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/receipts': {
+      id: '/_authenticated/receipts'
+      path: '/receipts'
+      fullPath: '/receipts'
+      preLoaderRoute: typeof AuthenticatedReceiptsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/market-intelligence': {
@@ -559,6 +578,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDiseaseIdRoute: typeof AuthenticatedDiseaseIdRoute
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
+  AuthenticatedReceiptsRoute: typeof AuthenticatedReceiptsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedEquipmentEquipmentIdRoute: typeof AuthenticatedEquipmentEquipmentIdRoute
   AuthenticatedFarmersFarmerIdRoute: typeof AuthenticatedFarmersFarmerIdRoute
@@ -580,6 +600,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDiseaseIdRoute: AuthenticatedDiseaseIdRoute,
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
+  AuthenticatedReceiptsRoute: AuthenticatedReceiptsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedEquipmentEquipmentIdRoute:
     AuthenticatedEquipmentEquipmentIdRoute,
