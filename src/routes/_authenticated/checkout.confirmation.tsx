@@ -131,7 +131,9 @@ function ConfirmationPage() {
       <div className="flex flex-wrap gap-3">
         <Button
           variant="secondary"
-          onClick={() => downloadReceiptPDF(orders, buyerName)}
+          onClick={() => {
+            void downloadReceiptPDF(orders, buyerName);
+          }}
         >
           <Download className="h-4 w-4" /> Download Receipt (PDF)
         </Button>
