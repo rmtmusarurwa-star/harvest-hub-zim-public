@@ -57,10 +57,7 @@ export function Topbar({ onOpenMobile }: Props) {
             </span>
           )}
         </button>
-
-
-
-
+        <NotificationsBell />
 
 
         <div className="hidden sm:block text-right leading-tight">
