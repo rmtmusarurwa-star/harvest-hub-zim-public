@@ -58,16 +58,8 @@ export function Topbar({ onOpenMobile }: Props) {
           )}
         </button>
 
-        <button
-          onClick={toggle}
-          className="grid h-9 w-9 place-items-center rounded-lg text-foreground/80 hover:bg-foreground/5 hover:text-foreground"
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          title={theme === "dark" ? "Light mode" : "Dark mode"}
-        >
-          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </button>
 
-        <NotificationsBell />
+
 
 
 
