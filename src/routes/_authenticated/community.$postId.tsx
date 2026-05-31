@@ -191,6 +191,29 @@ function PostDetailPage() {
     }
   };
 
+  const toggleCommentLike = async (commentId: string) => {
+    if (!user) return toast.error("Sign in to like");
+    const cur = commentLikes[commentId] ?? { count: 0, mine: false };
+    const next = {
+      count: Math.max(0, cur.count + (cur.mine ? -1 : 1)),
+      mine: !cur.mine,
+    };
+    setCommentLikes((prev) => ({ ...prev, [commentId]: next }));
+    const { error } = cur.mine
+      ? await (supabase as any)
+          .from("forum_comment_likes")
+          .delete()
+          .eq("comment_id", commentId)
+          .eq("user_id", user.id)
+      : await (supabase as any)
+          .from("forum_comment_likes")
+          .insert({ comment_id: commentId, user_id: user.id });
+    if (error) {
+      setCommentLikes((prev) => ({ ...prev, [commentId]: cur }));
+      toast.error(error.message || "Could not update like");
+    }
+  };
+
   const submitComment = async () => {
     if (!user || !reply.trim()) return;
     if (reply.length > 2000) {
