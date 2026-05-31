@@ -100,6 +100,26 @@ function PostDetailPage() {
       setCommentAuthors(map);
     }
 
+    // Load likes for these comments
+    const cmtIds = cmts.map((c) => c.id);
+    if (cmtIds.length) {
+      const { data: likeRows } = await (supabase as any)
+        .from("forum_comment_likes")
+        .select("comment_id, user_id")
+        .in("comment_id", cmtIds);
+      const likeMap: Record<string, { count: number; mine: boolean }> = {};
+      cmtIds.forEach((id) => (likeMap[id] = { count: 0, mine: false }));
+      (likeRows ?? []).forEach((r: { comment_id: string; user_id: string }) => {
+        const entry = likeMap[r.comment_id];
+        if (!entry) return;
+        entry.count += 1;
+        if (user && r.user_id === user.id) entry.mine = true;
+      });
+      setCommentLikes(likeMap);
+    } else {
+      setCommentLikes({});
+    }
+
     const grouped = REACTION_TYPES.map((t) => {
       const matching = (reactRows ?? []).filter((r) => r.type === t.value);
       return {
