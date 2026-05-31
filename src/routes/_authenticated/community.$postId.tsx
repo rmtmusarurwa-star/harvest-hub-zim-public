@@ -454,6 +454,8 @@ function PostDetailPage() {
                 comment={c}
                 profile={ca}
                 isOwn={user?.id === c.author_id}
+                like={commentLikes[c.id] ?? { count: 0, mine: false }}
+                onToggleLike={() => toggleCommentLike(c.id)}
                 onDelete={() => deleteComment(c.id)}
                 onSave={(val) => saveCommentEdit(c.id, val)}
               />
