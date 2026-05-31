@@ -42,6 +42,9 @@ function PostDetailPage() {
   const [author, setAuthor] = useState<Profile | null>(null);
   const [comments, setComments] = useState<ForumCommentRow[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, Profile>>({});
+  const [commentLikes, setCommentLikes] = useState<
+    Record<string, { count: number; mine: boolean }>
+  >({});
   const [reactions, setReactions] = useState<
     { type: ForumReactionType; count: number; mine: boolean }[]
   >([]);
