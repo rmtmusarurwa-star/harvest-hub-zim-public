@@ -568,7 +568,20 @@ function CommentItem({
                 </div>
               </div>
             ) : (
-              <p className="text-sm mt-1 whitespace-pre-wrap">{comment.content}</p>
+              <>
+                <p className="text-sm mt-1 whitespace-pre-wrap">{comment.content}</p>
+                <div className="mt-2">
+                  <Button
+                    variant={like.mine ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 gap-1.5 px-2"
+                    onClick={onToggleLike}
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" />
+                    <span className="text-xs">{like.count}</span>
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </div>
