@@ -151,6 +151,11 @@ function PostDetailPage() {
         { event: "*", schema: "public", table: "forum_reactions", filter: `post_id=eq.${postId}` },
         schedule
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "forum_comment_likes" },
+        schedule
+      )
       .subscribe();
     return () => {
       if (t) clearTimeout(t);
