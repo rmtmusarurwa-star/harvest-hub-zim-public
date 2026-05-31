@@ -42,6 +42,9 @@ function PostDetailPage() {
   const [author, setAuthor] = useState<Profile | null>(null);
   const [comments, setComments] = useState<ForumCommentRow[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, Profile>>({});
+  const [commentLikes, setCommentLikes] = useState<
+    Record<string, { count: number; mine: boolean }>
+  >({});
   const [reactions, setReactions] = useState<
     { type: ForumReactionType; count: number; mine: boolean }[]
   >([]);
@@ -97,6 +100,26 @@ function PostDetailPage() {
       setCommentAuthors(map);
     }
 
+    // Load likes for these comments
+    const cmtIds = cmts.map((c) => c.id);
+    if (cmtIds.length) {
+      const { data: likeRows } = await (supabase as any)
+        .from("forum_comment_likes")
+        .select("comment_id, user_id")
+        .in("comment_id", cmtIds);
+      const likeMap: Record<string, { count: number; mine: boolean }> = {};
+      cmtIds.forEach((id) => (likeMap[id] = { count: 0, mine: false }));
+      (likeRows ?? []).forEach((r: { comment_id: string; user_id: string }) => {
+        const entry = likeMap[r.comment_id];
+        if (!entry) return;
+        entry.count += 1;
+        if (user && r.user_id === user.id) entry.mine = true;
+      });
+      setCommentLikes(likeMap);
+    } else {
+      setCommentLikes({});
+    }
+
     const grouped = REACTION_TYPES.map((t) => {
       const matching = (reactRows ?? []).filter((r) => r.type === t.value);
       return {
@@ -126,6 +149,11 @@ function PostDetailPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "forum_reactions", filter: `post_id=eq.${postId}` },
+        schedule
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "forum_comment_likes" },
         schedule
       )
       .subscribe();
@@ -160,6 +188,29 @@ function PostDetailPage() {
     if (error) {
       toast.error(error.message || "Could not update reaction");
       load();
+    }
+  };
+
+  const toggleCommentLike = async (commentId: string) => {
+    if (!user) return toast.error("Sign in to like");
+    const cur = commentLikes[commentId] ?? { count: 0, mine: false };
+    const next = {
+      count: Math.max(0, cur.count + (cur.mine ? -1 : 1)),
+      mine: !cur.mine,
+    };
+    setCommentLikes((prev) => ({ ...prev, [commentId]: next }));
+    const { error } = cur.mine
+      ? await (supabase as any)
+          .from("forum_comment_likes")
+          .delete()
+          .eq("comment_id", commentId)
+          .eq("user_id", user.id)
+      : await (supabase as any)
+          .from("forum_comment_likes")
+          .insert({ comment_id: commentId, user_id: user.id });
+    if (error) {
+      setCommentLikes((prev) => ({ ...prev, [commentId]: cur }));
+      toast.error(error.message || "Could not update like");
     }
   };
 
@@ -366,7 +417,10 @@ function PostDetailPage() {
               rows={3}
               onChange={(e) => setReply(e.target.value)}
             />
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">
+                {reply.length}/2000
+              </span>
               <Button
                 onClick={submitComment}
                 disabled={submitting || !reply.trim()}
@@ -400,6 +454,8 @@ function PostDetailPage() {
                 comment={c}
                 profile={ca}
                 isOwn={user?.id === c.author_id}
+                like={commentLikes[c.id] ?? { count: 0, mine: false }}
+                onToggleLike={() => toggleCommentLike(c.id)}
                 onDelete={() => deleteComment(c.id)}
                 onSave={(val) => saveCommentEdit(c.id, val)}
               />
@@ -415,12 +471,16 @@ function CommentItem({
   comment,
   profile,
   isOwn,
+  like,
+  onToggleLike,
   onDelete,
   onSave,
 }: {
   comment: ForumCommentRow;
   profile: Profile | undefined;
   isOwn: boolean;
+  like: { count: number; mine: boolean };
+  onToggleLike: () => void;
   onDelete: () => void;
   onSave: (val: string) => Promise<boolean>;
 }) {
@@ -508,7 +568,20 @@ function CommentItem({
                 </div>
               </div>
             ) : (
-              <p className="text-sm mt-1 whitespace-pre-wrap">{comment.content}</p>
+              <>
+                <p className="text-sm mt-1 whitespace-pre-wrap">{comment.content}</p>
+                <div className="mt-2">
+                  <Button
+                    variant={like.mine ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 gap-1.5 px-2"
+                    onClick={onToggleLike}
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" />
+                    <span className="text-xs">{like.count}</span>
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </div>
