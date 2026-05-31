@@ -417,7 +417,10 @@ function PostDetailPage() {
               rows={3}
               onChange={(e) => setReply(e.target.value)}
             />
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">
+                {reply.length}/2000
+              </span>
               <Button
                 onClick={submitComment}
                 disabled={submitting || !reply.trim()}
