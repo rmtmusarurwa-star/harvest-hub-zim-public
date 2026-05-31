@@ -471,12 +471,16 @@ function CommentItem({
   comment,
   profile,
   isOwn,
+  like,
+  onToggleLike,
   onDelete,
   onSave,
 }: {
   comment: ForumCommentRow;
   profile: Profile | undefined;
   isOwn: boolean;
+  like: { count: number; mine: boolean };
+  onToggleLike: () => void;
   onDelete: () => void;
   onSave: (val: string) => Promise<boolean>;
 }) {
