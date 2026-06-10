@@ -40,17 +40,23 @@ function PublicProfilePage() {
   const isOwn = user?.id === userId;
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: ["public-profile", userId],
+    queryKey: ["public-profile", userId, isOwn],
     queryFn: async (): Promise<ProfileRow | null> => {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id, full_name, role, avatar_url, bio, location, phone, phone_verified, created_at",
+          "id, full_name, role, avatar_url, bio, location, phone_verified, created_at",
         )
         .eq("id", userId)
         .maybeSingle();
       if (error) throw error;
-      return data as ProfileRow | null;
+      if (!data) return null;
+      let phone: string | null = null;
+      if (isOwn) {
+        const { data: p } = await supabase.rpc("get_my_phone");
+        phone = (p as string | null) ?? null;
+      }
+      return { ...(data as Omit<ProfileRow, "phone">), phone } as ProfileRow;
     },
   });
 
