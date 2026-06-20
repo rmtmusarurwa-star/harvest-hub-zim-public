@@ -12,6 +12,10 @@ import { WeatherWidget } from "@/components/dashboard/WeatherWidget";
 import { AIInsight } from "@/components/dashboard/AIInsight";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { VolumeChart } from "@/components/dashboard/VolumeChart";
+import { CommandBar } from "@/components/agent/CommandBar";
+import { AgentControlCenter } from "@/components/agent/AgentControlCenter";
+import { LiveActivityFeed } from "@/components/agent/LiveActivityFeed";
+
 
 export const Route = createFileRoute("/_authenticated/")({
   component: DashboardPage,
@@ -50,6 +54,8 @@ function DashboardPage() {
         </Button>
       </motion.div>
 
+      <CommandBar />
+
       <MarketTicker />
 
       <StatCards />
@@ -62,11 +68,14 @@ function DashboardPage() {
           <ActivityFeed />
         </div>
         <div className="space-y-6">
+          <AgentControlCenter />
+          <LiveActivityFeed />
           <WeatherWidget />
           <AIInsight />
           <DemandAlerts />
         </div>
       </div>
+
 
       <FeaturedOpportunities />
     </section>
