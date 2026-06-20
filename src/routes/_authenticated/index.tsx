@@ -54,6 +54,8 @@ function DashboardPage() {
         </Button>
       </motion.div>
 
+      <CommandBar />
+
       <MarketTicker />
 
       <StatCards />
@@ -66,11 +68,14 @@ function DashboardPage() {
           <ActivityFeed />
         </div>
         <div className="space-y-6">
+          <AgentControlCenter />
+          <LiveActivityFeed />
           <WeatherWidget />
           <AIInsight />
           <DemandAlerts />
         </div>
       </div>
+
 
       <FeaturedOpportunities />
     </section>
