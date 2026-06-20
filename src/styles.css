@@ -223,6 +223,28 @@
   .btn-glow:hover {
     box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.35), 0 8px 30px -8px rgba(201, 168, 76, 0.45);
   }
+
+  /* Satisfying tap bounce — for like / heart / reaction buttons */
+  @keyframes tap-bounce {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); }
+    70%  { transform: scale(0.92); }
+    100% { transform: scale(1); }
+  }
+  .tap-bounce:active { animation: tap-bounce 280ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .tap-bounce:active { animation: none; }
+  }
+
+  /* Price flash for live market values */
+  @keyframes price-flash-up   { 0% { color: rgb(52,211,153); } 100% { } }
+  @keyframes price-flash-down { 0% { color: rgb(251,113,133); } 100% { } }
+  .price-flash-up   { animation: price-flash-up 900ms ease-out; }
+  .price-flash-down { animation: price-flash-down 900ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .price-flash-up, .price-flash-down { animation: none; }
+  }
 }
+
 
 
