@@ -3,13 +3,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { useDecorativeMotionGuard } from "@/hooks/use-decorative-motion";
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useDecorativeMotionGuard();
 
   return (
-    <div className="min-h-screen ambient-glow">
+    <div className="min-h-screen ambient-glow mesh-bg">
+
       <Sidebar
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
