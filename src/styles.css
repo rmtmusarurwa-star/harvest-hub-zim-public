@@ -188,5 +188,41 @@
       radial-gradient(50% 40% at 90% 0%, rgba(201, 168, 76, 0.10) 0%, transparent 70%),
       radial-gradient(70% 60% at 80% 100%, rgba(232, 160, 32, 0.06) 0%, transparent 70%);
   }
+
+  /* Animated gradient mesh — GPU-only, decorative */
+  .mesh-bg { position: relative; isolation: isolate; }
+  .mesh-bg::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 32% at 18% 22%, rgba(201, 168, 76, 0.22) 0%, transparent 65%),
+      radial-gradient(34% 30% at 82% 18%, rgba(13, 59, 46, 0.30) 0%, transparent 65%),
+      radial-gradient(40% 34% at 28% 82%, rgba(26, 82, 64, 0.24) 0%, transparent 65%),
+      radial-gradient(36% 30% at 78% 86%, rgba(232, 160, 32, 0.16) 0%, transparent 65%);
+    filter: blur(40px) saturate(120%);
+    will-change: transform;
+    animation: mesh-drift 22s ease-in-out infinite alternate;
+  }
+  .mesh-bg-strong::before { opacity: 1.4; }
+
+  @keyframes mesh-drift {
+    0%   { transform: translate3d(-2%, -1%, 0) scale(1); }
+    50%  { transform: translate3d(2%, 1.5%, 0) scale(1.04); }
+    100% { transform: translate3d(-1%, 2%, 0) scale(1.02); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mesh-bg::before { animation: none; }
+  }
+  .no-deco-motion .mesh-bg::before { animation: none; }
+
+  .btn-glow { transition: box-shadow 200ms ease, transform 200ms ease; }
+  .btn-glow:hover {
+    box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.35), 0 8px 30px -8px rgba(201, 168, 76, 0.45);
+  }
 }
+
 
