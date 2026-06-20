@@ -24,6 +24,7 @@ import {
 } from "@/lib/marketplace-data";
 import { useCart } from "@/lib/cart-context";
 import { Button } from "@/components/ui/button";
+import { CategoryIcon } from "@/components/brand/CategoryIcon";
 
 export const Route = createFileRoute("/_authenticated/marketplace/$listingId")({
   component: ListingDetailPage,
@@ -37,15 +38,6 @@ const CATEGORY_GRADIENT: Record<ListingRow["category"], string> = {
   grain: "from-yellow-700/40 via-stone-900/40 to-secondary/20",
   other: "from-emerald-800/30 via-stone-900/40 to-secondary/20",
 };
-const CATEGORY_EMOJI: Record<ListingRow["category"], string> = {
-  produce: "🍅",
-  livestock: "🐄",
-  poultry: "🐓",
-  dairy: "🥛",
-  grain: "🌾",
-  other: "📦",
-};
-
 function ListingDetailPage() {
   const { listingId } = Route.useParams();
   const { add, open } = useCart();
@@ -124,8 +116,8 @@ function ListingDetailPage() {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="grid h-full place-items-center text-[12rem] opacity-80">
-              {CATEGORY_EMOJI[listing.category]}
+            <div className="grid h-full place-items-center text-secondary/70">
+              <CategoryIcon category={listing.category} className="h-40 w-40" />
             </div>
           )}
           <div className="absolute left-4 top-4 flex items-center gap-2">
@@ -149,9 +141,7 @@ function ListingDetailPage() {
           className="space-y-5"
         >
           <div>
-            <h1 className="font-display text-3xl leading-tight md:text-4xl">
-              {listing.title}
-            </h1>
+            <h1 className="font-display text-3xl leading-tight md:text-4xl">{listing.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> {listing.location}
@@ -167,9 +157,7 @@ function ListingDetailPage() {
 
           <div className="glass rounded-2xl p-5">
             <div className="flex items-baseline gap-2">
-              <span className="font-display text-4xl text-secondary">
-                ${price.toFixed(2)}
-              </span>
+              <span className="font-display text-4xl text-secondary">${price.toFixed(2)}</span>
               <span className="text-sm text-muted-foreground">/ {listing.unit}</span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -178,9 +166,7 @@ function ListingDetailPage() {
 
             <div className="mt-5 space-y-3">
               <div className="flex items-center gap-3">
-                <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                  Qty
-                </span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Qty</span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -286,9 +272,7 @@ function ListingDetailPage() {
                     <ShieldCheck className="h-3 w-3" /> Verified
                   </span>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Member · Harvest Hub Zimbabwe
-                </div>
+                <div className="text-xs text-muted-foreground">Member · Harvest Hub Zimbabwe</div>
               </div>
               <Button size="sm" variant="outline">
                 View Profile

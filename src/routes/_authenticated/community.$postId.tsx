@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -14,11 +15,8 @@ import {
   X,
   Check,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import {
   REACTION_TYPES,
@@ -66,24 +64,20 @@ function PostDetailPage() {
     }
     setPost(p as ForumPostRow);
 
-    const [{ data: authorProf }, { data: commentRows }, { data: reactRows }] =
-      await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .eq("id", (p as ForumPostRow).author_id)
-          .maybeSingle(),
-        supabase
-          .from("forum_comments")
-          .select("*")
-          .eq("post_id", postId)
-          .eq("deleted", false)
-          .order("created_at", { ascending: true }),
-        supabase
-          .from("forum_reactions")
-          .select("type, user_id")
-          .eq("post_id", postId),
-      ]);
+    const [{ data: authorProf }, { data: commentRows }, { data: reactRows }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .eq("id", (p as ForumPostRow).author_id)
+        .maybeSingle(),
+      supabase
+        .from("forum_comments")
+        .select("*")
+        .eq("post_id", postId)
+        .eq("deleted", false)
+        .order("created_at", { ascending: true }),
+      supabase.from("forum_reactions").select("type, user_id").eq("post_id", postId),
+    ]);
 
     setAuthor((authorProf as Profile) ?? null);
     const cmts = (commentRows ?? []) as ForumCommentRow[];
@@ -144,17 +138,17 @@ function PostDetailPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "forum_comments", filter: `post_id=eq.${postId}` },
-        schedule
+        schedule,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "forum_reactions", filter: `post_id=eq.${postId}` },
-        schedule
+        schedule,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "forum_comment_likes" },
-        schedule
+        schedule,
       )
       .subscribe();
     return () => {
@@ -164,16 +158,13 @@ function PostDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, user?.id]);
 
-
   const toggleReaction = async (type: ForumReactionType, mine: boolean) => {
     if (!user) return toast.error("Sign in to react");
     // Optimistic update
     setReactions((prev) =>
       prev.map((r) =>
-        r.type === type
-          ? { ...r, mine: !mine, count: Math.max(0, r.count + (mine ? -1 : 1)) }
-          : r
-      )
+        r.type === type ? { ...r, mine: !mine, count: Math.max(0, r.count + (mine ? -1 : 1)) } : r,
+      ),
     );
     const { error } = mine
       ? await supabase
@@ -182,9 +173,7 @@ function PostDetailPage() {
           .eq("post_id", postId)
           .eq("user_id", user.id)
           .eq("type", type)
-      : await supabase
-          .from("forum_reactions")
-          .insert({ post_id: postId, user_id: user.id, type });
+      : await supabase.from("forum_reactions").insert({ post_id: postId, user_id: user.id, type });
     if (error) {
       toast.error(error.message || "Could not update reaction");
       load();
@@ -257,20 +246,14 @@ function PostDetailPage() {
       return;
     }
     // Swap the optimistic row for the real one
-    setComments((prev) =>
-      prev.map((c) => (c.id === tempId ? (data as ForumCommentRow) : c))
-    );
+    setComments((prev) => prev.map((c) => (c.id === tempId ? (data as ForumCommentRow) : c)));
   };
-
 
   const deleteComment = async (id: string) => {
     if (!confirm("Delete this comment?")) return;
     // Optimistic remove
     setComments((prev) => prev.filter((c) => c.id !== id));
-    const { error } = await supabase
-      .from("forum_comments")
-      .update({ deleted: true })
-      .eq("id", id);
+    const { error } = await supabase.from("forum_comments").update({ deleted: true }).eq("id", id);
     if (error) {
       toast.error("Could not delete");
       load();
@@ -295,9 +278,7 @@ function PostDetailPage() {
       toast.error(error.message || "Could not save edit");
       return false;
     }
-    setComments((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, content: trimmed } : c))
-    );
+    setComments((prev) => prev.map((c) => (c.id === id ? { ...c, content: trimmed } : c)));
     return true;
   };
 
@@ -312,16 +293,14 @@ function PostDetailPage() {
 
   if (loading) {
     return (
-      <div className="container max-w-3xl mx-auto py-10 text-center text-muted-foreground">
-        Loading...
-      </div>
+      <div className="mx-auto max-w-3xl py-10 text-center text-muted-foreground">Loading...</div>
     );
   }
   if (!post) {
     return (
-      <div className="container max-w-3xl mx-auto py-10 text-center">
-        <p className="text-muted-foreground mb-4">Post not found.</p>
-        <Button onClick={() => navigate({ to: "/community" })}>
+      <div className="mx-auto max-w-3xl py-10 text-center">
+        <p className="mb-4 text-muted-foreground">Post not found.</p>
+        <Button variant="secondary" onClick={() => navigate({ to: "/community" })}>
           Back to forum
         </Button>
       </div>
@@ -329,141 +308,151 @@ function PostDetailPage() {
   }
 
   return (
-    <div className="container max-w-3xl mx-auto px-4 py-6">
+    <section className="mx-auto max-w-3xl space-y-4">
       <Button
         variant="ghost"
         size="sm"
-        className="mb-4 gap-1"
+        className="gap-1 text-muted-foreground hover:text-secondary"
         onClick={() => navigate({ to: "/community" })}
       >
         <ArrowLeft className="h-4 w-4" /> Back to forum
       </Button>
 
-      <Card>
-        <CardContent className="p-5">
-          <div className="flex items-start gap-3 mb-3">
-            <Link
-              to="/farmers/$farmerId"
-              params={{ farmerId: post.author_id }}
-            >
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={author?.avatar_url ?? undefined} />
-                <AvatarFallback>
-                  {(author?.full_name ?? "U").slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </Link>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Link
-                  to="/farmers/$farmerId"
-                  params={{ farmerId: post.author_id }}
-                  className="font-semibold hover:underline"
-                >
-                  {author?.full_name || "Farmer"}
-                </Link>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(post.created_at).toLocaleString()}
-                </span>
-                <Badge variant="secondary" className="ml-auto">
-                  {categoryLabel(post.category)}
-                </Badge>
-              </div>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass rounded-2xl border border-white/5 p-5"
+      >
+        <div className="mb-3 flex items-start gap-3">
+          <Link to="/farmers/$farmerId" params={{ farmerId: post.author_id }}>
+            {author?.avatar_url ? (
+              <img
+                src={author.avatar_url}
+                alt=""
+                className="h-12 w-12 rounded-full object-cover ring-1 ring-white/10"
+              />
+            ) : (
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-secondary/15 font-display text-base text-secondary ring-1 ring-white/10">
+                {(author?.full_name ?? "U").slice(0, 2).toUpperCase()}
+              </span>
+            )}
+          </Link>
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/farmers/$farmerId"
+                params={{ farmerId: post.author_id }}
+                className="font-medium text-foreground hover:text-secondary"
+              >
+                {author?.full_name || "Farmer"}
+              </Link>
+              <span className="text-xs text-muted-foreground">
+                {new Date(post.created_at).toLocaleString()}
+              </span>
+              <span className="ml-auto rounded-full bg-secondary/15 px-2.5 py-0.5 text-[11px] text-secondary">
+                {categoryLabel(post.category)}
+              </span>
             </div>
           </div>
+        </div>
 
-          <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
-          <div className="text-sm whitespace-pre-wrap leading-relaxed">
-            {post.body}
-          </div>
-          {post.image_url && (
-            <img
-              src={post.image_url}
-              alt=""
-              className="mt-4 rounded-lg max-h-[420px] object-cover w-full"
-            />
-          )}
+        <h1 className="font-display text-2xl leading-tight">{post.title}</h1>
+        <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+          {post.body}
+        </div>
+        {post.image_url && (
+          <img
+            src={post.image_url}
+            alt=""
+            className="mt-4 max-h-[420px] w-full rounded-xl border border-white/5 object-cover"
+          />
+        )}
 
-          <div className="flex items-center gap-2 mt-5 pt-4 border-t flex-wrap">
-            {reactions.map((r) => (
-              <Button
-                key={r.type}
-                variant={r.mine ? "default" : "outline"}
-                size="sm"
-                className="gap-1.5"
-                onClick={() => toggleReaction(r.type, r.mine)}
-              >
-                {reactionIcon(r.type)}
-                <span className="capitalize">{r.type}</span>
-                <span className="text-xs opacity-80">{r.count}</span>
-              </Button>
-            ))}
-            <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
-              <MessageSquare className="h-3.5 w-3.5" /> {comments.length}{" "}
-              comments
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-white/5 pt-4">
+          {reactions.map((r) => (
+            <Button
+              key={r.type}
+              variant={r.mine ? "secondary" : "outline"}
+              size="sm"
+              className="gap-1.5"
+              onClick={() => toggleReaction(r.type, r.mine)}
+            >
+              {reactionIcon(r.type)}
+              <span className="capitalize">{r.type}</span>
+              <span className="text-xs opacity-80">{r.count}</span>
+            </Button>
+          ))}
+          <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+            <MessageSquare className="h-3.5 w-3.5" /> {comments.length} comments
+          </span>
+        </div>
+      </motion.div>
 
       {/* Reply input */}
       {user && (
-        <Card id="comments" className="mt-4 scroll-mt-24">
-          <CardContent className="p-4 space-y-2">
-            <Textarea
-              placeholder="Add a thoughtful reply..."
-              value={reply}
-              maxLength={2000}
-              rows={3}
-              onChange={(e) => setReply(e.target.value)}
-            />
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">
-                {reply.length}/2000
-              </span>
-              <Button
-                onClick={submitComment}
-                disabled={submitting || !reply.trim()}
-                className="gap-2"
-              >
-                <Send className="h-4 w-4" />
-                {submitting ? "Posting..." : "Reply"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          id="comments"
+          className="glass scroll-mt-24 space-y-2 rounded-2xl border border-white/5 p-4"
+        >
+          <Textarea
+            placeholder="Add a thoughtful reply..."
+            value={reply}
+            maxLength={2000}
+            rows={3}
+            onChange={(e) => setReply(e.target.value)}
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{reply.length}/2000</span>
+            <Button
+              variant="secondary"
+              onClick={submitComment}
+              disabled={submitting || !reply.trim()}
+              className="gap-2"
+            >
+              <Send className="h-4 w-4" />
+              {submitting ? "Posting..." : "Reply"}
+            </Button>
+          </div>
+        </motion.div>
       )}
 
       {/* Comments */}
-      <div className="mt-4 space-y-3">
-        <h2 className="font-semibold text-lg">
+      <div className="space-y-3">
+        <h2 className="font-display text-lg">
           {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
         </h2>
         {comments.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              No comments yet — be the first to reply.
-            </CardContent>
-          </Card>
+          <div className="glass rounded-2xl border border-white/5 py-8 text-center text-sm text-muted-foreground">
+            No comments yet — be the first to reply.
+          </div>
         ) : (
-          comments.map((c) => {
+          comments.map((c, i) => {
             const ca = commentAuthors[c.author_id];
             return (
-              <CommentItem
+              <motion.div
                 key={c.id}
-                comment={c}
-                profile={ca}
-                isOwn={user?.id === c.author_id}
-                like={commentLikes[c.id] ?? { count: 0, mine: false }}
-                onToggleLike={() => toggleCommentLike(c.id)}
-                onDelete={() => deleteComment(c.id)}
-                onSave={(val) => saveCommentEdit(c.id, val)}
-              />
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i, 6) * 0.04 }}
+              >
+                <CommentItem
+                  comment={c}
+                  profile={ca}
+                  isOwn={user?.id === c.author_id}
+                  like={commentLikes[c.id] ?? { count: 0, mine: false }}
+                  onToggleLike={() => toggleCommentLike(c.id)}
+                  onDelete={() => deleteComment(c.id)}
+                  onSave={(val) => saveCommentEdit(c.id, val)}
+                />
+              </motion.div>
             );
           })
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -489,103 +478,109 @@ function CommentItem({
   const [saving, setSaving] = useState(false);
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <Link to="/farmers/$farmerId" params={{ farmerId: comment.author_id }}>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={profile?.avatar_url ?? undefined} />
-              <AvatarFallback>
-                {(profile?.full_name ?? "U").slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </Link>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-xs">
-              <Link
-                to="/farmers/$farmerId"
-                params={{ farmerId: comment.author_id }}
-                className="font-semibold hover:underline"
-              >
-                {profile?.full_name || "Farmer"}
-              </Link>
-              <span className="text-muted-foreground">
-                {new Date(comment.created_at).toLocaleString()}
-              </span>
-              {isOwn && !editing && (
-                <div className="ml-auto flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => {
-                      setDraft(comment.content);
-                      setEditing(true);
-                    }}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onDelete}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
-            </div>
-            {editing ? (
-              <div className="mt-2 space-y-2">
-                <Textarea
-                  value={draft}
-                  rows={3}
-                  maxLength={2000}
-                  onChange={(e) => setDraft(e.target.value)}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditing(false)}
-                    disabled={saving}
-                  >
-                    <X className="h-3.5 w-3.5" /> Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      setSaving(true);
-                      const ok = await onSave(draft);
-                      setSaving(false);
-                      if (ok) setEditing(false);
-                    }}
-                    disabled={saving || !draft.trim()}
-                  >
-                    <Check className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
-                  </Button>
-                </div>
+    <div className="glass rounded-2xl border border-white/5 p-4">
+      <div className="flex items-start gap-3">
+        <Link to="/farmers/$farmerId" params={{ farmerId: comment.author_id }}>
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt=""
+              className="h-8 w-8 rounded-full object-cover ring-1 ring-white/10"
+            />
+          ) : (
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-secondary/15 font-display text-xs text-secondary ring-1 ring-white/10">
+              {(profile?.full_name ?? "U").slice(0, 2).toUpperCase()}
+            </span>
+          )}
+        </Link>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-xs">
+            <Link
+              to="/farmers/$farmerId"
+              params={{ farmerId: comment.author_id }}
+              className="font-medium text-foreground hover:text-secondary"
+            >
+              {profile?.full_name || "Farmer"}
+            </Link>
+            <span className="text-muted-foreground">
+              {new Date(comment.created_at).toLocaleString()}
+            </span>
+            {isOwn && !editing && (
+              <div className="ml-auto flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-secondary"
+                  onClick={() => {
+                    setDraft(comment.content);
+                    setEditing(true);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-rose-400"
+                  onClick={onDelete}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
-            ) : (
-              <>
-                <p className="text-sm mt-1 whitespace-pre-wrap">{comment.content}</p>
-                <div className="mt-2">
-                  <Button
-                    variant={like.mine ? "default" : "ghost"}
-                    size="sm"
-                    className="h-7 gap-1.5 px-2"
-                    onClick={onToggleLike}
-                  >
-                    <ThumbsUp className="h-3.5 w-3.5" />
-                    <span className="text-xs">{like.count}</span>
-                  </Button>
-                </div>
-              </>
             )}
           </div>
+          {editing ? (
+            <div className="mt-2 space-y-2">
+              <Textarea
+                value={draft}
+                rows={3}
+                maxLength={2000}
+                onChange={(e) => setDraft(e.target.value)}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditing(false)}
+                  disabled={saving}
+                >
+                  <X className="h-3.5 w-3.5" /> Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={async () => {
+                    setSaving(true);
+                    const ok = await onSave(draft);
+                    setSaving(false);
+                    if (ok) setEditing(false);
+                  }}
+                  disabled={saving || !draft.trim()}
+                >
+                  <Check className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground/90">
+                {comment.content}
+              </p>
+              <div className="mt-2">
+                <Button
+                  variant={like.mine ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 gap-1.5 px-2"
+                  onClick={onToggleLike}
+                >
+                  <ThumbsUp className="h-3.5 w-3.5" />
+                  <span className="text-xs">{like.count}</span>
+                </Button>
+              </div>
+            </>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

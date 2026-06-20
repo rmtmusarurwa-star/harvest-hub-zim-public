@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { FieldMapBackground } from "@/components/brand/FieldMapBackground";
+import { AskHarvestAi } from "@/components/brand/AskHarvestAi";
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -10,10 +12,8 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen ambient-glow">
-      <Sidebar
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
+      <FieldMapBackground />
+      <Sidebar mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 
       <div className="lg:pl-72">
         <Topbar onOpenMobile={() => setMobileOpen(true)} />
@@ -32,6 +32,8 @@ export function AppLayout() {
           </AnimatePresence>
         </main>
       </div>
+
+      <AskHarvestAi />
     </div>
   );
 }

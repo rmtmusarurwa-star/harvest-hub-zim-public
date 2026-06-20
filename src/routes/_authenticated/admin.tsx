@@ -22,8 +22,36 @@ import {
   LayoutGrid,
   Download,
   RefreshCw,
+  Star,
+  Award,
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import {
+  BG_SOFT,
+  BRAND_GREEN,
+  DANGER,
+  SUCCESS,
+  TABLE_STYLE,
+  WARN,
+  drawReportFooter,
+  drawReportHeader,
+  roundedCard,
+  sectionLabel,
+  textColor,
+} from "@/lib/pdf-report";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABEL, type AppRole } from "@/lib/auth-context";
@@ -106,26 +134,49 @@ function AdminPage() {
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview"><OverviewTab /></TabsContent>
-        <TabsContent value="users"><UsersTab /></TabsContent>
-        <TabsContent value="listings"><ListingsTab /></TabsContent>
-        <TabsContent value="orders"><OrdersTab /></TabsContent>
-        <TabsContent value="verification"><VerificationTab /></TabsContent>
-        <TabsContent value="reports"><ReportsTab /></TabsContent>
-        <TabsContent value="financial"><FinancialTab /></TabsContent>
-        <TabsContent value="analytics"><AnalyticsTab /></TabsContent>
-        <TabsContent value="categories"><CategoriesTab /></TabsContent>
-        <TabsContent value="announcements"><AnnouncementsTab /></TabsContent>
-        <TabsContent value="activity"><ActivityTab /></TabsContent>
+        <TabsContent value="overview">
+          <OverviewTab />
+        </TabsContent>
+        <TabsContent value="users">
+          <UsersTab />
+        </TabsContent>
+        <TabsContent value="listings">
+          <ListingsTab />
+        </TabsContent>
+        <TabsContent value="orders">
+          <OrdersTab />
+        </TabsContent>
+        <TabsContent value="verification">
+          <VerificationTab />
+        </TabsContent>
+        <TabsContent value="reports">
+          <ReportsTab />
+        </TabsContent>
+        <TabsContent value="financial">
+          <FinancialTab />
+        </TabsContent>
+        <TabsContent value="analytics">
+          <AnalyticsTab />
+        </TabsContent>
+        <TabsContent value="categories">
+          <CategoriesTab />
+        </TabsContent>
+        <TabsContent value="announcements">
+          <AnnouncementsTab />
+        </TabsContent>
+        <TabsContent value="activity">
+          <ActivityTab />
+        </TabsContent>
       </Tabs>
     </section>
   );
 }
 
-
 // ============ Helper: log admin action ============
 async function logAction(action: string, target_type = "", target_id = "", details = "") {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return;
   await supabase.from("admin_activity_log").insert({
     admin_id: user.id,
@@ -162,11 +213,20 @@ function OverviewTab() {
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "farmer"),
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "buyer"),
       supabase.from("listings").select("id", { count: "exact", head: true }).eq("status", "active"),
-      supabase.from("orders").select("id", { count: "exact", head: true }).gte("created_at", startOfMonth.toISOString()),
+      supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", startOfMonth.toISOString()),
       supabase.from("orders").select("total_amount").gte("created_at", startOfMonth.toISOString()),
-      supabase.from("verification_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase
+        .from("verification_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("suspended", true),
-      supabase.from("fraud_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+      supabase
+        .from("fraud_reports")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "open"),
     ]);
     const revenue = (rev.data ?? []).reduce((s, r: any) => s + Number(r.total_amount ?? 0), 0);
     setStats({
@@ -182,7 +242,9 @@ function OverviewTab() {
     });
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const cards = [
     { label: "Total Users", value: stats.users, icon: Users },
@@ -213,7 +275,9 @@ function OverviewTab() {
             className="glass rounded-2xl p-4"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </span>
               <c.icon className="h-4 w-4 text-secondary" />
             </div>
             <div className="mt-2 font-display text-2xl">{loading ? "—" : c.value}</div>
@@ -239,18 +303,36 @@ function OverviewTab() {
       </div>
 
       <div className="glass rounded-2xl p-4">
-        <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">Quick Actions</h3>
+        <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">
+          Quick Actions
+        </h3>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="announcements"]')?.click()}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => document.querySelector<HTMLElement>('[value="announcements"]')?.click()}
+          >
             <Megaphone className="h-3.5 w-3.5 mr-1" /> Create Announcement
           </Button>
-          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="financial"]')?.click()}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => document.querySelector<HTMLElement>('[value="financial"]')?.click()}
+          >
             <Wallet className="h-3.5 w-3.5 mr-1" /> Financial Report
           </Button>
-          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="verification"]')?.click()}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => document.querySelector<HTMLElement>('[value="verification"]')?.click()}
+          >
             <BadgeCheck className="h-3.5 w-3.5 mr-1" /> Approve Sellers
           </Button>
-          <Button size="sm" variant="outline" onClick={() => document.querySelector<HTMLElement>('[value="reports"]')?.click()}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => document.querySelector<HTMLElement>('[value="reports"]')?.click()}
+          >
             <Flag className="h-3.5 w-3.5 mr-1" /> Review Reports
           </Button>
         </div>
@@ -258,7 +340,6 @@ function OverviewTab() {
     </div>
   );
 }
-
 
 // ============ USERS ============
 type ProfileRow = {
@@ -285,13 +366,19 @@ function UsersTab() {
     setUsers((data as ProfileRow[]) ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const filtered = useMemo(
-    () => users.filter((u) =>
-      !search || u.full_name.toLowerCase().includes(search.toLowerCase()) || u.id.includes(search)
-    ),
-    [users, search]
+    () =>
+      users.filter(
+        (u) =>
+          !search ||
+          u.full_name.toLowerCase().includes(search.toLowerCase()) ||
+          u.id.includes(search),
+      ),
+    [users, search],
   );
 
   async function changeRole(u: ProfileRow, role: AppRole) {
@@ -324,7 +411,12 @@ function UsersTab() {
     <div className="space-y-4">
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users..." className="pl-9" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search users..."
+          className="pl-9"
+        />
       </div>
       <div className="glass overflow-hidden rounded-2xl">
         <table className="w-full text-sm">
@@ -338,57 +430,87 @@ function UsersTab() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Loading...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">No users found</td></tr>
-            ) : filtered.map((u) => (
-              <tr key={u.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                <td className="p-3">
-                  <button onClick={() => setSelected(u)} className="text-left hover:text-secondary">
-                    {u.full_name || "Unnamed"}
-                  </button>
-                  <div className="text-xs text-muted-foreground">{u.id.slice(0, 8)}</div>
-                </td>
-                <td className="p-3">
-                  <Select value={u.role} onValueChange={(v) => changeRole(u, v as AppRole)}>
-                    <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(["farmer", "buyer", "supplier", "transporter"] as AppRole[]).map((r) => (
-                        <SelectItem key={r} value={r}>{ROLE_LABEL[r]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </td>
-                <td className="p-3">
-                  {u.suspended ? (
-                    <Badge variant="destructive">Suspended</Badge>
-                  ) : (
-                    <Badge variant="outline">Active</Badge>
-                  )}
-                </td>
-                <td className="p-3 text-right space-x-2">
-                  <Button size="sm" variant="outline" onClick={() => toggleSuspend(u)}>
-                    <Ban className="h-3.5 w-3.5 mr-1" />
-                    {u.suspended ? "Unsuspend" : "Suspend"}
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => deleteUser(u)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+              <tr>
+                <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                  Loading...
                 </td>
               </tr>
-            ))}
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                  No users found
+                </td>
+              </tr>
+            ) : (
+              filtered.map((u) => (
+                <tr key={u.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                  <td className="p-3">
+                    <button
+                      onClick={() => setSelected(u)}
+                      className="text-left hover:text-secondary"
+                    >
+                      {u.full_name || "Unnamed"}
+                    </button>
+                    <div className="text-xs text-muted-foreground">{u.id.slice(0, 8)}</div>
+                  </td>
+                  <td className="p-3">
+                    <Select value={u.role} onValueChange={(v) => changeRole(u, v as AppRole)}>
+                      <SelectTrigger className="h-8 w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(["farmer", "buyer", "supplier", "transporter"] as AppRole[]).map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {ROLE_LABEL[r]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="p-3">
+                    {u.suspended ? (
+                      <Badge variant="destructive">Suspended</Badge>
+                    ) : (
+                      <Badge variant="outline">Active</Badge>
+                    )}
+                  </td>
+                  <td className="p-3 text-right space-x-2">
+                    <Button size="sm" variant="outline" onClick={() => toggleSuspend(u)}>
+                      <Ban className="h-3.5 w-3.5 mr-1" />
+                      {u.suspended ? "Unsuspend" : "Suspend"}
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => deleteUser(u)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{selected?.full_name}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{selected?.full_name}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-2 text-sm">
-            <div><span className="text-muted-foreground">ID:</span> {selected?.id}</div>
-            <div><span className="text-muted-foreground">Role:</span> {selected && ROLE_LABEL[selected.role]}</div>
-            <div><span className="text-muted-foreground">Status:</span> {selected?.suspended ? "Suspended" : "Active"}</div>
-            <div><span className="text-muted-foreground">Joined:</span> {selected && new Date(selected.created_at).toLocaleDateString()}</div>
+            <div>
+              <span className="text-muted-foreground">ID:</span> {selected?.id}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Role:</span>{" "}
+              {selected && ROLE_LABEL[selected.role]}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Status:</span>{" "}
+              {selected?.suspended ? "Suspended" : "Active"}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Joined:</span>{" "}
+              {selected && new Date(selected.created_at).toLocaleDateString()}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -413,10 +535,15 @@ function ListingsTab() {
     setListings(data ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function setStatus(l: any, status: string) {
-    const { error } = await supabase.from("listings").update({ status: status as any }).eq("id", l.id);
+    const { error } = await supabase
+      .from("listings")
+      .update({ status: status as any })
+      .eq("id", l.id);
     if (error) return toast.error(error.message);
     await logAction(`listing_${status}`, "listing", l.id, l.title);
     toast.success(`Listing ${status}`);
@@ -448,33 +575,68 @@ function ListingsTab() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Loading...</td></tr>
-            ) : listings.length === 0 ? (
-              <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">No listings</td></tr>
-            ) : listings.map((l) => (
-              <tr key={l.id} className="border-b border-white/5">
-                <td className="p-3">{l.title}</td>
-                <td className="p-3"><Badge variant="outline">{l.status}</Badge></td>
-                <td className="p-3">${Number(l.price).toFixed(2)}</td>
-                <td className="p-3 text-right space-x-1">
-                  <Button size="sm" variant="outline" onClick={() => setStatus(l, "active")}>Approve</Button>
-                  <Button size="sm" variant="outline" onClick={() => setStatus(l, "flagged")}>Flag</Button>
-                  <Button size="sm" variant="destructive" onClick={() => { setReasonFor(l); setReason(""); }}>Remove</Button>
+              <tr>
+                <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                  Loading...
                 </td>
               </tr>
-            ))}
+            ) : listings.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                  No listings
+                </td>
+              </tr>
+            ) : (
+              listings.map((l) => (
+                <tr key={l.id} className="border-b border-white/5">
+                  <td className="p-3">{l.title}</td>
+                  <td className="p-3">
+                    <Badge variant="outline">{l.status}</Badge>
+                  </td>
+                  <td className="p-3">${Number(l.price).toFixed(2)}</td>
+                  <td className="p-3 text-right space-x-1">
+                    <Button size="sm" variant="outline" onClick={() => setStatus(l, "active")}>
+                      Approve
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setStatus(l, "flagged")}>
+                      Flag
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        setReasonFor(l);
+                        setReason("");
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       <Dialog open={!!reasonFor} onOpenChange={(o) => !o && setReasonFor(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Remove listing</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Remove listing</DialogTitle>
+          </DialogHeader>
           <p className="text-sm text-muted-foreground">"{reasonFor?.title}"</p>
-          <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for removal..." />
+          <Textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Reason for removal..."
+          />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReasonFor(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={removeListing} disabled={!reason}>Confirm Remove</Button>
+            <Button variant="outline" onClick={() => setReasonFor(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={removeListing} disabled={!reason}>
+              Confirm Remove
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -497,10 +659,15 @@ function OrdersTab() {
     setOrders(data ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function updateStatus(o: any, payment_status: string) {
-    const { error } = await supabase.from("orders").update({ payment_status: payment_status as any }).eq("id", o.id);
+    const { error } = await supabase
+      .from("orders")
+      .update({ payment_status: payment_status as any })
+      .eq("id", o.id);
     if (error) return toast.error(error.message);
     await logAction("update_order", "order", o.id, `${o.order_code} → ${payment_status}`);
     toast.success("Order updated");
@@ -521,27 +688,43 @@ function OrdersTab() {
         </thead>
         <tbody>
           {loading ? (
-            <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Loading...</td></tr>
-          ) : orders.length === 0 ? (
-            <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">No orders</td></tr>
-          ) : orders.map((o) => (
-            <tr key={o.id} className="border-b border-white/5">
-              <td className="p-3 font-mono text-xs">{o.order_code}</td>
-              <td className="p-3">{o.listing_title}</td>
-              <td className="p-3">${Number(o.total_amount).toFixed(2)}</td>
-              <td className="p-3"><Badge variant="outline">{o.payment_status}</Badge></td>
-              <td className="p-3 text-right">
-                <Select value={o.payment_status} onValueChange={(v) => updateStatus(o, v)}>
-                  <SelectTrigger className="h-8 w-36 ml-auto"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["pending", "paid", "failed", "refunded"].map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <tr>
+              <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                Loading...
               </td>
             </tr>
-          ))}
+          ) : orders.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                No orders
+              </td>
+            </tr>
+          ) : (
+            orders.map((o) => (
+              <tr key={o.id} className="border-b border-white/5">
+                <td className="p-3 font-mono text-xs">{o.order_code}</td>
+                <td className="p-3">{o.listing_title}</td>
+                <td className="p-3">${Number(o.total_amount).toFixed(2)}</td>
+                <td className="p-3">
+                  <Badge variant="outline">{o.payment_status}</Badge>
+                </td>
+                <td className="p-3 text-right">
+                  <Select value={o.payment_status} onValueChange={(v) => updateStatus(o, v)}>
+                    <SelectTrigger className="h-8 w-36 ml-auto">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["pending", "paid", "failed", "refunded"].map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
@@ -552,7 +735,9 @@ function OrdersTab() {
 function VerificationTab() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notesFor, setNotesFor] = useState<{ item: any; action: "approved" | "rejected" } | null>(null);
+  const [notesFor, setNotesFor] = useState<{ item: any; action: "approved" | "rejected" } | null>(
+    null,
+  );
   const [notes, setNotes] = useState("");
 
   async function load() {
@@ -564,11 +749,15 @@ function VerificationTab() {
     setItems(data ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function submitDecision() {
     if (!notesFor) return;
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("verification_requests")
       .update({
@@ -594,42 +783,77 @@ function VerificationTab() {
           <BadgeCheck className="mx-auto mb-2 h-8 w-8" />
           No verification requests yet
         </div>
-      ) : items.map((v) => (
-        <div key={v.id} className="glass rounded-2xl p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{v.entity_type}</span>
-                <Badge variant={v.status === "pending" ? "outline" : v.status === "approved" ? "default" : "destructive"}>
-                  {v.status}
-                </Badge>
+      ) : (
+        items.map((v) => (
+          <div key={v.id} className="glass rounded-2xl p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{v.entity_type}</span>
+                  <Badge
+                    variant={
+                      v.status === "pending"
+                        ? "outline"
+                        : v.status === "approved"
+                          ? "default"
+                          : "destructive"
+                    }
+                  >
+                    {v.status}
+                  </Badge>
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  User: {v.user_id.slice(0, 8)}
+                </div>
+                {v.notes && <p className="mt-2 text-sm">{v.notes}</p>}
+                {v.review_notes && (
+                  <p className="mt-2 text-xs text-muted-foreground">Review: {v.review_notes}</p>
+                )}
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">User: {v.user_id.slice(0, 8)}</div>
-              {v.notes && <p className="mt-2 text-sm">{v.notes}</p>}
-              {v.review_notes && (
-                <p className="mt-2 text-xs text-muted-foreground">Review: {v.review_notes}</p>
+              {v.status === "pending" && (
+                <div className="flex shrink-0 gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setNotesFor({ item: v, action: "approved" });
+                      setNotes("");
+                    }}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      setNotesFor({ item: v, action: "rejected" });
+                      setNotes("");
+                    }}
+                  >
+                    <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
+                  </Button>
+                </div>
               )}
             </div>
-            {v.status === "pending" && (
-              <div className="flex shrink-0 gap-2">
-                <Button size="sm" onClick={() => { setNotesFor({ item: v, action: "approved" }); setNotes(""); }}>
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => { setNotesFor({ item: v, action: "rejected" }); setNotes(""); }}>
-                  <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
-                </Button>
-              </div>
-            )}
           </div>
-        </div>
-      ))}
+        ))
+      )}
 
       <Dialog open={!!notesFor} onOpenChange={(o) => !o && setNotesFor(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{notesFor?.action === "approved" ? "Approve" : "Reject"} verification</DialogTitle></DialogHeader>
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes..." />
+          <DialogHeader>
+            <DialogTitle>
+              {notesFor?.action === "approved" ? "Approve" : "Reject"} verification
+            </DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notes..."
+          />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNotesFor(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setNotesFor(null)}>
+              Cancel
+            </Button>
             <Button onClick={submitDecision}>Confirm</Button>
           </DialogFooter>
         </DialogContent>
@@ -652,10 +876,14 @@ function ReportsTab() {
     setReports(data ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function setStatus(r: any, status: string) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("fraud_reports")
       .update({ status: status as any, resolved_by: user?.id ?? null })
@@ -675,30 +903,39 @@ function ReportsTab() {
           <Flag className="mx-auto mb-2 h-8 w-8" />
           No fraud reports
         </div>
-      ) : reports.map((r) => (
-        <div key={r.id} className="glass rounded-2xl p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium capitalize">{r.category}</span>
-                <Badge variant={r.status === "open" ? "destructive" : "outline"}>{r.status}</Badge>
+      ) : (
+        reports.map((r) => (
+          <div key={r.id} className="glass rounded-2xl p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium capitalize">{r.category}</span>
+                  <Badge variant={r.status === "open" ? "destructive" : "outline"}>
+                    {r.status}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-sm">{r.description}</p>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Reporter: {r.reporter_id.slice(0, 8)} ·{" "}
+                  {new Date(r.created_at).toLocaleDateString()}
+                </div>
               </div>
-              <p className="mt-2 text-sm">{r.description}</p>
-              <div className="mt-1 text-xs text-muted-foreground">
-                Reporter: {r.reporter_id.slice(0, 8)} · {new Date(r.created_at).toLocaleDateString()}
-              </div>
+              <Select value={r.status} onValueChange={(v) => setStatus(r, v)}>
+                <SelectTrigger className="h-8 w-32 shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["open", "reviewing", "resolved", "dismissed"].map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={r.status} onValueChange={(v) => setStatus(r, v)}>
-              <SelectTrigger className="h-8 w-32 shrink-0"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["open", "reviewing", "resolved", "dismissed"].map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }
@@ -718,17 +955,24 @@ function AnnouncementsTab() {
       .order("created_at", { ascending: false });
     setItems(data ?? []);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function create() {
     if (!title || !user) return;
     const { error } = await supabase.from("platform_announcements").insert({
-      title, body, level, created_by: user.id,
+      title,
+      body,
+      level,
+      created_by: user.id,
     });
     if (error) return toast.error(error.message);
     await logAction("create_announcement", "announcement", "", title);
     toast.success("Announcement posted");
-    setTitle(""); setBody(""); setLevel("info");
+    setTitle("");
+    setBody("");
+    setLevel("info");
     load();
   }
 
@@ -756,17 +1000,25 @@ function AnnouncementsTab() {
           <h3 className="font-display text-lg">New announcement</h3>
         </div>
         <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" />
-        <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Message body..." />
+        <Textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Message body..."
+        />
         <div className="flex gap-2">
           <Select value={level} onValueChange={setLevel}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="info">Info</SelectItem>
               <SelectItem value="warning">Warning</SelectItem>
               <SelectItem value="critical">Critical</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={create} disabled={!title}>Publish</Button>
+          <Button onClick={create} disabled={!title}>
+            Publish
+          </Button>
         </div>
       </div>
 
@@ -782,8 +1034,12 @@ function AnnouncementsTab() {
               <p className="mt-1 text-sm text-muted-foreground">{a.body}</p>
             </div>
             <div className="flex shrink-0 gap-2">
-              <Button size="sm" variant="outline" onClick={() => toggle(a)}>{a.active ? "Disable" : "Enable"}</Button>
-              <Button size="sm" variant="destructive" onClick={() => remove(a)}><Trash2 className="h-3.5 w-3.5" /></Button>
+              <Button size="sm" variant="outline" onClick={() => toggle(a)}>
+                {a.active ? "Disable" : "Enable"}
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => remove(a)}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         ))}
@@ -813,7 +1069,9 @@ function ActivityTab() {
     <div className="glass overflow-hidden rounded-2xl">
       <div className="flex items-center gap-2 border-b border-white/5 p-3">
         <History className="h-4 w-4 text-secondary" />
-        <span className="text-sm uppercase tracking-wider text-muted-foreground">Recent admin actions</span>
+        <span className="text-sm uppercase tracking-wider text-muted-foreground">
+          Recent admin actions
+        </span>
       </div>
       {loading ? (
         <div className="p-6 text-center text-muted-foreground">Loading...</div>
@@ -826,7 +1084,8 @@ function ActivityTab() {
               <div className="min-w-0">
                 <div className="font-mono text-xs text-secondary">{l.action}</div>
                 <div className="text-xs text-muted-foreground">
-                  {l.target_type} {l.target_id && `· ${l.target_id.slice(0, 8)}`} {l.details && `· ${l.details}`}
+                  {l.target_type} {l.target_id && `· ${l.target_id.slice(0, 8)}`}{" "}
+                  {l.details && `· ${l.details}`}
                 </div>
               </div>
               <div className="shrink-0 text-xs text-muted-foreground">
@@ -849,7 +1108,9 @@ function FinancialTab() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, order_code, total_amount, payment_method, payment_status, listing_title, created_at")
+        .select(
+          "id, order_code, total_amount, payment_method, payment_status, listing_title, created_at",
+        )
         .order("created_at", { ascending: false })
         .limit(500);
       setOrders(data ?? []);
@@ -891,29 +1152,60 @@ function FinancialTab() {
   const maxTrend = Math.max(1, ...trend.map((t) => t.total));
 
   function exportPDF() {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Harvest Hub — Financial Report", 14, 18);
-    doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 26);
-    doc.setFontSize(12);
-    doc.text(`Month Revenue: $${monthRevenue.toFixed(2)}`, 14, 40);
-    doc.text(`Commission (2%): $${commission.toFixed(2)}`, 14, 48);
-    doc.text(`Pending Payouts: $${pendingPayouts.toFixed(2)}`, 14, 56);
-    doc.text(`Outstanding: $${outstanding.toFixed(2)}`, 14, 64);
-    doc.text("By Payment Method:", 14, 78);
-    let y = 86;
-    Object.entries(byMethod).forEach(([k, v]) => {
-      doc.text(`  ${k}: $${v.toFixed(2)}`, 14, y);
-      y += 7;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const W = doc.internal.pageSize.getWidth();
+    const M = 36;
+    let y = drawReportHeader(doc, {
+      title: "Admin Financial Report",
+      subtitle: "Platform-wide revenue & commission",
     });
-    doc.text("12-Month Trend:", 14, y + 6);
-    y += 14;
-    trend.forEach((t) => {
-      doc.text(`  ${t.month}: $${t.total.toFixed(2)}`, 14, y);
-      y += 6;
+
+    const stats: [string, string, [number, number, number]][] = [
+      ["Month Revenue", `$${monthRevenue.toFixed(2)}`, BRAND_GREEN],
+      ["Commission (2%)", `$${commission.toFixed(2)}`, SUCCESS],
+      ["Pending Payouts", `$${pendingPayouts.toFixed(2)}`, WARN],
+      ["Outstanding", `$${outstanding.toFixed(2)}`, DANGER],
+    ];
+    const cardGap = 12;
+    const cardW = (W - 2 * M - 3 * cardGap) / 4;
+    const cardH = 56;
+    stats.forEach(([label, value, color], i) => {
+      const x = M + i * (cardW + cardGap);
+      roundedCard(doc, x, y, cardW, cardH, BG_SOFT);
+      textColor(doc, [110, 120, 115]);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.text(label.toUpperCase(), x + 12, y + 18);
+      textColor(doc, color);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(value, x + 12, y + 40);
     });
-    doc.save(`financial-report-${now.toISOString().slice(0, 10)}.pdf`);
+    y += cardH + 24;
+
+    sectionLabel(doc, "Revenue by Payment Method", M, y);
+    y += 10;
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [["Method", "Revenue (this month)"]],
+      body: Object.entries(byMethod).map(([k, v]) => [k.replace(/_/g, " "), `$${v.toFixed(2)}`]),
+      ...TABLE_STYLE,
+    });
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 26;
+
+    sectionLabel(doc, "12-Month Trend", M, y);
+    y += 10;
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      head: [["Month", "Total Volume"]],
+      body: trend.map((t) => [t.month, `$${t.total.toFixed(2)}`]),
+      ...TABLE_STYLE,
+    });
+
+    drawReportFooter(doc, "Platform operations · Internal use only");
+    doc.save(`harvest-hub-admin-report-${now.toISOString().slice(0, 10)}.pdf`);
     toast.success("Report exported");
   }
 
@@ -930,7 +1222,9 @@ function FinancialTab() {
         ].map((c) => (
           <div key={c.label} className="glass rounded-2xl p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </span>
               <c.icon className="h-4 w-4 text-secondary" />
             </div>
             <div className="mt-2 font-display text-xl">{c.value}</div>
@@ -940,7 +1234,9 @@ function FinancialTab() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="glass rounded-2xl p-4">
-          <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">By Payment Method</h3>
+          <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">
+            By Payment Method
+          </h3>
           {Object.keys(byMethod).length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">No data this month</div>
           ) : (
@@ -964,7 +1260,9 @@ function FinancialTab() {
         </div>
 
         <div className="glass rounded-2xl p-4">
-          <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">12-Month Trend</h3>
+          <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">
+            12-Month Trend
+          </h3>
           <div className="flex h-32 items-end gap-1">
             {trend.map((t, i) => (
               <div key={i} className="flex flex-1 flex-col items-center gap-1">
@@ -1002,13 +1300,17 @@ function FinancialTab() {
           <tbody>
             {orders.slice(0, 50).map((o) => (
               <tr key={o.id} className="border-b border-white/5">
-                <td className="p-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</td>
+                <td className="p-3 text-xs text-muted-foreground">
+                  {new Date(o.created_at).toLocaleDateString()}
+                </td>
                 <td className="p-3 font-mono text-xs">{o.order_code}</td>
                 <td className="p-3">${Number(o.total_amount).toFixed(2)}</td>
                 <td className="p-3 text-xs capitalize">{o.payment_method}</td>
                 <td className="p-3 text-xs">${(Number(o.total_amount) * 0.02).toFixed(2)}</td>
                 <td className="p-3 text-xs">${(Number(o.total_amount) * 0.98).toFixed(2)}</td>
-                <td className="p-3"><Badge variant="outline">{o.payment_status}</Badge></td>
+                <td className="p-3">
+                  <Badge variant="outline">{o.payment_status}</Badge>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1019,8 +1321,20 @@ function FinancialTab() {
 }
 
 // ============ ANALYTICS ============
+type SellerRow = {
+  id: string;
+  name: string;
+  listings: number;
+  sales: number;
+  revenue: number;
+  rating: number;
+};
+
 function AnalyticsTab() {
-  const [data, setData] = useState<{ sellers: any[]; growth: { month: string; count: number }[] }>({
+  const [data, setData] = useState<{
+    sellers: SellerRow[];
+    growth: { month: string; count: number }[];
+  }>({
     sellers: [],
     growth: [],
   });
@@ -1029,7 +1343,10 @@ function AnalyticsTab() {
   useEffect(() => {
     (async () => {
       const [profilesRes, listingsRes, ordersRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, role, created_at").in("role", ["farmer", "supplier"]),
+        supabase
+          .from("profiles")
+          .select("id, full_name, role, created_at")
+          .in("role", ["farmer", "supplier"]),
         supabase.from("listings").select("id, farmer_id, rating"),
         supabase.from("orders").select("farmer_id, total_amount, created_at"),
       ]);
@@ -1038,22 +1355,25 @@ function AnalyticsTab() {
       const listings = listingsRes.data ?? [];
       const orders = ordersRes.data ?? [];
 
-      const sellers = profiles.map((p) => {
-        const myListings = listings.filter((l: any) => l.farmer_id === p.id);
-        const myOrders = orders.filter((o: any) => o.farmer_id === p.id);
-        const revenue = myOrders.reduce((s, o: any) => s + Number(o.total_amount ?? 0), 0);
-        const avgRating = myListings.length
-          ? myListings.reduce((s, l: any) => s + Number(l.rating ?? 0), 0) / myListings.length
-          : 0;
-        return {
-          id: p.id,
-          name: p.full_name || "Unnamed",
-          listings: myListings.length,
-          sales: myOrders.length,
-          revenue,
-          rating: avgRating,
-        };
-      }).sort((a, b) => b.revenue - a.revenue).slice(0, 20);
+      const sellers = profiles
+        .map((p) => {
+          const myListings = listings.filter((l: any) => l.farmer_id === p.id);
+          const myOrders = orders.filter((o: any) => o.farmer_id === p.id);
+          const revenue = myOrders.reduce((s, o: any) => s + Number(o.total_amount ?? 0), 0);
+          const avgRating = myListings.length
+            ? myListings.reduce((s, l: any) => s + Number(l.rating ?? 0), 0) / myListings.length
+            : 0;
+          return {
+            id: p.id,
+            name: p.full_name || "Unnamed",
+            listings: myListings.length,
+            sales: myOrders.length,
+            revenue,
+            rating: avgRating,
+          };
+        })
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 20);
 
       const now = new Date();
       const growth = Array.from({ length: 12 }, (_, i) => {
@@ -1071,31 +1391,144 @@ function AnalyticsTab() {
     })();
   }, []);
 
-  if (loading) return <div className="py-6 text-center text-muted-foreground">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="grid h-48 place-items-center">
+        <Loader2 className="h-5 w-5 animate-spin text-secondary" />
+      </div>
+    );
+  }
 
-  const maxGrowth = Math.max(1, ...data.growth.map((g) => g.count));
+  const totalNewSellers = data.growth.reduce((s, g) => s + g.count, 0);
+  const thisMonth = data.growth[data.growth.length - 1]?.count ?? 0;
+  const lastMonth = data.growth[data.growth.length - 2]?.count ?? 0;
+  const momChange = lastMonth
+    ? ((thisMonth - lastMonth) / lastMonth) * 100
+    : thisMonth > 0
+      ? 100
+      : 0;
+  const totalRevenue = data.sellers.reduce((s, x) => s + x.revenue, 0);
+  const avgRating = data.sellers.length
+    ? data.sellers.reduce((s, x) => s + x.rating, 0) / data.sellers.length
+    : 0;
+  const topSeller = data.sellers[0];
+  const maxRevenue = Math.max(1, ...data.sellers.map((s) => s.revenue));
+
+  const summaryCards: {
+    label: string;
+    value: string | number;
+    icon: typeof Users;
+    delta?: number;
+  }[] = [
+    { label: "New Sellers (12mo)", value: totalNewSellers, icon: Users },
+    { label: "This Month", value: thisMonth, icon: TrendingUp, delta: momChange },
+    { label: "Network Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: DollarSign },
+    { label: "Avg Seller Rating", value: avgRating.toFixed(1), icon: Star },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="glass rounded-2xl p-4">
-        <h3 className="mb-3 text-sm uppercase tracking-wider text-muted-foreground">New Sellers — 12 Month Trend</h3>
-        <div className="flex h-32 items-end gap-1">
-          {data.growth.map((g, i) => (
-            <div key={i} className="flex flex-1 flex-col items-center gap-1">
-              <div
-                className="w-full rounded-t bg-secondary/70"
-                style={{ height: `${(g.count / maxGrowth) * 100}%`, minHeight: "2px" }}
-                title={`${g.count} sellers`}
-              />
-              <span className="text-[10px] text-muted-foreground">{g.month}</span>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {summaryCards.map((c, i) => (
+          <motion.div
+            key={c.label}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="glass rounded-2xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </span>
+              <c.icon className="h-4 w-4 text-secondary" />
             </div>
-          ))}
-        </div>
+            <div className="mt-2 font-display text-2xl">{c.value}</div>
+            {c.delta !== undefined && (
+              <div
+                className={`mt-1 flex items-center gap-1 text-xs ${
+                  c.delta >= 0 ? "text-emerald-400" : "text-rose-400"
+                }`}
+              >
+                {c.delta >= 0 ? (
+                  <ArrowUpRight className="h-3 w-3" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3" />
+                )}
+                {Math.abs(c.delta).toFixed(0)}% vs last month
+              </div>
+            )}
+          </motion.div>
+        ))}
       </div>
 
-      <div className="glass overflow-hidden rounded-2xl">
-        <div className="border-b border-white/5 p-3">
-          <h3 className="text-sm uppercase tracking-wider text-muted-foreground">Top Sellers</h3>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="glass rounded-2xl p-5"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="flex items-center gap-2 font-display text-lg">
+            <BarChart3 className="h-4 w-4 text-secondary" /> New Sellers — 12 Month Trend
+          </h3>
+          <span className="text-xs text-muted-foreground">Platform-wide onboarding</span>
+        </div>
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data.growth}>
+              <defs>
+                <linearGradient id="sellerGrowth" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#C9A84C" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="#C9A84C" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                stroke="rgba(255,255,255,0.06)"
+                strokeDasharray="3 3"
+                vertical={false}
+              />
+              <XAxis dataKey="month" fontSize={11} stroke="rgba(240,237,230,0.4)" />
+              <YAxis fontSize={11} allowDecimals={false} stroke="rgba(240,237,230,0.4)" />
+              <Tooltip
+                contentStyle={{
+                  background: "#0F1F18",
+                  border: "1px solid rgba(243,240,232,0.1)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                labelStyle={{ color: "#C9A84C" }}
+              />
+              <Area
+                type="monotone"
+                dataKey="count"
+                name="New sellers"
+                stroke="#C9A84C"
+                strokeWidth={2}
+                fill="url(#sellerGrowth)"
+                dot={{ r: 3, fill: "#C9A84C" }}
+                activeDot={{ r: 5 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="glass overflow-hidden rounded-2xl"
+      >
+        <div className="flex items-center justify-between border-b border-white/5 p-4">
+          <h3 className="flex items-center gap-2 font-display text-lg">
+            <Award className="h-4 w-4 text-secondary" /> Top Sellers
+          </h3>
+          {topSeller && (
+            <span className="text-xs text-muted-foreground">
+              Leading: <span className="text-secondary">{topSeller.name}</span>
+            </span>
+          )}
         </div>
         <table className="w-full text-sm">
           <thead className="border-b border-white/5 bg-white/[0.02] text-xs uppercase tracking-wider text-muted-foreground">
@@ -1105,25 +1538,72 @@ function AnalyticsTab() {
               <th className="p-3 text-right">Listings</th>
               <th className="p-3 text-right">Sales</th>
               <th className="p-3 text-right">Revenue</th>
-              <th className="p-3 text-right">Avg Rating</th>
+              <th className="p-3 text-right">Rating</th>
             </tr>
           </thead>
           <tbody>
             {data.sellers.length === 0 ? (
-              <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No seller data yet</td></tr>
-            ) : data.sellers.map((s, i) => (
-              <tr key={s.id} className="border-b border-white/5">
-                <td className="p-3 font-mono text-xs text-secondary">{i + 1}</td>
-                <td className="p-3">{s.name}</td>
-                <td className="p-3 text-right">{s.listings}</td>
-                <td className="p-3 text-right">{s.sales}</td>
-                <td className="p-3 text-right">${s.revenue.toFixed(2)}</td>
-                <td className="p-3 text-right">{s.rating.toFixed(1)}</td>
+              <tr>
+                <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                  No seller data yet
+                </td>
               </tr>
-            ))}
+            ) : (
+              data.sellers.map((s, i) => (
+                <tr
+                  key={s.id}
+                  className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]"
+                >
+                  <td className="p-3">
+                    {i < 3 ? (
+                      <span
+                        className={`grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold ${
+                          i === 0
+                            ? "bg-secondary/25 text-secondary"
+                            : i === 1
+                              ? "bg-white/10 text-foreground"
+                              : "bg-accent/15 text-accent"
+                        }`}
+                      >
+                        {i + 1}
+                      </span>
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground">{i + 1}</span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary/15 font-display text-xs text-secondary">
+                        {s.name.charAt(0).toUpperCase()}
+                      </span>
+                      {s.name}
+                    </div>
+                  </td>
+                  <td className="p-3 text-right">{s.listings}</td>
+                  <td className="p-3 text-right">{s.sales}</td>
+                  <td className="p-3 text-right">
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="font-display text-secondary">${s.revenue.toFixed(2)}</span>
+                      <div className="h-1 w-20 overflow-hidden rounded-full bg-white/5">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-secondary to-accent"
+                          style={{ width: `${Math.max(4, (s.revenue / maxRevenue) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-3 text-right">
+                    <span className="inline-flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-secondary text-secondary" />
+                      {s.rating.toFixed(1)}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -1157,7 +1637,7 @@ function CategoriesTab() {
       setRows(
         Array.from(byCat.entries())
           .map(([category, v]) => ({ category, ...v }))
-          .sort((a, b) => b.count - a.count)
+          .sort((a, b) => b.count - a.count),
       );
       setLoading(false);
     })();
@@ -1189,19 +1669,24 @@ function CategoriesTab() {
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">No categories yet</td></tr>
-            ) : rows.map((r) => (
-              <tr key={r.category} className="border-b border-white/5">
-                <td className="p-3 capitalize">{r.category.replace(/_/g, " ")}</td>
-                <td className="p-3 text-right">{r.count}</td>
-                <td className="p-3 text-right">${r.revenue.toFixed(2)}</td>
-                <td className="p-3 text-right">${(r.revenue * 0.02).toFixed(2)}</td>
+              <tr>
+                <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                  No categories yet
+                </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((r) => (
+                <tr key={r.category} className="border-b border-white/5">
+                  <td className="p-3 capitalize">{r.category.replace(/_/g, " ")}</td>
+                  <td className="p-3 text-right">{r.count}</td>
+                  <td className="p-3 text-right">${r.revenue.toFixed(2)}</td>
+                  <td className="p-3 text-right">${(r.revenue * 0.02).toFixed(2)}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
-import logoUrl from "@/assets/harvest-hub-logo-transparent.png";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 type Props = {
   eyebrow: string;
@@ -27,7 +27,7 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
           className="hidden lg:flex flex-col justify-between"
         >
           <div className="flex flex-col gap-2">
-            <img src={logoUrl} alt="Harvest Hub" className="h-14 w-auto" />
+            <Wordmark size={48} />
             <div className="text-[11px] uppercase tracking-[0.28em] text-secondary/80">
               Connect · Trade · Grow
             </div>
@@ -41,9 +41,8 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
               From the soil of Zimbabwe to a connected market.
             </h2>
             <p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Built for farmers, buyers, suppliers and transporters. Trade
-              produce, source equipment, identify disease, and access financial
-              tools — all in one premium platform.
+              Built for farmers, buyers, suppliers and transporters. Trade produce, source
+              equipment, identify disease, and access financial tools — all in one premium platform.
             </p>
           </div>
 
@@ -64,7 +63,7 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
         >
           <div className="glass-strong w-full rounded-3xl p-7 lg:p-9">
             <div className="mb-6 flex flex-col items-center gap-2 lg:hidden">
-              <img src={logoUrl} alt="Harvest Hub" className="h-12 w-auto" />
+              <Wordmark size={40} />
               <div className="text-[10px] uppercase tracking-[0.28em] text-secondary/80">
                 Connect · Trade · Grow
               </div>
@@ -74,9 +73,7 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
                 <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
                 {eyebrow}
               </div>
-              <h1 className="mt-3 font-display text-3xl leading-tight md:text-4xl">
-                {title}
-              </h1>
+              <h1 className="mt-3 font-display text-3xl leading-tight md:text-4xl">{title}</h1>
               <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
             </div>
 
@@ -91,9 +88,7 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
               {children}
             </motion.div>
 
-            {footer && (
-              <div className="mt-6 text-sm text-muted-foreground">{footer}</div>
-            )}
+            {footer && <div className="mt-6 text-sm text-muted-foreground">{footer}</div>}
           </div>
         </motion.div>
       </div>

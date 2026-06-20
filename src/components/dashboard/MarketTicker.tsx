@@ -1,19 +1,15 @@
 import { motion } from "framer-motion";
 import { TrendingDown, TrendingUp } from "lucide-react";
-
-const COMMODITIES = [
-  { name: "Maize (white)", unit: "/ton", price: 385, change: 2.4 },
-  { name: "Soya Beans", unit: "/ton", price: 720, change: -1.1 },
-  { name: "Beef (carcass)", unit: "/kg", price: 4.85, change: 0.8 },
-  { name: "Pork (live)", unit: "/kg", price: 3.2, change: 1.6 },
-  { name: "Tomatoes", unit: "/crate", price: 12.5, change: -3.2 },
-  { name: "Onions", unit: "/bag 50kg", price: 28, change: 4.1 },
-  { name: "Broilers (live)", unit: "/bird", price: 6.4, change: 2.0 },
-  { name: "Groundnuts", unit: "/kg", price: 1.85, change: 0.5 },
-];
+import { COMMODITIES, commodityChangePct } from "@/lib/market-data";
 
 export function MarketTicker() {
-  const items = [...COMMODITIES, ...COMMODITIES];
+  const enriched = COMMODITIES.map((c) => ({
+    name: c.name,
+    unit: c.unit.replace("USD / ", "/"),
+    price: c.price,
+    change: commodityChangePct(c),
+  }));
+  const items = [...enriched, ...enriched];
   return (
     <div className="glass relative overflow-hidden rounded-2xl">
       <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-[#0F1F18] to-transparent" />
@@ -40,9 +36,7 @@ export function MarketTicker() {
           return (
             <div key={i} className="flex items-center gap-3 px-2">
               <span className="text-sm text-foreground/90">{c.name}</span>
-              <span className="font-mono text-sm text-secondary">
-                ${c.price.toFixed(2)}
-              </span>
+              <span className="font-mono text-sm text-secondary">${c.price.toFixed(2)}</span>
               <span className="text-[10px] text-muted-foreground">{c.unit}</span>
               <span
                 className={`flex items-center gap-1 text-xs ${

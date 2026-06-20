@@ -9,6 +9,7 @@ import {
 } from "@/lib/marketplace-data";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-context";
+import { CategoryIcon } from "@/components/brand/CategoryIcon";
 
 const CATEGORY_GRADIENT: Record<ListingRow["category"], string> = {
   produce: "from-emerald-700/40 via-emerald-900/40 to-secondary/20",
@@ -17,15 +18,6 @@ const CATEGORY_GRADIENT: Record<ListingRow["category"], string> = {
   dairy: "from-sky-700/30 via-slate-900/40 to-secondary/20",
   grain: "from-yellow-700/40 via-stone-900/40 to-secondary/20",
   other: "from-emerald-800/30 via-stone-900/40 to-secondary/20",
-};
-
-const CATEGORY_EMOJI: Record<ListingRow["category"], string> = {
-  produce: "🍅",
-  livestock: "🐄",
-  poultry: "🐓",
-  dairy: "🥛",
-  grain: "🌾",
-  other: "📦",
 };
 
 export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay?: number }) {
@@ -41,11 +33,7 @@ export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay
       transition={{ delay, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="glass group relative flex flex-col overflow-hidden rounded-2xl transition hover:border-secondary/30"
     >
-      <Link
-        to="/marketplace/$listingId"
-        params={{ listingId: listing.id }}
-        className="block"
-      >
+      <Link to="/marketplace/$listingId" params={{ listingId: listing.id }} className="block">
         <div
           className={`relative aspect-[4/3] overflow-hidden bg-gradient-to-br ${CATEGORY_GRADIENT[listing.category]}`}
         >
@@ -56,8 +44,8 @@ export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="grid h-full place-items-center text-6xl opacity-70">
-              {CATEGORY_EMOJI[listing.category]}
+            <div className="grid h-full place-items-center text-secondary/70">
+              <CategoryIcon category={listing.category} className="h-16 w-16" />
             </div>
           )}
           <div className="absolute left-3 top-3 flex items-center gap-2">
@@ -105,9 +93,7 @@ export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay
         </div>
 
         <div className="mt-3 flex items-baseline gap-1">
-          <span className="font-display text-xl text-secondary">
-            ${price.toFixed(2)}
-          </span>
+          <span className="font-display text-xl text-secondary">${price.toFixed(2)}</span>
           <span className="text-xs text-muted-foreground">/ {listing.unit}</span>
           <span className="ml-auto text-[10px] text-muted-foreground">{fresh.text}</span>
         </div>

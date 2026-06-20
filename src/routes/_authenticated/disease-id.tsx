@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { diagnosePhoto } from "@/lib/agent-client";
 
 export const Route = createFileRoute("/_authenticated/disease-id")({
   component: DiseaseIdPage,
@@ -177,9 +178,9 @@ const DISEASES: Disease[] = [
       "Pink spore masses in lesions",
       "Premature fruit drop",
     ],
-    treatment:
-      "Spray Mancozeb or Copper Oxychloride every 7-10 days during wet weather.",
-    prevention: "Plant on raised beds, mulch to prevent splash, prune for airflow, and rotate crops.",
+    treatment: "Spray Mancozeb or Copper Oxychloride every 7-10 days during wet weather.",
+    prevention:
+      "Plant on raised beds, mulch to prevent splash, prune for airflow, and rotate crops.",
     regions: ["Manicaland", "Mashonaland East"],
     severity: "moderate",
     supplies: ["Mancozeb", "Copper Oxychloride"],
@@ -387,7 +388,8 @@ const DISEASES: Disease[] = [
       "Pain on milking",
     ],
     treatment: "Intramammary antibiotic tubes (e.g. Albadry) after milking, for 3-5 days.",
-    prevention: "Pre and post-dip teats, clean milking parlour, dry-cow therapy, cull chronic cases.",
+    prevention:
+      "Pre and post-dip teats, clean milking parlour, dry-cow therapy, cull chronic cases.",
     regions: ["All provinces - dairy zones"],
     severity: "moderate",
     supplies: ["Intramammary antibiotic tubes", "Teat dip iodine", "California Mastitis Test"],
@@ -420,8 +422,10 @@ const DISEASES: Disease[] = [
       "Reduced fertility",
       "Swollen testicles in bulls",
     ],
-    treatment: "No effective treatment. Cull positive animals. Zoonotic — wear gloves when handling.",
-    prevention: "Vaccinate heifers with S19, test breeding bulls annually, source replacements carefully.",
+    treatment:
+      "No effective treatment. Cull positive animals. Zoonotic — wear gloves when handling.",
+    prevention:
+      "Vaccinate heifers with S19, test breeding bulls annually, source replacements carefully.",
     regions: ["Mashonaland West", "Midlands"],
     severity: "severe",
     supplies: ["S19 Brucella vaccine", "Brucella test kit", "Protective gloves"],
@@ -429,14 +433,62 @@ const DISEASES: Disease[] = [
 ];
 
 const VETS: { name: string; province: string; town: string; phone: string; whatsapp: string }[] = [
-  { name: "Dr Tendai Mahere", province: "Harare", town: "Borrowdale", phone: "+263242701234", whatsapp: "+263772111222" },
-  { name: "Dr Rumbi Chikore", province: "Bulawayo", town: "Hillside", phone: "+263292278899", whatsapp: "+263773998811" },
-  { name: "Dr Farai Sibanda", province: "Manicaland", town: "Mutare", phone: "+263202060011", whatsapp: "+263772556677" },
-  { name: "Dr Blessing Ncube", province: "Midlands", town: "Gweru", phone: "+263542223344", whatsapp: "+263775223311" },
-  { name: "Dr Kuda Mhaka", province: "Mashonaland West", town: "Chinhoyi", phone: "+263672123456", whatsapp: "+263778445566" },
-  { name: "Dr Tariro Dube", province: "Masvingo", town: "Masvingo", phone: "+263392265432", whatsapp: "+263772889900" },
-  { name: "Dr Munashe Kativhu", province: "Mashonaland East", town: "Marondera", phone: "+263279224400", whatsapp: "+263772334455" },
-  { name: "Dr Charity Mubaiwa", province: "Matabeleland South", town: "Gwanda", phone: "+263842322233", whatsapp: "+263776112233" },
+  {
+    name: "Dr Tendai Mahere",
+    province: "Harare",
+    town: "Borrowdale",
+    phone: "+263242701234",
+    whatsapp: "+263772111222",
+  },
+  {
+    name: "Dr Rumbi Chikore",
+    province: "Bulawayo",
+    town: "Hillside",
+    phone: "+263292278899",
+    whatsapp: "+263773998811",
+  },
+  {
+    name: "Dr Farai Sibanda",
+    province: "Manicaland",
+    town: "Mutare",
+    phone: "+263202060011",
+    whatsapp: "+263772556677",
+  },
+  {
+    name: "Dr Blessing Ncube",
+    province: "Midlands",
+    town: "Gweru",
+    phone: "+263542223344",
+    whatsapp: "+263775223311",
+  },
+  {
+    name: "Dr Kuda Mhaka",
+    province: "Mashonaland West",
+    town: "Chinhoyi",
+    phone: "+263672123456",
+    whatsapp: "+263778445566",
+  },
+  {
+    name: "Dr Tariro Dube",
+    province: "Masvingo",
+    town: "Masvingo",
+    phone: "+263392265432",
+    whatsapp: "+263772889900",
+  },
+  {
+    name: "Dr Munashe Kativhu",
+    province: "Mashonaland East",
+    town: "Marondera",
+    phone: "+263279224400",
+    whatsapp: "+263772334455",
+  },
+  {
+    name: "Dr Charity Mubaiwa",
+    province: "Matabeleland South",
+    town: "Gwanda",
+    phone: "+263842322233",
+    whatsapp: "+263776112233",
+  },
 ];
 
 const whatsappLink = (n: string, msg: string) =>
@@ -470,7 +522,8 @@ function DiseaseIdPage() {
           Diagnose. Treat. Protect.
         </h1>
         <p className="text-sm text-muted-foreground">
-          Symptom checker, photo diagnosis and a Zimbabwe-focused disease library — for crops and livestock.
+          Symptom checker, photo diagnosis and a Zimbabwe-focused disease library — for crops and
+          livestock.
         </p>
       </motion.div>
 
@@ -637,7 +690,12 @@ function SymptomCheckerTab() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="secondary" className="flex-1" disabled={checked.size === 0} onClick={diagnose}>
+          <Button
+            variant="secondary"
+            className="flex-1"
+            disabled={checked.size === 0}
+            onClick={diagnose}
+          >
             <Sparkles className="mr-1.5 h-4 w-4" /> Get diagnosis
           </Button>
           <Button variant="ghost" onClick={reset}>
@@ -656,7 +714,8 @@ function SymptomCheckerTab() {
           </div>
         ) : result.length === 0 ? (
           <div className="glass rounded-2xl border border-white/5 p-6 text-sm text-muted-foreground">
-            No matching diseases. Try selecting more symptoms or a different {mode === "crop" ? "crop" : "animal"}.
+            No matching diseases. Try selecting more symptoms or a different{" "}
+            {mode === "crop" ? "crop" : "animal"}.
           </div>
         ) : (
           <>
@@ -691,7 +750,9 @@ function DiagnosisCard({ result, primary }: { result: Diagnosis; primary: boolea
           <h3 className="font-display text-lg">{disease.name}</h3>
           <div className="text-xs text-muted-foreground">{disease.hosts.join(", ")}</div>
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${severityTone[disease.severity]}`}>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${severityTone[disease.severity]}`}
+        >
           {disease.severity}
         </span>
       </div>
@@ -730,8 +791,9 @@ function NearbySuppliers({ disease }: { disease: Disease }) {
   const supplyTerms = disease.supplies.map((s) => s.toLowerCase());
   const relevantCategory = disease.type === "crop" ? "fertilizer_chemicals" : "vaccines_medicine";
 
-  const matches: (ShopRow & { matchedItem: string })[] = MOCK_SHOPS
-    .filter((s) => s.category === relevantCategory || s.category === "agro_vets")
+  const matches: (ShopRow & { matchedItem: string })[] = MOCK_SHOPS.filter(
+    (s) => s.category === relevantCategory || s.category === "agro_vets",
+  )
     .slice(0, 3)
     .map((s, i) => ({ ...s, matchedItem: disease.supplies[i % disease.supplies.length] }));
 
@@ -785,37 +847,61 @@ function PhotoDiagnosisTab() {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<Disease | null>(null);
+  const [confidence, setConfidence] = useState(0);
+  const [reasoning, setReasoning] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pick = (f: File | null) => {
     if (!f) return;
     setFile(f);
     setResult(null);
+    setError(null);
     if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(f));
   };
 
-  const analyse = () => {
+  const analyse = async () => {
     if (!file) return;
     setProcessing(true);
     setProgress(0);
     setResult(null);
-    const steps = [12, 28, 46, 63, 78, 91, 100];
+    setError(null);
+
+    // Perceived-progress ticker while the real vision call is in flight —
+    // the steps don't track actual server progress (there's no streaming
+    // here), just keeps the wait from feeling dead.
+    const steps = [12, 28, 46, 63, 78, 91];
     let i = 0;
     const tick = setInterval(() => {
-      setProgress(steps[i]);
-      i++;
-      if (i >= steps.length) {
-        clearInterval(tick);
-        // pick a realistic mock based on mode
-        const pool = DISEASES.filter((d) => d.type === mode);
-        const picked = pool[Math.floor(Math.random() * pool.length)];
-        setTimeout(() => {
-          setProcessing(false);
-          setResult(picked);
-        }, 350);
-      }
+      if (i < steps.length) setProgress(steps[i++]);
     }, 380);
+
+    try {
+      const diagnosis = await diagnosePhoto(file, mode);
+      const match = diagnosis.diseaseId
+        ? (DISEASES.find((d) => d.id === diagnosis.diseaseId) ?? null)
+        : null;
+      setProgress(100);
+      setConfidence(diagnosis.confidence);
+      setReasoning(diagnosis.reasoning);
+      setResult(match);
+      if (!match) {
+        setError(
+          diagnosis.diseaseId
+            ? `Model returned an unrecognised disease id (${diagnosis.diseaseId}).`
+            : "No confident match — try a clearer, closer photo of the affected area.",
+        );
+      }
+    } catch (err) {
+      setError(
+        "Harvest AI vision isn't connected yet — the diagnose-photo function needs to be deployed (supabase functions deploy diagnose-photo) with an ANTHROPIC_API_KEY secret set.",
+      );
+      console.error("[PhotoDiagnosisTab]", err);
+    } finally {
+      clearInterval(tick);
+      setProcessing(false);
+    }
   };
 
   const reset = () => {
@@ -824,6 +910,8 @@ function PhotoDiagnosisTab() {
     setPreview(null);
     setResult(null);
     setProgress(0);
+    setError(null);
+    setReasoning(null);
   };
 
   return (
@@ -856,7 +944,11 @@ function PhotoDiagnosisTab() {
         >
           {preview ? (
             <>
-              <img src={preview} alt="Upload preview" className="max-h-72 w-full rounded-xl object-contain" />
+              <img
+                src={preview}
+                alt="Upload preview"
+                className="max-h-72 w-full rounded-xl object-contain"
+              />
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -903,7 +995,8 @@ function PhotoDiagnosisTab() {
           )}
         </Button>
         <p className="text-[10px] text-muted-foreground">
-          Demo AI — results are illustrative and based on a Zimbabwean disease knowledge base. Always confirm with a vet or extension officer.
+          AI-assisted visual screening against a Zimbabwean disease knowledge base. Always confirm
+          with a vet or extension officer before treating.
         </p>
       </div>
 
@@ -941,7 +1034,12 @@ function PhotoDiagnosisTab() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-3"
             >
-              <DiagnosisCard result={{ disease: result, confidence: 78 + Math.floor(Math.random() * 18) }} primary />
+              <DiagnosisCard result={{ disease: result, confidence }} primary />
+              {reasoning && (
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-[11px] text-muted-foreground">
+                  <span className="font-medium text-foreground">What the AI saw:</span> {reasoning}
+                </div>
+              )}
               <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-[11px] text-muted-foreground">
                 <span className="font-medium text-foreground">Symptoms typically seen:</span>{" "}
                 {result.symptoms.slice(0, 3).join("; ")}
@@ -950,7 +1048,18 @@ function PhotoDiagnosisTab() {
             </motion.div>
           )}
 
-          {!processing && !result && (
+          {!processing && !result && error && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="glass rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-200"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          {!processing && !result && !error && (
             <motion.div
               key="idle"
               initial={{ opacity: 0 }}
@@ -1032,12 +1141,16 @@ function LibraryTab() {
                 </div>
                 <h3 className="font-display text-base leading-tight">{d.name}</h3>
               </div>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${severityTone[d.severity]}`}>
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${severityTone[d.severity]}`}
+              >
                 {d.severity}
               </span>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-secondary/70">Symptoms</div>
+              <div className="text-[10px] uppercase tracking-widest text-secondary/70">
+                Symptoms
+              </div>
               <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs text-muted-foreground">
                 {d.symptoms.slice(0, 3).map((s) => (
                   <li key={s}>{s}</li>
@@ -1105,7 +1218,10 @@ function VetDirectoryTab() {
             </div>
             <div className="flex gap-2">
               <a
-                href={whatsappLink(v.whatsapp, `Hi Dr, I need a consultation via Harvest Hub Zimbabwe.`)}
+                href={whatsappLink(
+                  v.whatsapp,
+                  `Hi Dr, I need a consultation via Harvest Hub Zimbabwe.`,
+                )}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex flex-1 items-center justify-center gap-1 rounded-md bg-emerald-500/20 px-2 py-1.5 text-xs text-emerald-200 hover:bg-emerald-500/30"

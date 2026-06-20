@@ -28,7 +28,20 @@ import {
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  BRAND_GREEN,
+  BG_SOFT,
+  DANGER,
+  SUCCESS,
+  TEXT_MUTED,
+  TABLE_STYLE,
+  WARN,
+  drawReportFooter,
+  drawReportHeader,
+  roundedCard,
+  sectionLabel,
+  textColor,
+} from "@/lib/pdf-report";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,14 +53,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -65,8 +70,7 @@ export const Route = createFileRoute("/_authenticated/financial-hub")({
       { title: "Financial Hub — Harvest Hub Zimbabwe" },
       {
         name: "description",
-        content:
-          "Track revenue, expenses, and order history for your farm or buyer account.",
+        content: "Track revenue, expenses, and order history for your farm or buyer account.",
       },
     ],
   }),
@@ -133,12 +137,11 @@ const fmt = (n: number) =>
 
 const statusTone = (s: string) => {
   if (s === "paid" || s === "confirmed" || s === "completed")
-    return "bg-green-100 text-green-800 border-green-200";
+    return "bg-emerald-500/15 text-emerald-300 border-emerald-500/20";
   if (s === "pending" || s === "awaiting_confirmation")
-    return "bg-yellow-100 text-yellow-800 border-yellow-200";
-  if (s === "failed" || s === "cancelled")
-    return "bg-red-100 text-red-800 border-red-200";
-  return "bg-muted text-muted-foreground";
+    return "bg-amber-500/15 text-amber-300 border-amber-500/20";
+  if (s === "failed" || s === "cancelled") return "bg-rose-500/15 text-rose-300 border-rose-500/20";
+  return "bg-white/5 text-muted-foreground border-white/10";
 };
 
 function FinancialHubPage() {
@@ -173,7 +176,7 @@ function FinancialHubPage() {
 
       // Fetch counterpart names
       const otherIds = Array.from(
-        new Set(rows.map((r) => (isFarmer ? r.buyer_id : r.farmer_id)))
+        new Set(rows.map((r) => (isFarmer ? r.buyer_id : r.farmer_id))),
       ).filter(Boolean);
       if (otherIds.length) {
         const { data: profs } = await supabase
@@ -192,13 +195,19 @@ function FinancialHubPage() {
   }, [userId, isFarmer]);
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-6 space-y-6">
+    <section className="mx-auto max-w-7xl space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-          <Wallet className="h-7 w-7 text-primary" />
-          Financial Hub
+        <div className="mb-2 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-secondary" />
+          <span className="text-[11px] uppercase tracking-[0.22em] text-secondary/80">
+            Financial Hub
+          </span>
+        </div>
+        <h1 className="font-display text-3xl leading-tight md:text-5xl">
+          <Wallet className="mr-2 inline h-7 w-7 text-secondary" />
+          {isFarmer ? "Know your numbers." : "Track every order."}
         </h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="mt-1 text-sm text-muted-foreground">
           {isFarmer
             ? "Revenue, expenses, and statements for your farm."
             : "Your spending and order history."}
@@ -206,13 +215,9 @@ function FinancialHubPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-16 text-muted-foreground">Loading…</div>
+        <div className="py-16 text-center text-muted-foreground">Loading…</div>
       ) : isFarmer ? (
-        <FarmerView
-          userId={userId}
-          orders={orders}
-          buyerNames={buyerNames}
-        />
+        <FarmerView userId={userId} orders={orders} buyerNames={buyerNames} />
       ) : (
         <BuyerView
           orders={orders}
@@ -227,7 +232,7 @@ function FinancialHubPage() {
           }
         />
       )}
-    </div>
+    </section>
   );
 }
 
@@ -247,24 +252,19 @@ function FarmerView({
   const now = new Date();
   const thisMonth = (d: string) => {
     const dt = new Date(d);
-    return (
-      dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()
-    );
+    return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
   };
 
   const paid = orders.filter((o) => o.payment_status === "paid");
   const pending = orders.filter((o) =>
-    ["pending", "awaiting_confirmation"].includes(o.payment_status)
+    ["pending", "awaiting_confirmation"].includes(o.payment_status),
   );
 
   const revenueAllTime = paid.reduce((s, o) => s + Number(o.total_amount), 0);
   const revenueThisMonth = paid
     .filter((o) => thisMonth(o.created_at))
     .reduce((s, o) => s + Number(o.total_amount), 0);
-  const pendingAmount = pending.reduce(
-    (s, o) => s + Number(o.total_amount),
-    0
-  );
+  const pendingAmount = pending.reduce((s, o) => s + Number(o.total_amount), 0);
   const expensesThisMonth = expenses
     .filter((e) => thisMonth(e.date))
     .reduce((s, e) => s + e.amount, 0);
@@ -314,70 +314,71 @@ function FarmerView({
   };
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFillColor(34, 139, 34);
-    doc.rect(0, 0, 210, 25, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.text("Harvest Hub Zimbabwe", 14, 16);
-    doc.setFontSize(11);
-    doc.text("Farmer Financial Statement", 14, 22);
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const W = doc.internal.pageSize.getWidth();
+    const M = 36;
+    let y = drawReportHeader(doc, {
+      title: "Financial Statement",
+      subtitle: "Farmer revenue & expense report",
+    });
 
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
     const range =
       orders.length > 0
-        ? `${new Date(
-            orders[orders.length - 1].created_at
-          ).toLocaleDateString()} — ${new Date(
-            orders[0].created_at
-          ).toLocaleDateString()}`
-        : "No transactions";
-    doc.text(`Date range: ${range}`, 14, 34);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 40);
+        ? `${new Date(orders[orders.length - 1].created_at).toLocaleDateString("en-GB")} — ${new Date(
+            orders[0].created_at,
+          ).toLocaleDateString("en-GB")}`
+        : "No transactions yet";
+    textColor(doc, TEXT_MUTED);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`Statement period: ${range}`, M, y);
+    y += 20;
 
-    // Totals
-    doc.setFontSize(12);
-    doc.text("Summary", 14, 50);
-    doc.setFontSize(10);
-    doc.text(`Total Revenue: ${fmt(revenueAllTime)}`, 14, 57);
-    doc.text(`Pending Payments: ${fmt(pendingAmount)}`, 14, 63);
-    doc.text(
-      `Total Expenses: ${fmt(expenses.reduce((s, e) => s + e.amount, 0))}`,
-      14,
-      69
-    );
-    doc.text(
-      `Net Income: ${fmt(
-        revenueAllTime - expenses.reduce((s, e) => s + e.amount, 0)
-      )}`,
-      14,
-      75
-    );
+    // Summary card — 4 stat tiles
+    const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+    const netIncome = revenueAllTime - totalExpenses;
+    const stats: [string, string, [number, number, number]][] = [
+      ["Total Revenue", fmt(revenueAllTime), SUCCESS],
+      ["Pending Payments", fmt(pendingAmount), WARN],
+      ["Total Expenses", `-${fmt(totalExpenses)}`, DANGER],
+      ["Net Income", fmt(netIncome), BRAND_GREEN],
+    ];
+    const cardGap = 12;
+    const cardW = (W - 2 * M - 3 * cardGap) / 4;
+    const cardH = 56;
+    stats.forEach(([label, value, color], i) => {
+      const x = M + i * (cardW + cardGap);
+      roundedCard(doc, x, y, cardW, cardH, BG_SOFT);
+      textColor(doc, TEXT_MUTED);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.text(label.toUpperCase(), x + 12, y + 18);
+      textColor(doc, color);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(value, x + 12, y + 40);
+    });
+    y += cardH + 24;
+
+    sectionLabel(doc, "Transaction History", M, y);
+    y += 10;
 
     autoTable(doc, {
-      startY: 82,
+      startY: y,
+      margin: { left: M, right: M },
       head: [["Date", "Buyer", "Product", "Method", "Status", "Amount"]],
       body: orders.map((o) => [
-        new Date(o.created_at).toLocaleDateString(),
+        new Date(o.created_at).toLocaleDateString("en-GB"),
         buyerNames[o.buyer_id] || "Buyer",
         o.listing_title,
-        o.payment_method,
+        o.payment_method.replace(/_/g, " "),
         o.payment_status,
         fmt(Number(o.total_amount)),
       ]),
-      headStyles: { fillColor: [34, 139, 34] },
-      styles: { fontSize: 9 },
+      ...TABLE_STYLE,
     });
 
-    doc.setFontSize(8);
-    doc.setTextColor(120, 120, 120);
-    doc.text(
-      "Harvest Hub Zimbabwe • harvest-hub-zim.lovable.app",
-      14,
-      290
-    );
-
+    drawReportFooter(doc);
     doc.save(`harvest-hub-statement-${Date.now()}.pdf`);
   };
 
@@ -389,7 +390,7 @@ function FarmerView({
           icon={<TrendingUp className="h-5 w-5" />}
           label="Revenue (Month)"
           value={fmt(revenueThisMonth)}
-          tone="text-green-600"
+          tone="text-emerald-400"
         />
         <KpiCard
           icon={<DollarSign className="h-5 w-5" />}
@@ -400,7 +401,7 @@ function FarmerView({
           icon={<Clock className="h-5 w-5" />}
           label="Pending Payments"
           value={fmt(pendingAmount)}
-          tone="text-yellow-600"
+          tone="text-amber-300"
         />
         <KpiCard
           icon={<CheckCircle2 className="h-5 w-5" />}
@@ -410,156 +411,148 @@ function FarmerView({
       </div>
 
       {/* Net Income Chart */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Net Income — Last 6 Months</CardTitle>
+      <div className="glass space-y-4 rounded-2xl border border-white/5 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg">Net Income — Last 6 Months</h2>
           <div className="text-sm text-muted-foreground">
             Expenses this month: {fmt(expensesThisMonth)}
           </div>
-        </CardHeader>
-        <CardContent className="h-72">
+        </div>
+        <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-              <XAxis dataKey="label" fontSize={12} />
-              <YAxis fontSize={12} />
+              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <XAxis dataKey="label" fontSize={12} stroke="rgba(240,237,230,0.4)" />
+              <YAxis fontSize={12} stroke="rgba(240,237,230,0.4)" />
               <Tooltip
                 formatter={(v: number) => fmt(v)}
-                contentStyle={{ borderRadius: 8 }}
+                contentStyle={{
+                  background: "#0F1F18",
+                  border: "1px solid rgba(243,240,232,0.1)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
               />
-              <Legend />
-              <Bar dataKey="revenue" fill="#16a34a" name="Revenue" />
-              <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
-              <Bar dataKey="net" fill="#2563eb" name="Net" />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="revenue" fill="#5fd99b" name="Revenue" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expenses" fill="#e8767a" name="Expenses" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="net" fill="#C9A84C" name="Net" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Expenses */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-primary" /> Expenses
-          </CardTitle>
+      <div className="glass space-y-4 rounded-2xl border border-white/5 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 font-display text-lg">
+            <Receipt className="h-5 w-5 text-secondary" /> Expenses
+          </h2>
           <AddExpenseDialog onAdd={handleAddExpense} />
-        </CardHeader>
-        <CardContent>
-          {expenses.length === 0 ? (
-            <EmptyState
-              icon={<Receipt className="h-10 w-10" />}
-              title="No expenses logged yet"
-              hint="Track inputs, labour, fuel, and other farm costs to see your true net income."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expenses.map((e) => (
-                    <TableRow key={e.id}>
-                      <TableCell>
-                        {new Date(e.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {e.description}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{e.category}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right text-red-600 font-medium">
-                        -{fmt(e.amount)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteExpense(e.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+        {expenses.length === 0 ? (
+          <EmptyState
+            icon={<Receipt className="h-10 w-10" />}
+            title="No expenses logged yet"
+            hint="Track inputs, labour, fuel, and other farm costs to see your true net income."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/5 text-left text-[11px] uppercase tracking-widest text-secondary/70">
+                  <th className="py-2 font-normal">Date</th>
+                  <th className="py-2 font-normal">Description</th>
+                  <th className="py-2 font-normal">Category</th>
+                  <th className="py-2 text-right font-normal">Amount</th>
+                  <th className="py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((e) => (
+                  <tr key={e.id} className="border-b border-white/5 last:border-0">
+                    <td className="py-2.5 text-muted-foreground">
+                      {new Date(e.date).toLocaleDateString()}
+                    </td>
+                    <td className="py-2.5 font-medium text-foreground">{e.description}</td>
+                    <td className="py-2.5">
+                      <Badge variant="secondary">{e.category}</Badge>
+                    </td>
+                    <td className="py-2.5 text-right font-medium text-rose-400">
+                      -{fmt(e.amount)}
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(e.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Transactions */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Transaction History</CardTitle>
-          <Button onClick={handleExportPDF} className="gap-2">
+      <div className="glass space-y-4 rounded-2xl border border-white/5 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg">Transaction History</h2>
+          <Button variant="secondary" onClick={handleExportPDF}>
             <Download className="h-4 w-4" />
             Export PDF
           </Button>
-        </CardHeader>
-        <CardContent>
-          {orders.length === 0 ? (
-            <EmptyState
-              icon={<Inbox className="h-10 w-10" />}
-              title="No transactions yet"
-              hint="Once buyers pay for your listings, transactions will appear here."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Buyer</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orders.map((o) => (
-                    <TableRow key={o.id}>
-                      <TableCell>
-                        {new Date(o.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{buyerNames[o.buyer_id] || "Buyer"}</TableCell>
-                      <TableCell className="font-medium">
-                        {o.listing_title}
-                        <div className="text-xs text-muted-foreground">
-                          {o.quantity} {o.unit}
-                        </div>
-                      </TableCell>
-                      <TableCell className="capitalize text-xs">
-                        {o.payment_method.replace(/_/g, " ")}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={statusTone(o.payment_status)}
-                        >
-                          {o.payment_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {fmt(Number(o.total_amount))}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+        {orders.length === 0 ? (
+          <EmptyState
+            icon={<Inbox className="h-10 w-10" />}
+            title="No transactions yet"
+            hint="Once buyers pay for your listings, transactions will appear here."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/5 text-left text-[11px] uppercase tracking-widest text-secondary/70">
+                  <th className="py-2 font-normal">Date</th>
+                  <th className="py-2 font-normal">Buyer</th>
+                  <th className="py-2 font-normal">Product</th>
+                  <th className="py-2 font-normal">Method</th>
+                  <th className="py-2 font-normal">Status</th>
+                  <th className="py-2 text-right font-normal">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id} className="border-b border-white/5 last:border-0">
+                    <td className="py-2.5 text-muted-foreground">
+                      {new Date(o.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="py-2.5">{buyerNames[o.buyer_id] || "Buyer"}</td>
+                    <td className="py-2.5 font-medium text-foreground">
+                      {o.listing_title}
+                      <div className="text-xs text-muted-foreground">
+                        {o.quantity} {o.unit}
+                      </div>
+                    </td>
+                    <td className="py-2.5 text-xs capitalize text-muted-foreground">
+                      {o.payment_method.replace(/_/g, " ")}
+                    </td>
+                    <td className="py-2.5">
+                      <Badge variant="outline" className={statusTone(o.payment_status)}>
+                        {o.payment_status}
+                      </Badge>
+                    </td>
+                    <td className="py-2.5 text-right font-display text-secondary">
+                      {fmt(Number(o.total_amount))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -577,9 +570,7 @@ function BuyerView({
   const now = new Date();
   const thisMonth = (d: string) => {
     const dt = new Date(d);
-    return (
-      dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()
-    );
+    return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
   };
 
   const totalSpentAll = orders
@@ -589,7 +580,7 @@ function BuyerView({
     .filter((o) => o.payment_status === "paid" && thisMonth(o.created_at))
     .reduce((s, o) => s + Number(o.total_amount), 0);
   const pendingOrders = orders.filter((o) =>
-    ["pending", "awaiting_confirmation"].includes(o.payment_status)
+    ["pending", "awaiting_confirmation"].includes(o.payment_status),
   );
 
   return (
@@ -609,7 +600,7 @@ function BuyerView({
           icon={<Clock className="h-5 w-5" />}
           label="Pending Orders"
           value={`${pendingOrders.length}`}
-          tone="text-yellow-600"
+          tone="text-amber-300"
         />
         <KpiCard
           icon={<CheckCircle2 className="h-5 w-5" />}
@@ -621,25 +612,15 @@ function BuyerView({
       <Tabs defaultValue="all">
         <TabsList>
           <TabsTrigger value="all">Order History</TabsTrigger>
-          <TabsTrigger value="pending">
-            Pending ({pendingOrders.length})
-          </TabsTrigger>
+          <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
-          <OrderTable
-            orders={orders}
-            sellerNames={sellerNames}
-            onReorder={onReorder}
-          />
+          <OrderTable orders={orders} sellerNames={sellerNames} onReorder={onReorder} />
         </TabsContent>
 
         <TabsContent value="pending">
-          <OrderTable
-            orders={pendingOrders}
-            sellerNames={sellerNames}
-            onReorder={onReorder}
-          />
+          <OrderTable orders={pendingOrders} sellerNames={sellerNames} onReorder={onReorder} />
         </TabsContent>
       </Tabs>
     </div>
@@ -657,72 +638,60 @@ function OrderTable({
 }) {
   if (orders.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-10">
-          <EmptyState
-            icon={<Inbox className="h-10 w-10" />}
-            title="No orders yet"
-            hint="Place your first order from the marketplace to see it here."
-          />
-        </CardContent>
-      </Card>
+      <div className="glass rounded-2xl border border-white/5 py-10">
+        <EmptyState
+          icon={<Inbox className="h-10 w-10" />}
+          title="No orders yet"
+          hint="Place your first order from the marketplace to see it here."
+        />
+      </div>
     );
   }
   return (
-    <Card>
-      <CardContent className="p-0 overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Seller</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.map((o) => (
-              <TableRow key={o.id}>
-                <TableCell>
-                  {new Date(o.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>{sellerNames[o.farmer_id] || "Farmer"}</TableCell>
-                <TableCell className="font-medium">
-                  {o.listing_title}
-                  <div className="text-xs text-muted-foreground">
-                    {o.quantity} {o.unit} • {o.order_code}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={statusTone(o.payment_status)}
-                  >
-                    {o.payment_status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right font-semibold">
-                  {fmt(Number(o.total_amount))}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1"
-                    onClick={() => onReorder(o)}
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Reorder
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <div className="glass overflow-x-auto rounded-2xl border border-white/5">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-white/5 text-left text-[11px] uppercase tracking-widest text-secondary/70">
+            <th className="px-5 py-3 font-normal">Date</th>
+            <th className="px-2 py-3 font-normal">Seller</th>
+            <th className="px-2 py-3 font-normal">Product</th>
+            <th className="px-2 py-3 font-normal">Status</th>
+            <th className="px-2 py-3 text-right font-normal">Amount</th>
+            <th className="px-5 py-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((o) => (
+            <tr key={o.id} className="border-b border-white/5 last:border-0">
+              <td className="px-5 py-3 text-muted-foreground">
+                {new Date(o.created_at).toLocaleDateString()}
+              </td>
+              <td className="px-2 py-3">{sellerNames[o.farmer_id] || "Farmer"}</td>
+              <td className="px-2 py-3 font-medium text-foreground">
+                {o.listing_title}
+                <div className="text-xs text-muted-foreground">
+                  {o.quantity} {o.unit} • {o.order_code}
+                </div>
+              </td>
+              <td className="px-2 py-3">
+                <Badge variant="outline" className={statusTone(o.payment_status)}>
+                  {o.payment_status}
+                </Badge>
+              </td>
+              <td className="px-2 py-3 text-right font-display text-secondary">
+                {fmt(Number(o.total_amount))}
+              </td>
+              <td className="px-5 py-3 text-right">
+                <Button variant="outline" size="sm" onClick={() => onReorder(o)}>
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Reorder
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -739,26 +708,16 @@ function KpiCard({
   tone?: string;
 }) {
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-muted-foreground text-xs">
-          {icon} {label}
-        </div>
-        <div className={`text-2xl font-bold mt-1 ${tone ?? ""}`}>{value}</div>
-      </CardContent>
-    </Card>
+    <div className="glass rounded-2xl p-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {icon} {label}
+      </div>
+      <div className={`mt-1 font-display text-2xl ${tone ?? "text-secondary"}`}>{value}</div>
+    </div>
   );
 }
 
-function EmptyState({
-  icon,
-  title,
-  hint,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  hint: string;
-}) {
+function EmptyState({ icon, title, hint }: { icon: React.ReactNode; title: string; hint: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
       <div className="text-muted-foreground mb-3">{icon}</div>
@@ -827,11 +786,7 @@ function AddExpenseDialog({ onAdd }: { onAdd: (e: Expense) => void }) {
             </div>
             <div className="space-y-1">
               <Label>Date</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
           </div>
           <div className="space-y-1">
