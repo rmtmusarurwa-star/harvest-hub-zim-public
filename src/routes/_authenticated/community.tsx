@@ -419,9 +419,11 @@ function PostCard({ post, onChanged }: { post: PostWithMeta; onChanged: () => vo
               size="sm"
               onClick={toggleLike}
               disabled={busy}
-              className={`h-8 gap-1.5 ${liked ? "text-secondary" : "text-muted-foreground"}`}
+              className={`tap-bounce h-8 gap-1.5 ${liked ? "text-secondary" : "text-muted-foreground"}`}
             >
-              <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
+              <Heart
+                className={`h-4 w-4 transition-transform ${liked ? "fill-current scale-110" : ""}`}
+              />
               <span className="text-xs">{likeCount}</span>
             </Button>
             <Button

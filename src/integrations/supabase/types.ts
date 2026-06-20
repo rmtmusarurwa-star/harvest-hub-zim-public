@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_activity_log: {
+        Row: {
+          agent: Database["public"]["Enums"]["agent_kind"]
+          created_at: string
+          detail: string | null
+          event_type: Database["public"]["Enums"]["agent_event_type"]
+          id: string
+          link: string | null
+          metadata: Json | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          agent: Database["public"]["Enums"]["agent_kind"]
+          created_at?: string
+          detail?: string | null
+          event_type?: Database["public"]["Enums"]["agent_event_type"]
+          id?: string
+          link?: string | null
+          metadata?: Json | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          agent?: Database["public"]["Enums"]["agent_kind"]
+          created_at?: string
+          detail?: string | null
+          event_type?: Database["public"]["Enums"]["agent_event_type"]
+          id?: string
+          link?: string | null
+          metadata?: Json | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -1172,6 +1208,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_phone: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1186,6 +1223,14 @@ export type Database = {
       }
     }
     Enums: {
+      agent_event_type:
+        | "action"
+        | "recommendation"
+        | "match"
+        | "price_update"
+        | "alert"
+        | "status"
+      agent_kind: "sales" | "buyers" | "disease" | "market" | "transport"
       app_role: "admin" | "moderator"
       booking_status:
         | "pending"
@@ -1400,6 +1445,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agent_event_type: [
+        "action",
+        "recommendation",
+        "match",
+        "price_update",
+        "alert",
+        "status",
+      ],
+      agent_kind: ["sales", "buyers", "disease", "market", "transport"],
       app_role: ["admin", "moderator"],
       booking_status: [
         "pending",

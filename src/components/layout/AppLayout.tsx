@@ -5,13 +5,15 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { FieldMapBackground } from "@/components/brand/FieldMapBackground";
 import { AskHarvestAi } from "@/components/brand/AskHarvestAi";
+import { useDecorativeMotionGuard } from "@/hooks/use-decorative-motion";
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useDecorativeMotionGuard();
 
   return (
-    <div className="min-h-screen ambient-glow">
+    <div className="min-h-screen ambient-glow mesh-bg">
       <FieldMapBackground />
       <Sidebar mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 

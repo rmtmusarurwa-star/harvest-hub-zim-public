@@ -65,10 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function fetchProfile(userId: string) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, role, avatar_url, bio, location, phone, phone_verified")
+      .select("id, full_name, role, avatar_url, bio, location, phone_verified")
       .eq("id", userId)
       .maybeSingle();
-    if (!error && data) setProfile(data as Profile);
+    if (error || !data) return;
+    const { data: phone } = await supabase.rpc("get_my_phone");
+    setProfile({ ...(data as Profile), phone: (phone as string | null) ?? "" });
   }
 
   const value = useMemo<AuthContextValue>(

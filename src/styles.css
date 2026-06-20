@@ -196,6 +196,62 @@
       radial-gradient(ellipse 70% 50% at 30% 20%, rgba(232, 160, 32, 0.07), transparent 60%),
       linear-gradient(180deg, rgba(6, 16, 11, 0.12) 0%, rgba(6, 16, 11, 0.03) 25%, rgba(6, 16, 11, 0.28) 65%, rgba(6, 16, 11, 0.42) 100%);
   }
+
+  /* Animated gradient mesh — GPU-only, decorative */
+  .mesh-bg { position: relative; isolation: isolate; }
+  .mesh-bg::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 32% at 18% 22%, rgba(201, 168, 76, 0.22) 0%, transparent 65%),
+      radial-gradient(34% 30% at 82% 18%, rgba(13, 59, 46, 0.30) 0%, transparent 65%),
+      radial-gradient(40% 34% at 28% 82%, rgba(26, 82, 64, 0.24) 0%, transparent 65%),
+      radial-gradient(36% 30% at 78% 86%, rgba(232, 160, 32, 0.16) 0%, transparent 65%);
+    filter: blur(40px) saturate(120%);
+    will-change: transform;
+    animation: mesh-drift 22s ease-in-out infinite alternate;
+  }
+  .mesh-bg-strong::before { opacity: 1.4; }
+
+  @keyframes mesh-drift {
+    0%   { transform: translate3d(-2%, -1%, 0) scale(1); }
+    50%  { transform: translate3d(2%, 1.5%, 0) scale(1.04); }
+    100% { transform: translate3d(-1%, 2%, 0) scale(1.02); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mesh-bg::before { animation: none; }
+  }
+  .no-deco-motion .mesh-bg::before { animation: none; }
+
+  .btn-glow { transition: box-shadow 200ms ease, transform 200ms ease; }
+  .btn-glow:hover {
+    box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.35), 0 8px 30px -8px rgba(201, 168, 76, 0.45);
+  }
+
+  /* Satisfying tap bounce — for like / heart / reaction buttons */
+  @keyframes tap-bounce {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); }
+    70%  { transform: scale(0.92); }
+    100% { transform: scale(1); }
+  }
+  .tap-bounce:active { animation: tap-bounce 280ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .tap-bounce:active { animation: none; }
+  }
+
+  /* Price flash for live market values */
+  @keyframes price-flash-up   { 0% { color: rgb(52,211,153); } 100% { } }
+  @keyframes price-flash-down { 0% { color: rgb(251,113,133); } 100% { } }
+  .price-flash-up   { animation: price-flash-up 900ms ease-out; }
+  .price-flash-down { animation: price-flash-down 900ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .price-flash-up, .price-flash-down { animation: none; }
+  }
 }
 
 @keyframes field-map-drift {
@@ -206,5 +262,6 @@
 @keyframes field-map-pulse {
   0% { r: 3; opacity: 0.7; }
   100% { r: 16; opacity: 0; }
-}
+
+
 
