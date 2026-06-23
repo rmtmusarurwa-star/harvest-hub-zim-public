@@ -80,7 +80,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
         <img
           src="/harvest-hub-logo.png"
           alt="Harvest Hub"
-          className="h-11 w-auto rounded-md bg-white p-1 ring-1 ring-secondary/30"
+          className="h-11 w-auto rounded-md"
         />
         <div className="leading-tight">
           <div className="font-display text-lg tracking-tight">Harvest Hub</div>

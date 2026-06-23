@@ -1,8 +1,9 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Loader2, Sprout } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/lib/auth-context";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -62,11 +63,8 @@ function AuthenticatedLayout() {
     <div className="min-h-screen ambient-glow mesh-bg">
       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary">
-              <Sprout className="h-4 w-4 text-secondary" />
-            </div>
-            <span className="font-display text-lg text-foreground">Harvest Hub</span>
+          <Link to="/">
+            <Wordmark size={32} />
           </Link>
 
           <nav className="hidden items-center gap-6 md:flex">

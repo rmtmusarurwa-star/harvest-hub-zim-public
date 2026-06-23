@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -8,11 +8,11 @@ import {
   MapPin,
   Package,
   ShieldCheck,
-  Sprout,
   Store,
   Truck,
   Users,
 } from "lucide-react";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { FieldMapBackground } from "@/components/brand/FieldMapBackground";
@@ -136,11 +136,8 @@ function LandingPage() {
       {/* ── Nav ── */}
       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary">
-              <Sprout className="h-4 w-4 text-secondary" />
-            </div>
-            <span className="font-display text-lg text-foreground">Harvest Hub</span>
+          <Link to="/">
+            <Wordmark size={32} />
           </Link>
 
           <nav className="hidden items-center gap-6 md:flex">
@@ -316,10 +313,7 @@ function LandingPage() {
       {/* ── Footer ── */}
       <footer className="border-t border-white/5 py-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 text-center text-xs text-muted-foreground sm:flex-row sm:justify-between lg:px-6">
-          <div className="flex items-center gap-2">
-            <Sprout className="h-3.5 w-3.5 text-secondary" />
-            <span>Harvest Hub Zimbabwe</span>
-          </div>
+          <Wordmark size={22} />
           <span>© {new Date().getFullYear()} · Connecting Zimbabwe's farms</span>
           <div className="flex items-center gap-4">
             <Link to="/marketplace" className="hover:text-foreground transition-colors">Marketplace</Link>
