@@ -1,31 +1,16 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
+/** Only this email address has admin access. */
+const ADMIN_EMAIL = "rmtmusarurwa@icloud.com";
+
+/**
+ * Returns true only for the single designated admin account.
+ * Check is purely on the authenticated Supabase email — no extra DB query.
+ */
 export function useIsAdmin() {
   const { user, loading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      setIsAdmin(false);
-      return;
-    }
-    let cancelled = false;
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled) setIsAdmin(Boolean(data));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user, loading]);
+  const isAdmin = !loading && !!user && user.email === ADMIN_EMAIL;
 
-  return { isAdmin, loading: loading || isAdmin === null };
+  return { isAdmin, loading };
 }

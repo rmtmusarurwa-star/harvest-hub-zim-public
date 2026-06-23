@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Filter, Plus, Search, ShoppingCart, Star } from "lucide-react";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CATEGORIES,
@@ -20,8 +19,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/marketplace/")({
+export const Route = createFileRoute("/_public/marketplace/")({
   component: MarketplacePage,
 });
 
@@ -36,18 +36,7 @@ function MarketplacePage() {
   const [deliveryOnly, setDeliveryOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
-  const { count, open } = useCart();
-
-  function requireAuth(action: () => void) {
-    if (!session) {
-      toast("Create a free account to continue", {
-        description: "Sign up in seconds — no credit card required.",
-        action: { label: "Get Started", onClick: () => navigate({ to: "/signup" }) },
-      });
-      return;
-    }
-    action();
-  }
+  const { count, open: openCart } = useCart();
 
   const { data: dbListings = [] } = useQuery({
     queryKey: ["listings"],
@@ -84,6 +73,17 @@ function MarketplacePage() {
     });
   }, [all, category, search, priceMax, province, minRating, deliveryOnly]);
 
+  function requireAuth(action: () => void) {
+    if (!session) {
+      toast("Create a free account to continue", {
+        description: "Sign up in seconds — no credit card required.",
+        action: { label: "Get Started", onClick: () => navigate({ to: "/signup" }) },
+      });
+      return;
+    }
+    action();
+  }
+
   return (
     <section className="mx-auto max-w-7xl space-y-6">
       <motion.div
@@ -110,7 +110,7 @@ function MarketplacePage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => requireAuth(open)}
+            onClick={() => requireAuth(openCart)}
             className="gap-2"
           >
             <ShoppingCart className="h-4 w-4" />
@@ -178,9 +178,7 @@ function MarketplacePage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
         {/* Filter sidebar */}
-        <aside
-          className={`${showFilters ? "block" : "hidden"} lg:block`}
-        >
+        <aside className={`${showFilters ? "block" : "hidden"} lg:block`}>
           <div className="glass space-y-5 rounded-2xl p-5">
             <div>
               <h4 className="mb-3 text-xs uppercase tracking-widest text-secondary/80">
@@ -298,7 +296,9 @@ function MarketplacePage() {
         </div>
       </div>
 
-      {session && <PostListingModal open={postOpen} onClose={() => setPostOpen(false)} />}
+      {session && (
+        <PostListingModal open={postOpen} onClose={() => setPostOpen(false)} />
+      )}
     </section>
   );
 }

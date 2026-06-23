@@ -88,7 +88,7 @@ function AdminPage() {
   useEffect(() => {
     if (!loading && isAdmin === false) {
       toast.error("Admin access required");
-      navigate({ to: "/" });
+      navigate({ to: "/dashboard" });
     }
   }, [isAdmin, loading, navigate]);
 

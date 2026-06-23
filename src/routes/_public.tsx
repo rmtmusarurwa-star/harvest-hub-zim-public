@@ -1,38 +1,20 @@
-import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { Loader2, Sprout } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/lib/auth-context";
+import { FieldMapBackground } from "@/components/brand/FieldMapBackground";
 
-export const Route = createFileRoute("/_authenticated")({
-  component: AuthenticatedLayout,
+export const Route = createFileRoute("/_public")({
+  component: PublicLayout,
 });
 
 /**
- * Adaptive layout:
- * - Auth users   → full AppLayout (sidebar + topbar) for ALL routes
- * - Guests on public-browsable routes (/, /marketplace, /market-intelligence)
- *     → minimal branded header (or no header for landing page which is self-contained)
- * - Guests on any other route → redirect to /login
+ * Adaptive layout for publicly browsable pages (marketplace, market-intelligence).
+ * - Authenticated users see the full app layout (sidebar + topbar).
+ * - Guests see a minimal branded header with Sign In / Get Started buttons.
  */
-
-/** Paths that guests may browse without an account */
-const PUBLIC_PATHS = ["/marketplace", "/market-intelligence"];
-
-function AuthenticatedLayout() {
+function PublicLayout() {
   const { session, loading } = useAuth();
-  const navigate = useNavigate();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  const isPublicBrowsable =
-    pathname === "/" ||
-    PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
-
-  useEffect(() => {
-    if (!loading && !session && !isPublicBrowsable) {
-      navigate({ to: "/login" });
-    }
-  }, [loading, session, isPublicBrowsable, navigate]);
 
   if (loading) {
     return (
@@ -42,31 +24,24 @@ function AuthenticatedLayout() {
     );
   }
 
-  // Non-public route and no session → will redirect, show spinner
-  if (!session && !isPublicBrowsable) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-background ambient-glow">
-        <Loader2 className="h-5 w-5 animate-spin text-secondary" />
-      </div>
-    );
-  }
-
-  // Auth users get the full app experience
+  // Logged-in users get the full experience
   if (session) return <AppLayout />;
 
-  // Guests on landing page: no extra wrapper, the page is self-contained
-  if (pathname === "/") return <Outlet />;
-
-  // Guests on marketplace / market-intelligence: minimal public nav
+  // Guests get a minimal branded header
   return (
     <div className="min-h-screen ambient-glow mesh-bg">
+      <FieldMapBackground />
+
+      {/* Public nav */}
       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary">
               <Sprout className="h-4 w-4 text-secondary" />
             </div>
-            <span className="font-display text-lg text-foreground">Harvest Hub</span>
+            <span className="font-display text-lg text-foreground">
+              Harvest Hub
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-6 md:flex">

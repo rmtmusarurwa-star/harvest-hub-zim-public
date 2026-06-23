@@ -24,7 +24,7 @@ import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
 import { useIsAdmin } from "@/lib/use-is-admin";
 
 export const NAV_ITEMS = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/marketplace", label: "Marketplace", icon: Store },
   { to: "/farmers", label: "Farmers", icon: Users },
   { to: "/chat", label: "Chat", icon: MessageSquare },

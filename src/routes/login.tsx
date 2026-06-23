@@ -25,7 +25,7 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/" });
+    if (!loading && session) navigate({ to: "/dashboard" });
   }, [session, loading, navigate]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -43,7 +43,7 @@ function LoginPage() {
       setError(error.message);
       return;
     }
-    navigate({ to: "/" });
+    navigate({ to: "/dashboard" });
   }
 
   return (

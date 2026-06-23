@@ -19,6 +19,7 @@ import { Route as AuthenticatedReceiptsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
 import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
 import { Route as AuthenticatedDiseaseIdRouteImport } from './routes/_authenticated/disease-id'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
@@ -87,6 +88,11 @@ const AuthenticatedFinancialHubRoute =
 const AuthenticatedDiseaseIdRoute = AuthenticatedDiseaseIdRouteImport.update({
   id: '/disease-id',
   path: '/disease-id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedCommunityRoute = AuthenticatedCommunityRouteImport.update({
@@ -203,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/community': typeof AuthenticatedCommunityRouteWithChildren
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/community': typeof AuthenticatedCommunityRouteWithChildren
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRouteWithChildren
   '/_authenticated/community': typeof AuthenticatedCommunityRouteWithChildren
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/disease-id': typeof AuthenticatedDiseaseIdRoute
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/checkout'
     | '/community'
+    | '/dashboard'
     | '/disease-id'
     | '/financial-hub'
     | '/market-intelligence'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/checkout'
     | '/community'
+    | '/dashboard'
     | '/disease-id'
     | '/financial-hub'
     | '/market-intelligence'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat'
     | '/_authenticated/checkout'
     | '/_authenticated/community'
+    | '/_authenticated/dashboard'
     | '/_authenticated/disease-id'
     | '/_authenticated/financial-hub'
     | '/_authenticated/market-intelligence'
@@ -451,6 +463,13 @@ declare module '@tanstack/react-router' {
       path: '/disease-id'
       fullPath: '/disease-id'
       preLoaderRoute: typeof AuthenticatedDiseaseIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/community': {
@@ -615,6 +634,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRouteWithChildren
   AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRouteWithChildren
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDiseaseIdRoute: typeof AuthenticatedDiseaseIdRoute
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
@@ -639,6 +659,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRouteWithChildren,
   AuthenticatedCommunityRoute: AuthenticatedCommunityRouteWithChildren,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDiseaseIdRoute: AuthenticatedDiseaseIdRoute,
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,

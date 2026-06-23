@@ -28,7 +28,7 @@ import { useCart } from "@/lib/cart-context";
 import { Button } from "@/components/ui/button";
 import { CategoryIcon } from "@/components/brand/CategoryIcon";
 
-export const Route = createFileRoute("/_authenticated/marketplace/$listingId")({
+export const Route = createFileRoute("/_public/marketplace/$listingId")({
   component: ListingDetailPage,
 });
 

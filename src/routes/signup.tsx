@@ -39,7 +39,7 @@ function SignupPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/" });
+    if (!loading && session) navigate({ to: "/dashboard" });
   }, [session, loading, navigate]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -69,7 +69,7 @@ function SignupPage() {
       return;
     }
     if (data.session) {
-      navigate({ to: "/" });
+      navigate({ to: "/dashboard" });
     } else {
       setInfo("Check your inbox to confirm your email, then sign in.");
     }
