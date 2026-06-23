@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { uid } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   REACTION_TYPES,
@@ -212,7 +213,7 @@ function PostDetailPage() {
     setSubmitting(true);
     const content = reply.trim();
     // Optimistic insert so the comment appears instantly
-    const tempId = `temp-${crypto.randomUUID()}`;
+    const tempId = `temp-${uid()}`;
     const optimistic: ForumCommentRow = {
       id: tempId,
       post_id: postId,

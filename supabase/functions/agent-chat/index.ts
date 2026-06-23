@@ -54,7 +54,12 @@ Be concise (this may be read on a basic phone). Use the tools you're given rathe
 guessing at prices, listings, or weather. When a farmer describes produce to sell, confirm
 the details back to them in plain language BEFORE calling create_listing — there is no UI
 here to catch typos, so confirmation is mandatory. Reply in the user's language if it is
-not English.`;
+not English.
+
+When calling get_weather or get_market_price, always extract the location or commodity from
+the user's MOST RECENT message — never reuse one from earlier in the conversation. If the
+latest message names a different place or item than before, call the tool with that new one,
+even if an earlier turn already covered a different location/commodity.`;
 
 const TOOLS = [
   {
@@ -111,6 +116,77 @@ const TOOLS = [
   },
 ];
 
+// WMO weather codes (used by Open-Meteo) collapsed into plain-language conditions.
+function weatherCodeToText(code: number): string {
+  if (code === 0) return "Clear sky";
+  if (code <= 3) return "Partly cloudy";
+  if (code <= 49) return "Fog";
+  if (code <= 57) return "Drizzle";
+  if (code <= 67) return "Rain";
+  if (code <= 77) return "Snow";
+  if (code <= 82) return "Rain showers";
+  if (code <= 86) return "Snow showers";
+  return "Thunderstorm";
+}
+
+// Open-Meteo is free and keyless — geocode the place name, then pull current conditions.
+async function getRealWeather(location: string) {
+  const geoRes = await fetch(
+    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`,
+  );
+  if (!geoRes.ok) throw new Error(`Geocoding failed (${geoRes.status})`);
+  const geo = await geoRes.json();
+  const place = geo.results?.[0];
+  if (!place) return { error: `Couldn't find a location called "${location}".` };
+
+  const wxRes = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}` +
+      `&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m`,
+  );
+  if (!wxRes.ok) throw new Error(`Forecast failed (${wxRes.status})`);
+  const wx = await wxRes.json();
+  const c = wx.current;
+  return {
+    location: [place.name, place.admin1, place.country].filter(Boolean).join(", "),
+    temp_c: c.temperature_2m,
+    condition: weatherCodeToText(c.weather_code),
+    humidity_pct: c.relative_humidity_2m,
+    precipitation_mm: c.precipitation,
+    wind_kmh: c.wind_speed_10m,
+    as_of: c.time,
+    source: "open-meteo.com",
+  };
+}
+
+// Real price discovery from actual active listings rather than a static guess —
+// reflects what the marketplace is actually asking right now, not a curated number.
+async function getRealMarketPrice(commodity: string) {
+  const { data, error } = await supabase
+    .from("listings")
+    .select("price, unit")
+    .eq("status", "active")
+    .ilike("title", `%${commodity}%`)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return { error: `No active listings for "${commodity}" right now — can't quote a current price.` };
+  }
+  const prices = data.map((d) => Number(d.price)).filter((p) => Number.isFinite(p));
+  const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
+  return {
+    commodity,
+    avg_price: Math.round(avg * 100) / 100,
+    min_price: Math.min(...prices),
+    max_price: Math.max(...prices),
+    unit: data[0].unit,
+    sample_size: prices.length,
+    currency: "USD",
+    source: "live Harvest Hub listings",
+    as_of: new Date().toISOString(),
+  };
+}
+
 async function runTool(name: string, input: Record<string, unknown>, ctx: { farmerId: string | null }) {
   switch (name) {
     case "search_listings": {
@@ -151,24 +227,19 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: { farm
     }
 
     case "get_market_price": {
-      // STUB — market-intelligence.tsx and MarketTicker.tsx both run on
-      // hardcoded mock data today (see whatsapp-agent-spec.md §6). Wire
-      // this to a real price feed/table before relying on it in production.
-      const MOCK: Record<string, number> = {
-        maize: 385, "white maize": 385, tomatoes: 12.5, avocado: 3.1,
-        avocados: 3.1, cocoa: 2840, soybeans: 720, coffee: 6.4, wheat: 310,
-      };
-      const key = String(input.commodity).toLowerCase();
-      const price = MOCK[key];
-      return price
-        ? { commodity: input.commodity, price, currency: "USD", source: "mock — see TODO in get_market_price", as_of: new Date().toISOString() }
-        : { error: `No price data for "${input.commodity}" yet.` };
+      try {
+        return await getRealMarketPrice(String(input.commodity));
+      } catch (err) {
+        return { error: (err as Error).message };
+      }
     }
 
     case "get_weather": {
-      // STUB — same situation as WeatherWidget.tsx. Replace with a real
-      // weather API call (e.g. Open-Meteo) keyed off the listing's location.
-      return { location: input.location, temp_c: 26, condition: "Partly cloudy", source: "mock — wire a real weather API" };
+      try {
+        return await getRealWeather(String(input.location));
+      } catch (err) {
+        return { error: (err as Error).message };
+      }
     }
 
     default:
@@ -259,9 +330,16 @@ serve(async (req) => {
       conversation_id: convo.id, direction: "inbound", type: "text", content: message,
     });
 
-    const { data: history } = await supabase
+    // Most recent 8 messages (4 exchanges), not the oldest 20 — keeps the
+    // model anchored to what's actually being asked right now instead of
+    // re-fetching ancient turns once a conversation runs long, and limits
+    // how much a stale earlier answer (e.g. an old weather lookup) can bias
+    // a new one.
+    const { data: historyDesc, error: historyErr } = await supabase
       .from("agent_messages").select("direction, content, tool_calls")
-      .eq("conversation_id", convo.id).order("created_at", { ascending: true }).limit(20);
+      .eq("conversation_id", convo.id).order("created_at", { ascending: false }).limit(8);
+    if (historyErr) throw new Error(`Failed to load conversation history: ${historyErr.message}`);
+    const history = (historyDesc ?? []).slice().reverse();
 
     const claudeMessages: unknown[] = (history ?? []).map((m) => ({
       role: m.direction === "inbound" ? "user" : "assistant",
@@ -271,8 +349,12 @@ serve(async (req) => {
     let finalText = "";
     for (let turn = 0; turn < 3; turn++) {
       const resp = await callClaude(claudeMessages);
-      const toolUses = (resp.content ?? []).filter((b: { type: string }) => b.type === "tool_use");
-      const textBlocks = (resp.content ?? []).filter((b: { type: string }) => b.type === "text");
+      if (!Array.isArray(resp.content)) {
+        console.error("Unexpected LLM response shape:", JSON.stringify(resp));
+        throw new Error("The AI service returned an unexpected response — see function logs.");
+      }
+      const toolUses = resp.content.filter((b: { type: string }) => b.type === "tool_use");
+      const textBlocks = resp.content.filter((b: { type: string }) => b.type === "text");
       finalText = textBlocks.map((b: { text: string }) => b.text).join("\n");
 
       if (toolUses.length === 0) break;
@@ -284,6 +366,11 @@ serve(async (req) => {
         toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(result) });
       }
       claudeMessages.push({ role: "user", content: toolResults });
+    }
+
+    if (!finalText.trim()) {
+      console.error("Empty reply after tool loop. Last claudeMessages:", JSON.stringify(claudeMessages));
+      finalText = "Sorry, I wasn't able to put together a reply for that — try rephrasing, or ask again in a moment.";
     }
 
     await supabase.from("agent_messages").insert({

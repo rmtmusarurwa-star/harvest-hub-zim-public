@@ -72,8 +72,7 @@ export function CommandBar() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-background/40 px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-secondary/60"
-            placeholder="What would you like to do today?"
+            className="w-full rounded-xl border border-white/10 bg-background/40 px-4 py-3 text-sm text-foreground outline-none focus:border-secondary/60"
             aria-label="Ask Harvest AI"
             disabled={pending}
           />
@@ -116,16 +115,23 @@ export function CommandBar() {
                 {response ? (
                   <span className="text-foreground/90">{response.summary}</span>
                 ) : (
-                  <>Results for <span className="text-foreground">"{submitted}"</span></>
+                  <>
+                    Results for <span className="text-foreground">"{submitted}"</span>
+                  </>
                 )}
               </span>
-              <button onClick={clear} className="hover:text-foreground">Clear</button>
+              <button onClick={clear} className="hover:text-foreground">
+                Clear
+              </button>
             </div>
 
             {pending && (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-24 animate-pulse rounded-xl border border-white/5 bg-white/[0.03]" />
+                  <div
+                    key={i}
+                    className="h-24 animate-pulse rounded-xl border border-white/5 bg-white/[0.03]"
+                  />
                 ))}
               </div>
             )}
@@ -150,7 +156,9 @@ export function CommandBar() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-foreground">{r.title}</div>
+                          <div className="truncate text-sm font-semibold text-foreground">
+                            {r.title}
+                          </div>
                           <div className="truncate text-xs text-muted-foreground">{r.subtitle}</div>
                         </div>
                         <span className="rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-semibold text-secondary">
@@ -177,10 +185,18 @@ export function CommandBar() {
                           </button>
                         </div>
                       ) : (
-                        <div className={`mt-3 flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold ${
-                          status === "accepted" ? "bg-emerald-500/15 text-emerald-300" : "bg-white/5 text-muted-foreground"
-                        }`}>
-                          {status === "accepted" ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                        <div
+                          className={`mt-3 flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold ${
+                            status === "accepted"
+                              ? "bg-emerald-500/15 text-emerald-300"
+                              : "bg-white/5 text-muted-foreground"
+                          }`}
+                        >
+                          {status === "accepted" ? (
+                            <Check className="h-3.5 w-3.5" />
+                          ) : (
+                            <X className="h-3.5 w-3.5" />
+                          )}
                           {status === "accepted" ? "Deal created" : "Declined"}
                         </div>
                       )}

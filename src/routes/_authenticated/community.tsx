@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { uid } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -472,7 +473,7 @@ function CreatePostDialog({ onCreated }: { onCreated: () => void }) {
       let image_url: string | null = null;
       if (file) {
         const ext = file.name.split(".").pop() || "jpg";
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const path = `${user.id}/${uid()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("forum-images")
           .upload(path, file, { upsert: false });

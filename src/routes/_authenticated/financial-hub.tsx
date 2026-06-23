@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { uid } from "@/lib/utils";
 import {
   BarChart,
   Bar,
@@ -741,7 +742,7 @@ function AddExpenseDialog({ onAdd }: { onAdd: (e: Expense) => void }) {
       return;
     }
     onAdd({
-      id: crypto.randomUUID(),
+      id: uid(),
       description: description.trim(),
       amount: amt,
       category,

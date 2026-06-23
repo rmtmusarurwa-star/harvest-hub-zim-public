@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users, ShoppingBag, Activity, BarChart3 } from "lucide-react";
+import { Users, ShoppingBag, Package, BarChart3 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 function useCounter(target: number, duration = 1400) {
   const [val, setVal] = useState(0);
@@ -24,17 +25,19 @@ function Stat({
   value,
   suffix,
   prefix,
-  delta,
+  sublabel,
   icon: Icon,
   delay,
+  loading,
 }: {
   label: string;
   value: number;
   suffix?: string;
   prefix?: string;
-  delta: string;
+  sublabel: string;
   icon: React.ComponentType<{ className?: string }>;
   delay: number;
+  loading?: boolean;
 }) {
   const n = useCounter(value);
   return (
@@ -52,40 +55,104 @@ function Stat({
         <Icon className="h-4 w-4 text-secondary" />
       </div>
       <div className="mt-3 flex items-baseline gap-1">
-        <span className="font-display text-3xl text-foreground">
-          {prefix}
-          {n.toLocaleString()}
-          {suffix}
-        </span>
+        {loading ? (
+          <span className="h-9 w-20 animate-pulse rounded-lg bg-white/5" />
+        ) : (
+          <span className="font-display text-3xl text-foreground">
+            {prefix}
+            {n.toLocaleString()}
+            {suffix}
+          </span>
+        )}
       </div>
       <div className="mt-2 flex items-center gap-2">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-        <span className="text-xs text-emerald-400">{delta}</span>
-        <span className="text-xs text-muted-foreground">vs last week</span>
+        <span className="text-xs text-muted-foreground">{sublabel}</span>
       </div>
     </motion.div>
   );
 }
 
 export function StatCards() {
+  const [farmers, setFarmers] = useState(0);
+  const [buyers, setBuyers] = useState(0);
+  const [listings, setListings] = useState(0);
+  const [volume, setVolume] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const [farmersRes, buyersRes, listingsCountRes, volumeRes] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .eq("role", "farmer"),
+          supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .in("role", ["buyer", "supplier", "transporter"]),
+          supabase
+            .from("listings")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "active"),
+          supabase
+            .from("listings")
+            .select("price, quantity")
+            .eq("status", "active"),
+        ]);
+
+      setFarmers(farmersRes.count ?? 0);
+      setBuyers(buyersRes.count ?? 0);
+      setListings(listingsCountRes.count ?? 0);
+
+      if (volumeRes.data) {
+        const total = volumeRes.data.reduce(
+          (sum, l) => sum + l.price * l.quantity,
+          0,
+        );
+        setVolume(Math.round(total));
+      }
+
+      setLoading(false);
+    }
+    load();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Stat label="Active Farmers" value={12480} delta="+4.2%" icon={Users} delay={0.0} />
-      <Stat label="Active Buyers" value={3214} delta="+2.8%" icon={ShoppingBag} delay={0.05} />
       <Stat
-        label="Today's Transactions"
-        value={847}
-        delta="+11.4%"
-        icon={Activity}
-        delay={0.1}
+        label="Active Farmers"
+        value={farmers}
+        sublabel="on the platform"
+        icon={Users}
+        delay={0.0}
+        loading={loading}
       />
       <Stat
-        label="Total Volume"
-        value={284600}
+        label="Buyers & Traders"
+        value={buyers}
+        sublabel="on the platform"
+        icon={ShoppingBag}
+        delay={0.05}
+        loading={loading}
+      />
+      <Stat
+        label="Active Listings"
+        value={listings}
+        sublabel="available now"
+        icon={Package}
+        delay={0.1}
+        loading={loading}
+      />
+      <Stat
+        label="Listed Value"
+        value={volume}
         prefix="$"
-        delta="+6.7%"
+        sublabel="across all listings"
         icon={BarChart3}
         delay={0.15}
+        loading={loading}
       />
     </div>
   );
