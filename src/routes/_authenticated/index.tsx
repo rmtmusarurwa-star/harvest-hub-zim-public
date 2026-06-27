@@ -79,9 +79,9 @@ const BUYER_STEPS = [
 const FEATURES = [
   { icon: Bot, title: "Harvest AI", desc: "Type a question in Shona, Ndebele or English. It pulls live data — prices, weather, disease symptoms — and answers in seconds. Also on WhatsApp." },
   { icon: BarChart3, title: "Market prices", desc: "What's soya beans going for in Gweru right now? The data comes from active listings, not guesswork." },
+  { icon: Store, title: "Agri-Shops", desc: "Agro-vets, feed suppliers, irrigation equipment and more. Open your own shop or browse verified stores across Zimbabwe." },
   { icon: Truck, title: "Transport", desc: "Post a request with your cargo, route and budget. Nearby drivers respond. You don't have to know anyone." },
   { icon: ShieldCheck, title: "Verified sellers", desc: "Every listing links to a real Harvest Hub account. One tap to report anything that looks off." },
-  { icon: CloudSun, title: "Weather", desc: "Ask the AI for the forecast at your field. Useful before you plant, before you harvest, before you ship." },
   { icon: TrendingUp, title: "Dashboard", desc: "Your listings, orders, and revenue in one place. No spreadsheets." },
 ];
 
@@ -364,6 +364,53 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* ── Shops showcase ───────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
+        <div className="glass overflow-hidden rounded-3xl">
+          <div className="grid gap-0 md:grid-cols-2">
+            {/* Left — copy */}
+            <div className="flex flex-col justify-center p-8 sm:p-10">
+              <motion.div initial={{ opacity: 0, x: -12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
+                <div className="mb-3 flex items-center gap-2">
+                  <Store className="h-5 w-5 text-secondary" />
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-secondary/80">Agri-Shops</span>
+                </div>
+                <h2 className="font-display text-3xl md:text-4xl">Everything your farm needs, in one place.</h2>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  Browse agro-vets, feed suppliers, irrigation equipment, fertilizers and more — all verified and rated. Or open your own shop and reach buyers across all 10 provinces.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link to="/shops" className="inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-primary transition hover:bg-secondary/90">
+                    Browse Shops <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link to="/shops/setup" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-white/[0.07]">
+                    Open a Shop
+                  </Link>
+                </div>
+              </motion.div>
+            </div>
+            {/* Right — category pills */}
+            <div className="flex flex-col justify-center gap-3 border-t border-white/5 p-8 md:border-l md:border-t-0 sm:p-10">
+              {[
+                { icon: "🐄", label: "Agro-Vets", sub: "Vaccines, dewormers, antibiotics" },
+                { icon: "🌾", label: "Feed Suppliers", sub: "Broiler, layer, dairy & pig feed" },
+                { icon: "🧪", label: "Fertilizers & Chemicals", sub: "NPK, herbicides, fungicides" },
+                { icon: "💧", label: "Irrigation Equipment", sub: "Drip kits, pumps, poly pipe" },
+                { icon: "🛠️", label: "Farming Tools", sub: "Hoes, sprayers, hand tools" },
+              ].map(({ icon, label, sub }) => (
+                <motion.div key={label} initial={{ opacity: 0, x: 12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.35 }} className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-4 py-3 hover:bg-white/[0.06] transition">
+                  <span className="text-xl">{icon}</span>
+                  <div>
+                    <div className="text-sm font-medium">{label}</div>
+                    <div className="text-xs text-muted-foreground">{sub}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Final CTA ────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
         <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="glass overflow-hidden rounded-3xl p-8 text-center sm:p-12">
@@ -393,6 +440,7 @@ function LandingPage() {
           <span>© {new Date().getFullYear()} Harvest Hub · Connecting Zimbabwe's farms</span>
           <div className="flex items-center gap-4">
             <Link to="/marketplace" className="transition-colors hover:text-foreground">Marketplace</Link>
+            <Link to="/shops" className="transition-colors hover:text-foreground">Shops</Link>
             <Link to="/market-intelligence" className="transition-colors hover:text-foreground">Prices</Link>
             <Link to="/login" className="transition-colors hover:text-foreground">Sign in</Link>
             <Link to="/signup" className="transition-colors hover:text-foreground">Sign up</Link>

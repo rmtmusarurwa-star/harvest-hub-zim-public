@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { BadgeCheck, MapPin, Search, ShoppingCart, Star, Navigation } from "lucide-react";
+import { BadgeCheck, MapPin, Plus, Search, ShoppingCart, Star, Store, Navigation } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import {
   MOCK_SHOPS,
   SHOP_CATEGORIES,
@@ -24,6 +25,21 @@ function ShopsPage() {
   const [category, setCategory] = useState<ShopCategory | "all">("all");
   const [search, setSearch] = useState("");
   const { count, open } = useCart();
+  const { user } = useAuth();
+
+  // Check if logged-in user already owns a shop
+  const { data: myShop } = useQuery({
+    queryKey: ["my-shop", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("shops")
+        .select("id")
+        .eq("owner_id", user!.id)
+        .maybeSingle();
+      return data as { id: string } | null;
+    },
+  });
 
   const { data: dbShops = [] } = useQuery({
     queryKey: ["shops"],
@@ -73,15 +89,30 @@ function ShopsPage() {
           </p>
         </div>
 
-        <Button variant="outline" size="sm" onClick={open} className="gap-2 self-start">
-          <ShoppingCart className="h-4 w-4" />
-          Cart
-          {count > 0 && (
-            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-secondary px-1 text-[10px] font-semibold text-secondary-foreground">
-              {count}
-            </span>
+        <div className="flex shrink-0 items-center gap-2 self-start">
+          {myShop ? (
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/shops/manage">
+                <Store className="h-4 w-4" /> Manage My Shop
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/shops/setup">
+                <Plus className="h-4 w-4" /> Open a Shop
+              </Link>
+            </Button>
           )}
-        </Button>
+          <Button variant="outline" size="sm" onClick={open} className="gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Cart
+            {count > 0 && (
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-secondary px-1 text-[10px] font-semibold text-secondary-foreground">
+                {count}
+              </span>
+            )}
+          </Button>
+        </div>
       </motion.div>
 
       <div className="glass rounded-2xl p-3">

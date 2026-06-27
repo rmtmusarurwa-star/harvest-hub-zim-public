@@ -10,6 +10,8 @@ import type { ListingRow } from "@/lib/marketplace-data";
 
 export type CartItem = {
   id: string;
+  /** Explicit listings.id to store on order. Null for shop products (avoids FK violation). */
+  listing_id?: string | null;
   title: string;
   price: number;
   unit: string;

@@ -51,6 +51,7 @@ export const PAYMENT_METHOD_LABEL: Record<
   zipit: "ZIPIT / Bank Transfer",
   cash_on_delivery: "Cash on Delivery",
   card: "Visa / Mastercard",
+  clicknpay: "ClicknPay",
 };
 
 export const PAYMENT_STATUS_LABEL: Record<

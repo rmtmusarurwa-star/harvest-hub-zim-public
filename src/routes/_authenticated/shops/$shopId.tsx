@@ -92,6 +92,7 @@ function ShopDetailPage() {
   const handleAdd = (p: ShopProductRow) => {
     addItem({
       id: p.id,
+      listing_id: null, // shop products are not in listings table — prevent FK violation
       title: p.name,
       price: Number(p.price),
       unit: p.unit,

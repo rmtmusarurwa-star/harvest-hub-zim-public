@@ -26,6 +26,8 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedTransportIndexRouteImport } from './routes/_authenticated/transport/index'
 import { Route as AuthenticatedShopsIndexRouteImport } from './routes/_authenticated/shops/index'
+import { Route as AuthenticatedShopsSetupRouteImport } from './routes/_authenticated/shops/setup'
+import { Route as AuthenticatedShopsManageRouteImport } from './routes/_authenticated/shops/manage'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedFarmersIndexRouteImport } from './routes/_authenticated/farmers/index'
 import { Route as AuthenticatedEquipmentIndexRouteImport } from './routes/_authenticated/equipment/index'
@@ -40,6 +42,7 @@ import { Route as AuthenticatedCommunityPostIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedCheckoutConfirmationRouteImport } from './routes/_authenticated/checkout.confirmation'
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
 import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders/$orderId'
+import { Route as CheckoutPaymentReturnRouteImport } from './routes/checkout.payment-return'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -158,6 +161,18 @@ const AuthenticatedShopsShopIdRoute =
     path: '/shops/$shopId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedShopsSetupRoute =
+  AuthenticatedShopsSetupRouteImport.update({
+    id: '/shops/setup',
+    path: '/shops/setup',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedShopsManageRoute =
+  AuthenticatedShopsManageRouteImport.update({
+    id: '/shops/manage',
+    path: '/shops/manage',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProfileEditRoute =
   AuthenticatedProfileEditRouteImport.update({
     id: '/profile/edit',
@@ -212,6 +227,11 @@ const AuthenticatedOrdersOrderIdRoute =
     path: '/orders/$orderId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const CheckoutPaymentReturnRoute = CheckoutPaymentReturnRouteImport.update({
+  id: '/checkout/payment-return',
+  path: '/checkout/payment-return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -236,6 +256,8 @@ export interface FileRoutesByFullPath {
   '/profile/$userId': typeof AuthenticatedProfileUserIdRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
+  '/shops/setup': typeof AuthenticatedShopsSetupRoute
+  '/shops/manage': typeof AuthenticatedShopsManageRoute
   '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/farmers/': typeof AuthenticatedFarmersIndexRoute
@@ -244,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/transport/': typeof AuthenticatedTransportIndexRoute
   '/orders/': typeof AuthenticatedOrdersIndexRoute
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -268,6 +291,8 @@ export interface FileRoutesByTo {
   '/profile/$userId': typeof AuthenticatedProfileUserIdRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
+  '/shops/setup': typeof AuthenticatedShopsSetupRoute
+  '/shops/manage': typeof AuthenticatedShopsManageRoute
   '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/equipment': typeof AuthenticatedEquipmentIndexRoute
   '/farmers': typeof AuthenticatedFarmersIndexRoute
@@ -276,6 +301,7 @@ export interface FileRoutesByTo {
   '/transport': typeof AuthenticatedTransportIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -302,6 +328,8 @@ export interface FileRoutesById {
   '/_authenticated/profile/$userId': typeof AuthenticatedProfileUserIdRoute
   '/_authenticated/profile/edit': typeof AuthenticatedProfileEditRoute
   '/_authenticated/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
+  '/_authenticated/shops/setup': typeof AuthenticatedShopsSetupRoute
+  '/_authenticated/shops/manage': typeof AuthenticatedShopsManageRoute
   '/_authenticated/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/_authenticated/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/_authenticated/farmers/': typeof AuthenticatedFarmersIndexRoute
@@ -310,6 +338,7 @@ export interface FileRoutesById {
   '/_authenticated/transport/': typeof AuthenticatedTransportIndexRoute
   '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
+  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -336,6 +365,8 @@ export interface FileRouteTypes {
     | '/profile/$userId'
     | '/profile/edit'
     | '/shops/$shopId'
+    | '/shops/setup'
+    | '/shops/manage'
     | '/transport/$vehicleId'
     | '/equipment/'
     | '/farmers/'
@@ -344,6 +375,7 @@ export interface FileRouteTypes {
     | '/transport/'
     | '/orders/'
     | '/orders/$orderId'
+    | '/checkout/payment-return'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -368,6 +400,8 @@ export interface FileRouteTypes {
     | '/profile/$userId'
     | '/profile/edit'
     | '/shops/$shopId'
+    | '/shops/setup'
+    | '/shops/manage'
     | '/transport/$vehicleId'
     | '/equipment'
     | '/farmers'
@@ -376,6 +410,7 @@ export interface FileRouteTypes {
     | '/transport'
     | '/orders'
     | '/orders/$orderId'
+    | '/checkout/payment-return'
   id:
     | '__root__'
     | '/_authenticated'
@@ -401,6 +436,8 @@ export interface FileRouteTypes {
     | '/_authenticated/profile/$userId'
     | '/_authenticated/profile/edit'
     | '/_authenticated/shops/$shopId'
+    | '/_authenticated/shops/setup'
+    | '/_authenticated/shops/manage'
     | '/_authenticated/transport/$vehicleId'
     | '/_authenticated/equipment/'
     | '/_authenticated/farmers/'
@@ -409,6 +446,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transport/'
     | '/_authenticated/orders/'
     | '/_authenticated/orders/$orderId'
+    | '/checkout/payment-return'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -417,6 +455,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  CheckoutPaymentReturnRoute: typeof CheckoutPaymentReturnRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -575,6 +614,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShopsShopIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/shops/setup': {
+      id: '/_authenticated/shops/setup'
+      path: '/shops/setup'
+      fullPath: '/shops/setup'
+      preLoaderRoute: typeof AuthenticatedShopsSetupRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/shops/manage': {
+      id: '/_authenticated/shops/manage'
+      path: '/shops/manage'
+      fullPath: '/shops/manage'
+      preLoaderRoute: typeof AuthenticatedShopsManageRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/profile/edit': {
       id: '/_authenticated/profile/edit'
       path: '/profile/edit'
@@ -638,6 +691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrdersOrderIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/checkout/payment-return': {
+      id: '/checkout/payment-return'
+      path: '/checkout/payment-return'
+      fullPath: '/checkout/payment-return'
+      preLoaderRoute: typeof CheckoutPaymentReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -686,6 +746,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProfileUserIdRoute: typeof AuthenticatedProfileUserIdRoute
   AuthenticatedProfileEditRoute: typeof AuthenticatedProfileEditRoute
   AuthenticatedShopsShopIdRoute: typeof AuthenticatedShopsShopIdRoute
+  AuthenticatedShopsSetupRoute: typeof AuthenticatedShopsSetupRoute
+  AuthenticatedShopsManageRoute: typeof AuthenticatedShopsManageRoute
   AuthenticatedTransportVehicleIdRoute: typeof AuthenticatedTransportVehicleIdRoute
   AuthenticatedEquipmentIndexRoute: typeof AuthenticatedEquipmentIndexRoute
   AuthenticatedFarmersIndexRoute: typeof AuthenticatedFarmersIndexRoute
@@ -715,6 +777,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProfileUserIdRoute: AuthenticatedProfileUserIdRoute,
   AuthenticatedProfileEditRoute: AuthenticatedProfileEditRoute,
   AuthenticatedShopsShopIdRoute: AuthenticatedShopsShopIdRoute,
+  AuthenticatedShopsSetupRoute: AuthenticatedShopsSetupRoute,
+  AuthenticatedShopsManageRoute: AuthenticatedShopsManageRoute,
   AuthenticatedTransportVehicleIdRoute: AuthenticatedTransportVehicleIdRoute,
   AuthenticatedEquipmentIndexRoute: AuthenticatedEquipmentIndexRoute,
   AuthenticatedFarmersIndexRoute: AuthenticatedFarmersIndexRoute,
@@ -735,6 +799,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  CheckoutPaymentReturnRoute: CheckoutPaymentReturnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

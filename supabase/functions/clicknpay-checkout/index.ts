@@ -1,0 +1,132 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const CLICKNPAY_BASE = "https://backendservices.clicknpay.africa:2081";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const CLICKNPAY_PUBLIC_UID = Deno.env.get("CLICKNPAY_PUBLIC_UID") ?? "HQGVaTYJihldpvzsw";
+const APP_URL = Deno.env.get("APP_URL") ?? "https://harvest-hub-zim.pages.dev";
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+function genCode() {
+  const ts = Date.now().toString(36).toUpperCase().slice(-4);
+  const rand = Math.random().toString(36).toUpperCase().slice(2, 5);
+  return `HHZ-${ts}${rand}`;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
+  try {
+    const { buyerId, buyerEmail, paymentMethod, items, customerPhone } =
+      await req.json() as {
+        buyerId: string;
+        buyerEmail?: string;
+        paymentMethod?: string;
+        items: Array<{
+          id: string;
+          farmer_id?: string;
+          title: string;
+          quantity: number;
+          unit: string;
+          price: number;
+        }>;
+        customerPhone?: string;
+      };
+
+    if (!buyerId || !items?.length) return json({ error: "Missing required fields" }, 400);
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const primaryCode = genCode();
+    const orderRows = items.map((it, i) => ({
+      order_code: i === 0 ? primaryCode : genCode(),
+      buyer_id: buyerId,
+      farmer_id: it.farmer_id && it.farmer_id !== "mock" ? it.farmer_id : buyerId,
+      listing_id: it.id && !String(it.id).startsWith("mock-") ? it.id : null,
+      listing_title: it.title,
+      quantity: it.quantity,
+      unit: it.unit,
+      unit_price: it.price,
+      total_amount: it.price * it.quantity,
+      payment_method: paymentMethod ?? "card", // store the actual method, not 'clicknpay'
+      payment_status: "pending",
+      payment_reference: primaryCode,
+    }));
+
+    const { data: inserted, error: dbErr } = await supabase
+      .from("orders")
+      .insert(orderRows)
+      .select("order_code, listing_title, quantity, unit, unit_price");
+
+    if (dbErr) throw new Error(dbErr.message);
+
+    const codes = inserted!.map((o: { order_code: string }) => o.order_code);
+
+    // The popup will land here after ClicknPay payment; it auto-closes via window.close()
+    const returnUrl = `${APP_URL}/checkout/payment-return`;
+
+    const productsList = inserted!.map((o: {
+      listing_title: string;
+      quantity: number;
+      unit: string;
+      unit_price: number;
+    }, i: number) => ({
+      id: i,
+      productName: o.listing_title ?? "Farm Produce",
+      description: `${o.quantity} ${o.unit}`,
+      price: Number(o.unit_price),
+      quantity: Number(o.quantity),
+    }));
+
+    const clicknpayBody = {
+      channel: "AUTOMATED",
+      clientReference: primaryCode,
+      currency: "USD",
+      customerCharged: true,
+      customerPhoneNumber: customerPhone ?? "",
+      customerEmail: buyerEmail ?? "",
+      description: `Harvest Hub – ${codes.length} order${codes.length > 1 ? "s" : ""}`,
+      multiplePayments: true,
+      orderYpe: "DYNAMIC",
+      productsList,
+      publicUniqueId: CLICKNPAY_PUBLIC_UID,
+      returnUrl,
+    };
+
+    const cpRes = await fetch(`${CLICKNPAY_BASE}/payme/orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(clicknpayBody),
+    });
+
+    const cpText = await cpRes.text();
+    if (!cpRes.ok) throw new Error(`ClicknPay ${cpRes.status}: ${cpText}`);
+
+    const cpData = JSON.parse(cpText);
+    const paymeURL: string | undefined =
+      cpData.paymeURL ?? cpData.payme_url ?? cpData.PaymeURL;
+
+    if (!paymeURL) {
+      console.error("[clicknpay-checkout] response missing paymeURL:", cpText);
+      throw new Error("ClicknPay did not return a payment URL");
+    }
+
+    return json({ paymeURL, codes: codes.join(","), primaryCode });
+  } catch (err) {
+    console.error("[clicknpay-checkout]", err);
+    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+  }
+});

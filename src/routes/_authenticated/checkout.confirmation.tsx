@@ -75,9 +75,7 @@ function ConfirmationPage() {
         >
           <CheckCircle2 className="h-10 w-10 text-primary" />
         </motion.div>
-        <h1 className="relative mt-5 font-display text-3xl md:text-4xl">
-          Order Confirmed
-        </h1>
+        <h1 className="relative mt-5 font-display text-3xl md:text-4xl">Order Confirmed</h1>
         <p className="relative mt-2 text-sm text-muted-foreground">
           Thank you, {buyerName}. Your harvest is on its way.
         </p>
@@ -98,7 +96,8 @@ function ConfirmationPage() {
           </span>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Paid via {PAYMENT_METHOD_LABEL[orders[0].payment_method]}
+          Paid via{" "}
+          {PAYMENT_METHOD_LABEL[orders[0].payment_method] ?? orders[0].payment_method}
         </p>
         <ul className="mt-4 divide-y divide-white/5">
           {orders.map((o) => (
@@ -112,9 +111,7 @@ function ConfirmationPage() {
                   {o.quantity} {o.unit} · code {o.order_code}
                 </div>
               </div>
-              <div className="font-mono text-sm">
-                ${Number(o.total_amount).toFixed(2)}
-              </div>
+              <div className="font-mono text-sm">${Number(o.total_amount).toFixed(2)}</div>
             </li>
           ))}
         </ul>
@@ -122,18 +119,14 @@ function ConfirmationPage() {
           <span className="text-xs uppercase tracking-widest text-muted-foreground">
             Grand Total
           </span>
-          <span className="font-display text-2xl text-secondary">
-            ${total.toFixed(2)}
-          </span>
+          <span className="font-display text-2xl text-secondary">${total.toFixed(2)}</span>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
         <Button
           variant="secondary"
-          onClick={() => {
-            void downloadReceiptPDF(orders, buyerName);
-          }}
+          onClick={() => { void downloadReceiptPDF(orders, buyerName); }}
         >
           <Download className="h-4 w-4" /> Download Receipt (PDF)
         </Button>

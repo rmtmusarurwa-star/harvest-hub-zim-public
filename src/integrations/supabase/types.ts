@@ -1292,6 +1292,7 @@ export type Database = {
         | "zipit"
         | "cash_on_delivery"
         | "card"
+        | "clicknpay"
       payment_status:
         | "pending"
         | "awaiting_confirmation"
@@ -1521,6 +1522,7 @@ export const Constants = {
         "zipit",
         "cash_on_delivery",
         "card",
+        "clicknpay",
       ],
       payment_status: [
         "pending",
