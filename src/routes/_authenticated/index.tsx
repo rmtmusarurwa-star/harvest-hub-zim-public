@@ -122,6 +122,7 @@ function LandingPage() {
           <Link to="/"><Wordmark size={32} /></Link>
           <nav className="hidden items-center gap-6 md:flex">
             <Link to="/marketplace" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Marketplace</Link>
+            <Link to="/shops" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Shops</Link>
             <Link to="/market-intelligence" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Market Prices</Link>
           </nav>
           <div className="flex items-center gap-3">

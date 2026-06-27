@@ -124,6 +124,7 @@ function AdminPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="listings">Listings</TabsTrigger>
+          <TabsTrigger value="shops">Shops</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="verification">Verification</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -142,6 +143,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="listings">
           <ListingsTab />
+        </TabsContent>
+        <TabsContent value="shops">
+          <ShopsTab />
         </TabsContent>
         <TabsContent value="orders">
           <OrdersTab />
@@ -640,6 +644,172 @@ function ListingsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ============ SHOPS ============
+function ShopsTab() {
+  const [shops, setShops] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("shops")
+      .select("id, name, category, location, province, verified, created_at, owner_id, phone, email")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (!data) { setLoading(false); return; }
+
+    // Fetch owner names in one go
+    const ownerIds = [...new Set(data.map((s: any) => s.owner_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", ownerIds);
+    const nameMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.full_name]));
+
+    // Fetch product counts
+    const { data: products } = await supabase
+      .from("shop_products")
+      .select("shop_id");
+    const countMap: Record<string, number> = {};
+    (products ?? []).forEach((p: any) => {
+      countMap[p.shop_id] = (countMap[p.shop_id] ?? 0) + 1;
+    });
+
+    setShops(data.map((s: any) => ({
+      ...s,
+      ownerName: nameMap[s.owner_id] ?? "Unknown",
+      productCount: countMap[s.id] ?? 0,
+    })));
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  const filtered = shops.filter((s) => {
+    const q = search.toLowerCase();
+    return !q || `${s.name} ${s.location} ${s.province} ${s.ownerName}`.toLowerCase().includes(q);
+  });
+
+  async function toggleVerify(s: any) {
+    const next = !s.verified;
+    const { error } = await supabase.from("shops").update({ verified: next } as any).eq("id", s.id);
+    if (error) return toast.error(error.message);
+    await logAction(next ? "verify_shop" : "unverify_shop", "shop", s.id, s.name);
+    toast.success(next ? "Shop verified" : "Verification removed");
+    load();
+  }
+
+  async function deleteShop(s: any) {
+    if (!window.confirm(`Delete shop "${s.name}"? This cannot be undone.`)) return;
+    const { error } = await supabase.from("shops").delete().eq("id", s.id);
+    if (error) return toast.error(error.message);
+    await logAction("delete_shop", "shop", s.id, s.name);
+    toast.success("Shop deleted");
+    load();
+  }
+
+  const CATEGORY_LABEL: Record<string, string> = {
+    agro_vets: "Agro-Vet",
+    feed_suppliers: "Feed",
+    fertilizers: "Fertilizers",
+    irrigation: "Irrigation",
+    tools: "Tools",
+    other: "Other",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search shops…"
+            className="pl-9"
+          />
+        </div>
+        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+        <span className="text-xs text-muted-foreground">{filtered.length} shops</span>
+      </div>
+
+      <div className="glass overflow-hidden rounded-2xl">
+        <table className="w-full text-sm">
+          <thead className="border-b border-white/5 bg-white/[0.02] text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="p-3 text-left">Shop</th>
+              <th className="p-3 text-left">Category</th>
+              <th className="p-3 text-left">Location</th>
+              <th className="p-3 text-left">Owner</th>
+              <th className="p-3 text-left">Products</th>
+              <th className="p-3 text-left">Status</th>
+              <th className="p-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                  <Loader2 className="inline h-4 w-4 animate-spin mr-2" />Loading…
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                  No shops found
+                </td>
+              </tr>
+            ) : (
+              filtered.map((s) => (
+                <tr key={s.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                  <td className="p-3">
+                    <div className="font-medium">{s.name}</div>
+                    {s.phone && <div className="text-xs text-muted-foreground">{s.phone}</div>}
+                  </td>
+                  <td className="p-3 text-muted-foreground text-xs">
+                    {CATEGORY_LABEL[s.category] ?? s.category}
+                  </td>
+                  <td className="p-3 text-xs text-muted-foreground">
+                    {s.location}<br />{s.province}
+                  </td>
+                  <td className="p-3 text-xs text-muted-foreground">{s.ownerName}</td>
+                  <td className="p-3 text-center text-xs">{s.productCount}</td>
+                  <td className="p-3">
+                    {s.verified ? (
+                      <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30">
+                        <BadgeCheck className="h-3 w-3 mr-1" />Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">Unverified</Badge>
+                    )}
+                  </td>
+                  <td className="p-3 text-right space-x-1">
+                    <Button size="sm" variant="outline" onClick={() => toggleVerify(s)}>
+                      {s.verified ? (
+                        <><XCircle className="h-3.5 w-3.5 mr-1" />Unverify</>
+                      ) : (
+                        <><CheckCircle2 className="h-3.5 w-3.5 mr-1" />Verify</>
+                      )}
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => deleteShop(s)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
