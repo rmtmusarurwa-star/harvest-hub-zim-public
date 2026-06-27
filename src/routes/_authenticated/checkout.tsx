@@ -175,6 +175,33 @@ function CheckoutPage() {
       return;
     }
 
+    // ── Open popup SYNCHRONOUSLY (before any await) ─────────────────────────
+    // Browsers block window.open() called after an async delay — it must happen
+    // inside the synchronous part of the user-gesture handler.
+    const pw = 820, ph = 700;
+    const left = Math.round((screen.width - pw) / 2);
+    const top = Math.round((screen.height - ph) / 2);
+    const popup = window.open(
+      "about:blank",
+      "harvest_pay",
+      `width=${pw},height=${ph},left=${left},top=${top},scrollbars=yes,status=yes`,
+    );
+
+    if (!popup) {
+      toast.error("Popup blocked — allow popups for this site and try again");
+      return;
+    }
+    popupRef.current = popup;
+
+    // Show a loading message inside the blank popup while the edge function runs
+    try {
+      popup.document.write(
+        `<html><body style="background:#0a0f0d;color:#86efac;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+          <p style="font-size:1rem">Preparing payment…</p>
+        </body></html>`,
+      );
+    } catch { /* cross-origin write might be blocked in some browsers — harmless */ }
+
     setSubmitting(true);
 
     const { data, error } = await supabase.functions.invoke("clicknpay-checkout", {
@@ -195,29 +222,16 @@ function CheckoutPage() {
     });
 
     if (error || !data?.paymeURL) {
+      popup.close();
+      popupRef.current = null;
       toast.error(data?.error ?? error?.message ?? "Could not start payment");
       setSubmitting(false);
       return;
     }
 
-    // Open centred popup
-    const pw = 820, ph = 700;
-    const left = Math.round((screen.width - pw) / 2);
-    const top = Math.round((screen.height - ph) / 2);
+    // Navigate the already-open popup to the real payment URL
+    popup.location.href = data.paymeURL as string;
 
-    const popup = window.open(
-      data.paymeURL as string,
-      "harvest_pay",
-      `width=${pw},height=${ph},left=${left},top=${top},scrollbars=yes,status=yes`,
-    );
-
-    if (!popup) {
-      toast.error("Popup blocked — allow popups for this site and try again");
-      setSubmitting(false);
-      return;
-    }
-
-    popupRef.current = popup;
     setCnpState("waiting");
     setSubmitting(false);
     startPolling(data.primaryCode as string, data.codes as string);

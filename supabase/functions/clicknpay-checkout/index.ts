@@ -100,7 +100,7 @@ serve(async (req) => {
       customerEmail: buyerEmail ?? "",
       description: `Harvest Hub – ${codes.length} order${codes.length > 1 ? "s" : ""}`,
       multiplePayments: true,
-      orderYpe: "DYNAMIC",
+      orderType: "DYNAMIC",
       productsList,
       publicUniqueId: CLICKNPAY_PUBLIC_UID,
       returnUrl,

@@ -13,6 +13,7 @@ import {
   Wallet,
   Globe2,
   Receipt,
+  Settings,
   Shield,
   Sprout,
   UserCircle,
@@ -38,6 +39,7 @@ export const NAV_ITEMS = [
   { to: "/community", label: "Community", icon: Globe2 },
   { to: "/orders", label: "Orders", icon: ClipboardList },
   { to: "/receipts", label: "Receipts", icon: Receipt },
+  { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 const ADMIN_ITEM = { to: "/admin", label: "Admin", icon: Shield } as const;
