@@ -3,17 +3,43 @@ import { useEffect } from "react";
 import { CheckCircle2 } from "lucide-react";
 
 // This page loads inside the ClicknPay popup after payment.
-// It immediately tries to close the popup; the parent window's polling handles the rest.
+// 1. It reads any status params ClicknPay passes back in the URL.
+// 2. It postMessages those params to the parent checkout page.
+// 3. It closes the popup window.
 export const Route = createFileRoute("/checkout/payment-return")({
   component: PaymentReturnPage,
 });
 
 function PaymentReturnPage() {
   useEffect(() => {
-    // Give the page a brief moment to paint before closing
-    const t = setTimeout(() => {
-      window.close();
-    }, 600);
+    // Read any query params ClicknPay appended to the return URL
+    const p = new URLSearchParams(window.location.search);
+    const status =
+      p.get("status") ??
+      p.get("paymentStatus") ??
+      p.get("PaymentStatus") ??
+      "";
+    const reference =
+      p.get("reference") ??
+      p.get("clientReference") ??
+      p.get("clientreference") ??
+      p.get("ClientReference") ??
+      "";
+
+    // Notify the parent checkout page
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(
+          { type: "CLICKNPAY_RETURN", status, reference },
+          "*",
+        );
+      }
+    } catch {
+      // opener may be cross-origin in some browsers — harmless
+    }
+
+    // Close the popup after a brief moment so the user sees the check
+    const t = setTimeout(() => window.close(), 800);
     return () => clearTimeout(t);
   }, []);
 

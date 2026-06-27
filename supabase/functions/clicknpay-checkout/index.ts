@@ -6,7 +6,9 @@ const CLICKNPAY_BASE = "https://backendservices.clicknpay.africa:2081";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const CLICKNPAY_PUBLIC_UID = Deno.env.get("CLICKNPAY_PUBLIC_UID") ?? "HQGVaTYJihldpvzsw";
-const APP_URL = Deno.env.get("APP_URL") ?? "https://harvest-hub-zim.pages.dev";
+// APP_URL must be set as a Supabase secret: supabase secrets set APP_URL=https://your-domain
+// Falls back to the Workers URL — update this if your custom domain changes.
+const APP_URL = Deno.env.get("APP_URL") ?? "https://harvest-hub-zim.rowlandmusarurwa.workers.dev";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

@@ -67,10 +67,13 @@ function CheckoutPage() {
   const [copied, setCopied] = useState(false);
 
   // ClicknPay popup + polling refs
-  const popupRef    = useRef<Window | null>(null);
-  const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
-  const closedRef   = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
+  const popupRef       = useRef<Window | null>(null);
+  const pollRef        = useRef<ReturnType<typeof setInterval> | null>(null);
+  const closedRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef     = useRef<ReturnType<typeof setTimeout>  | null>(null);
+  // Store current transaction so message listener + closed watcher can access them
+  const primaryCodeRef = useRef<string | null>(null);
+  const codesRef       = useRef<string | null>(null);
 
   const reference = useMemo(() => generateOrderCode(), []);
 
@@ -81,6 +84,22 @@ function CheckoutPage() {
       if (closedRef.current)  clearInterval(closedRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
+  }, []);
+
+  // Listen for postMessage from the payment-return popup page.
+  // When ClicknPay redirects the popup to /checkout/payment-return,
+  // that page messages us back so we can verify immediately instead of
+  // waiting up to 3 s for the next poll tick.
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type !== "CLICKNPAY_RETURN") return;
+      if (primaryCodeRef.current && codesRef.current) {
+        void verifyNowRef.current?.(primaryCodeRef.current, codesRef.current);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (items.length === 0) {
@@ -143,6 +162,40 @@ function CheckoutPage() {
     if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
   }
 
+  // Shared verify-and-act logic — called by both the poll interval AND the
+  // immediate triggers (postMessage from popup, popup closed detection).
+  async function verifyNow(primaryCode: string, codes: string) {
+    try {
+      const { data, error } = await supabase.functions.invoke("clicknpay-verify", {
+        body: { primaryCode },
+      });
+      if (error) {
+        console.warn("[verify] error (will retry via poll):", error.message);
+        return;
+      }
+      const status: string = data?.paymentStatus ?? "pending";
+      if (status === "paid") {
+        stopAll();
+        popupRef.current?.close();
+        clear();
+        void navigate({ to: "/checkout/confirmation", search: { codes } });
+      } else if (status === "failed") {
+        stopAll();
+        popupRef.current?.close();
+        setCnpState("failed");
+        setSubmitting(false);
+      }
+      // 'pending' → no action; poll interval will retry
+    } catch (e) {
+      console.warn("[verify] unexpected error (will retry):", e);
+    }
+  }
+
+  // Stable ref so the postMessage useEffect (empty deps) can call the latest
+  // verifyNow without stale-closure issues
+  const verifyNowRef = useRef(verifyNow);
+  verifyNowRef.current = verifyNow;
+
   function startPolling(primaryCode: string, codes: string) {
     // Hard timeout — 10 minutes
     timeoutRef.current = setTimeout(() => {
@@ -152,44 +205,21 @@ function CheckoutPage() {
       toast.error("Payment timed out. If you completed it, check your orders page.");
     }, 10 * 60 * 1000);
 
-    // Watch for popup closure while still waiting
+    // Watch for popup closure — when the popup closes (after payment-return
+    // calls window.close()), trigger an immediate verify instead of waiting
+    // up to 3 s for the next poll tick.
     closedRef.current = setInterval(() => {
       if (popupRef.current?.closed) {
         if (closedRef.current) { clearInterval(closedRef.current); closedRef.current = null; }
         setCnpState("popup_closed");
+        // Immediate verify — don't wait for next poll tick
+        void verifyNowRef.current(primaryCode, codes);
       }
     }, 800);
 
-    // Poll verify every 3 seconds
+    // Poll verify every 3 seconds as a fallback
     pollRef.current = setInterval(async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("clicknpay-verify", {
-          body: { primaryCode },
-        });
-
-        if (error) {
-          // Transient network / function error — keep polling, don't surface to user
-          console.warn("[poll] verify error (will retry):", error.message);
-          return;
-        }
-
-        const status: string = data?.paymentStatus ?? "pending";
-
-        if (status === "paid") {
-          stopAll();
-          popupRef.current?.close();
-          clear();
-          void navigate({ to: "/checkout/confirmation", search: { codes } });
-        } else if (status === "failed") {
-          stopAll();
-          popupRef.current?.close();
-          setCnpState("failed");
-          setSubmitting(false);
-        }
-        // 'pending' → keep polling
-      } catch (e) {
-        console.warn("[poll] unexpected error (will retry):", e);
-      }
+      await verifyNowRef.current(primaryCode, codes);
     }, 3000);
   }
 
@@ -258,6 +288,10 @@ function CheckoutPage() {
 
     // Navigate the already-open popup to the real payment URL
     popup.location.href = data.paymeURL as string;
+
+    // Store in refs so postMessage listener + closedRef watcher can access them
+    primaryCodeRef.current = data.primaryCode as string;
+    codesRef.current       = data.codes as string;
 
     setCnpState("waiting");
     setSubmitting(false);
