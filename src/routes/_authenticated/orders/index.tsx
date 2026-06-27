@@ -36,7 +36,11 @@ function OrdersPage() {
   });
 
   const purchases = orders.filter((o) => o.buyer_id === user?.id);
-  const sales = orders.filter((o) => o.farmer_id === user?.id);
+  // Exclude orders where the user is both buyer and farmer (mock/test listings
+  // fall back to buyer_id for farmer_id — those belong only in Purchases).
+  const sales = orders.filter(
+    (o) => o.farmer_id === user?.id && o.buyer_id !== user?.id,
+  );
 
   return (
     <section className="space-y-6">
