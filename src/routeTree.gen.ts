@@ -38,6 +38,8 @@ import { Route as AuthenticatedFarmersFarmerIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment/$equipmentId'
 import { Route as AuthenticatedCommunityPostIdRouteImport } from './routes/_authenticated/community.$postId'
 import { Route as AuthenticatedCheckoutConfirmationRouteImport } from './routes/_authenticated/checkout.confirmation'
+import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
+import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders/$orderId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -198,6 +200,18 @@ const AuthenticatedCheckoutConfirmationRoute =
     path: '/confirmation',
     getParentRoute: () => AuthenticatedCheckoutRoute,
   } as any)
+const AuthenticatedOrdersIndexRoute =
+  AuthenticatedOrdersIndexRouteImport.update({
+    id: '/orders/',
+    path: '/orders/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedOrdersOrderIdRoute =
+  AuthenticatedOrdersOrderIdRouteImport.update({
+    id: '/orders/$orderId',
+    path: '/orders/$orderId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -228,6 +242,8 @@ export interface FileRoutesByFullPath {
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/shops/': typeof AuthenticatedShopsIndexRoute
   '/transport/': typeof AuthenticatedTransportIndexRoute
+  '/orders/': typeof AuthenticatedOrdersIndexRoute
+  '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -258,6 +274,8 @@ export interface FileRoutesByTo {
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
   '/shops': typeof AuthenticatedShopsIndexRoute
   '/transport': typeof AuthenticatedTransportIndexRoute
+  '/orders': typeof AuthenticatedOrdersIndexRoute
+  '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -290,6 +308,8 @@ export interface FileRoutesById {
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/_authenticated/shops/': typeof AuthenticatedShopsIndexRoute
   '/_authenticated/transport/': typeof AuthenticatedTransportIndexRoute
+  '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
+  '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -322,6 +342,8 @@ export interface FileRouteTypes {
     | '/marketplace/'
     | '/shops/'
     | '/transport/'
+    | '/orders/'
+    | '/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -352,6 +374,8 @@ export interface FileRouteTypes {
     | '/marketplace'
     | '/shops'
     | '/transport'
+    | '/orders'
+    | '/orders/$orderId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -383,6 +407,8 @@ export interface FileRouteTypes {
     | '/_authenticated/marketplace/'
     | '/_authenticated/shops/'
     | '/_authenticated/transport/'
+    | '/_authenticated/orders/'
+    | '/_authenticated/orders/$orderId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -598,6 +624,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCheckoutConfirmationRouteImport
       parentRoute: typeof AuthenticatedCheckoutRoute
     }
+    '/_authenticated/orders/': {
+      id: '/_authenticated/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof AuthenticatedOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/orders/$orderId': {
+      id: '/_authenticated/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof AuthenticatedOrdersOrderIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -652,6 +692,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
   AuthenticatedShopsIndexRoute: typeof AuthenticatedShopsIndexRoute
   AuthenticatedTransportIndexRoute: typeof AuthenticatedTransportIndexRoute
+  AuthenticatedOrdersIndexRoute: typeof AuthenticatedOrdersIndexRoute
+  AuthenticatedOrdersOrderIdRoute: typeof AuthenticatedOrdersOrderIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -679,6 +721,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   AuthenticatedShopsIndexRoute: AuthenticatedShopsIndexRoute,
   AuthenticatedTransportIndexRoute: AuthenticatedTransportIndexRoute,
+  AuthenticatedOrdersIndexRoute: AuthenticatedOrdersIndexRoute,
+  AuthenticatedOrdersOrderIdRoute: AuthenticatedOrdersOrderIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

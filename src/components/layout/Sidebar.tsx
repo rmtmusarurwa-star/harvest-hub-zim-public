@@ -18,6 +18,7 @@ import {
   UserCircle,
   X,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
@@ -35,6 +36,7 @@ export const NAV_ITEMS = [
   { to: "/market-intelligence", label: "Market Intelligence", icon: LineChart },
   { to: "/financial-hub", label: "Financial Hub", icon: Wallet },
   { to: "/community", label: "Community", icon: Globe2 },
+  { to: "/orders", label: "Orders", icon: ClipboardList },
   { to: "/receipts", label: "Receipts", icon: Receipt },
 ] as const;
 

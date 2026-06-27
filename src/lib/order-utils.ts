@@ -6,6 +6,42 @@ import logoUrl from "@/assets/harvest-hub-logo-transparent.png";
 
 export type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
+// Fulfillment (added via migration — not yet in generated types)
+export type FulfillmentStatus =
+  | "pending"
+  | "confirmed"
+  | "dispatched"
+  | "delivered"
+  | "cancelled";
+
+export type ExtendedOrderRow = OrderRow & {
+  fulfillment_status: FulfillmentStatus;
+  fulfillment_notes?: string | null;
+};
+
+export const FULFILLMENT_STATUS_LABEL: Record<FulfillmentStatus, string> = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  dispatched: "Dispatched",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
+export const FULFILLMENT_STATUS_COLOR: Record<FulfillmentStatus, string> = {
+  pending: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+  confirmed: "text-blue-400 bg-blue-400/10 border-blue-400/20",
+  dispatched: "text-purple-400 bg-purple-400/10 border-purple-400/20",
+  delivered: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+  cancelled: "text-rose-400 bg-rose-400/10 border-rose-400/20",
+};
+
+export const FULFILLMENT_STEPS: FulfillmentStatus[] = [
+  "pending",
+  "confirmed",
+  "dispatched",
+  "delivered",
+];
+
 export const PAYMENT_METHOD_LABEL: Record<
   Database["public"]["Enums"]["payment_method"],
   string
