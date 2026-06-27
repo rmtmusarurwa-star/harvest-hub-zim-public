@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2, Mail, User, Sprout, ShoppingBag, Truck, Wrench } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, User, Sprout, ShoppingBag, Truck, Store } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthShell, fieldVariants } from "@/components/auth/AuthShell";
@@ -18,7 +18,7 @@ const schema = z.object({
 const ROLES: { value: AppRole; label: string; description: string; icon: typeof Sprout }[] = [
   { value: "farmer", label: "Farmer", description: "Grow & sell produce", icon: Sprout },
   { value: "buyer", label: "Buyer", description: "Source from farms", icon: ShoppingBag },
-  { value: "supplier", label: "Supplier", description: "Inputs & equipment", icon: Wrench },
+  { value: "supplier", label: "Shop Owner", description: "Agri-shop · Inputs & supplies", icon: Store },
   { value: "transporter", label: "Transporter", description: "Logistics & haulage", icon: Truck },
 ];
 
@@ -79,7 +79,7 @@ function SignupPage() {
     <AuthShell
       eyebrow="Create account"
       title="Join Harvest Hub Zimbabwe"
-      subtitle="One platform for farmers, buyers, suppliers and transporters."
+      subtitle="One platform for farmers, buyers, shop owners and transporters."
       footer={
         <span>
           Already have an account?{" "}

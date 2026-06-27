@@ -1270,32 +1270,126 @@ function ActivityTab() {
 }
 
 // ============ FINANCIAL ============
+type Obligation = {
+  id: string;
+  order_id: string;
+  payment_reference: string;
+  gross_amount: number;
+  platform_fee: number;
+  net_amount: number;
+  status: string;
+  created_at: string;
+  // joined
+  sellerName: string;
+  orderCode: string;
+  ecocash_number: string;
+  onemoney_number: string;
+  bank_name: string;
+  bank_account_number: string;
+  bank_account_name: string;
+};
+
 function FinancialTab() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [obligations, setObligations] = useState<Obligation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [disbursing, setDisbursing] = useState<string | null>(null);
+  const [disburseNotes, setDisburseNotes] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
+  async function loadAll() {
+    setLoading(true);
+    const [ordersRes, oblRes] = await Promise.all([
+      supabase
         .from("orders")
-        .select(
-          "id, order_code, total_amount, payment_method, payment_status, listing_title, created_at",
-        )
+        .select("id, order_code, total_amount, payment_method, payment_status, listing_title, created_at")
         .order("created_at", { ascending: false })
-        .limit(500);
-      setOrders(data ?? []);
-      setLoading(false);
-    })();
-  }, []);
+        .limit(500),
+      (supabase as any)
+        .from("payout_obligations")
+        .select("id, order_id, payment_reference, gross_amount, platform_fee, net_amount, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
+    ]);
+
+    const rawOrders = ordersRes.data ?? [];
+    const rawObl: any[] = oblRes.data ?? [];
+
+    // Enrich obligations: seller name from profiles, payout details from payout_settings
+    if (rawObl.length > 0) {
+      // Get seller IDs from the orders table for each obligation
+      const orderIds = rawObl.map((o: any) => o.order_id);
+      const { data: orderRows } = await supabase
+        .from("orders")
+        .select("id, order_code, farmer_id")
+        .in("id", orderIds);
+      const orderMap = Object.fromEntries((orderRows ?? []).map((r: any) => [r.id, r]));
+
+      const sellerIds = [...new Set((orderRows ?? []).map((r: any) => r.farmer_id).filter(Boolean))];
+
+      const [profilesRes, payoutRes] = await Promise.all([
+        supabase.from("profiles").select("id, full_name").in("id", sellerIds),
+        (supabase as any).from("payout_settings").select("user_id, ecocash_number, onemoney_number, bank_name, bank_account_number, bank_account_name").in("user_id", sellerIds),
+      ]);
+
+      const nameMap: Record<string, string> = Object.fromEntries((profilesRes.data ?? []).map((p: any) => [p.id, p.full_name ?? "Unknown"]));
+      const payoutMap: Record<string, any> = Object.fromEntries((payoutRes.data ?? []).map((p: any) => [p.user_id, p]));
+
+      const enriched: Obligation[] = rawObl.map((o: any) => {
+        const order = orderMap[o.order_id] ?? {};
+        const sellerId = order.farmer_id ?? "";
+        const payout = payoutMap[sellerId] ?? {};
+        return {
+          ...o,
+          gross_amount: Number(o.gross_amount),
+          platform_fee: Number(o.platform_fee),
+          net_amount: Number(o.net_amount),
+          sellerName: nameMap[sellerId] ?? "Unknown",
+          orderCode: order.order_code ?? o.payment_reference,
+          ecocash_number: payout.ecocash_number ?? "",
+          onemoney_number: payout.onemoney_number ?? "",
+          bank_name: payout.bank_name ?? "",
+          bank_account_number: payout.bank_account_number ?? "",
+          bank_account_name: payout.bank_account_name ?? "",
+        };
+      });
+      setObligations(enriched);
+    } else {
+      setObligations([]);
+    }
+
+    setOrders(rawOrders);
+    setLoading(false);
+  }
+
+  useEffect(() => { loadAll(); }, []);
+
+  async function markDisbursed(obl: Obligation) {
+    const { error } = await (supabase as any)
+      .from("payout_obligations")
+      .update({
+        status: "disbursed",
+        disbursed_at: new Date().toISOString(),
+        notes: disburseNotes || null,
+      })
+      .eq("id", obl.id);
+    if (error) return toast.error(error.message);
+    await logAction("disburse_payout", "payout_obligation", obl.id,
+      `${obl.sellerName} · $${obl.net_amount.toFixed(2)}`);
+    toast.success(`Payout marked as disbursed for ${obl.sellerName}`);
+    setDisbursing(null);
+    setDisburseNotes("");
+    loadAll();
+  }
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthOrders = orders.filter((o) => new Date(o.created_at) >= startOfMonth);
   const monthRevenue = monthOrders.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
   const commission = monthRevenue * 0.02;
-  const pendingPayouts = orders
-    .filter((o) => o.payment_status === "paid")
-    .reduce((s, o) => s + Number(o.total_amount ?? 0) * 0.98, 0);
+  // Pending payouts: sum of net amounts for obligations not yet disbursed
+  const pendingPayouts = obligations
+    .filter((o) => o.status === "pending")
+    .reduce((s, o) => s + o.net_amount, 0);
   const outstanding = orders
     .filter((o) => o.payment_status === "pending")
     .reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
@@ -1381,8 +1475,17 @@ function FinancialTab() {
 
   if (loading) return <div className="py-6 text-center text-muted-foreground">Loading...</div>;
 
+  const pendingObligations = obligations.filter((o) => o.status === "pending");
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={loadAll} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
           { label: "Revenue (Month)", value: `$${monthRevenue.toFixed(2)}`, icon: DollarSign },
@@ -1447,6 +1550,148 @@ function FinancialTab() {
           </div>
         </div>
       </div>
+
+      {/* ── Pending Payouts (from payout_obligations) ──────────────────── */}
+      <div className="glass rounded-2xl border border-white/5 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-secondary" />
+            Pending Payouts
+            {pendingObligations.length > 0 && (
+              <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-[10px] text-secondary">
+                {pendingObligations.length}
+              </span>
+            )}
+          </h3>
+        </div>
+
+        {pendingObligations.length === 0 ? (
+          <div className="py-4 text-center text-sm text-muted-foreground">
+            No pending payouts — all sellers have been disbursed.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-white/5 text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="pb-2 text-left">Seller</th>
+                  <th className="pb-2 text-left">Order</th>
+                  <th className="pb-2 text-left">Gross</th>
+                  <th className="pb-2 text-left">Fee 2%</th>
+                  <th className="pb-2 text-left font-semibold text-secondary">Net Due</th>
+                  <th className="pb-2 text-left">Payout Method</th>
+                  <th className="pb-2 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingObligations.map((obl) => {
+                  const hasMobile = obl.ecocash_number || obl.onemoney_number;
+                  const hasBank   = obl.bank_account_number;
+                  const payoutMethod = hasMobile
+                    ? obl.ecocash_number
+                      ? `EcoCash · ${obl.ecocash_number}`
+                      : `OneMoney · ${obl.onemoney_number}`
+                    : hasBank
+                    ? `${obl.bank_name || "Bank"} · ${obl.bank_account_number}`
+                    : "⚠️ No payout method registered";
+
+                  return (
+                    <tr key={obl.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <td className="py-3 pr-3">
+                        <div className="font-medium">{obl.sellerName}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {new Date(obl.created_at).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="py-3 pr-3 font-mono text-xs text-muted-foreground">{obl.orderCode}</td>
+                      <td className="py-3 pr-3 text-xs">${obl.gross_amount.toFixed(2)}</td>
+                      <td className="py-3 pr-3 text-xs text-muted-foreground">−${obl.platform_fee.toFixed(2)}</td>
+                      <td className="py-3 pr-3 font-semibold text-secondary">${obl.net_amount.toFixed(2)}</td>
+                      <td className="py-3 pr-3">
+                        <div className="text-xs">{payoutMethod}</div>
+                        {hasBank && obl.bank_account_name && (
+                          <div className="text-[11px] text-muted-foreground">{obl.bank_account_name}</div>
+                        )}
+                      </td>
+                      <td className="py-3 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-secondary/30 text-secondary hover:bg-secondary/10"
+                          onClick={() => { setDisbursing(obl.id); setDisburseNotes(""); }}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                          Mark Disbursed
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Disburse confirmation dialog */}
+      <Dialog open={!!disbursing} onOpenChange={(o) => !o && setDisbursing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Disbursement</DialogTitle>
+          </DialogHeader>
+          {disbursing && (() => {
+            const obl = obligations.find(o => o.id === disbursing)!;
+            return (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Seller</span>
+                    <span className="font-medium">{obl?.sellerName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Amount to send</span>
+                    <span className="font-semibold text-secondary">${obl?.net_amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">To</span>
+                    <span className="text-right text-xs">
+                      {obl?.ecocash_number || obl?.onemoney_number
+                        ? `Mobile: ${obl.ecocash_number || obl.onemoney_number}`
+                        : obl?.bank_account_number
+                        ? `${obl.bank_name} · ${obl.bank_account_number}`
+                        : "No payout method"}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
+                    Transaction ref / notes (optional)
+                  </label>
+                  <Textarea
+                    value={disburseNotes}
+                    onChange={(e) => setDisburseNotes(e.target.value)}
+                    placeholder="e.g. EcoCash ref #ECO123456…"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDisbursing(null)}>Cancel</Button>
+            <Button
+              className="bg-secondary text-primary hover:bg-secondary/90"
+              onClick={() => {
+                const obl = obligations.find(o => o.id === disbursing);
+                if (obl) markDisbursed(obl);
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+              Confirm Disbursement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex justify-end">
         <Button onClick={exportPDF}>

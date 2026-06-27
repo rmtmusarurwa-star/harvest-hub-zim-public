@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CLICKNPAY_BASE = "https://backendservices.clicknpay.africa:2081";
+const PLATFORM_FEE_RATE = 0.02; // 2 % commission kept by Harvest Hub
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -25,42 +26,95 @@ serve(async (req) => {
     const { primaryCode } = await req.json() as { primaryCode: string };
     if (!primaryCode) return json({ error: "primaryCode required" }, 400);
 
-    const cpRes = await fetch(
-      `${CLICKNPAY_BASE}/payme/orders/top-paid/${encodeURIComponent(primaryCode)}`,
-      { headers: { "Content-Type": "application/json" } },
-    );
+    // ── 1. Poll ClicknPay for order status ────────────────────────────────────
+    let cpStatus: string;
+    try {
+      const cpRes = await fetch(
+        `${CLICKNPAY_BASE}/payme/orders/top-paid/${encodeURIComponent(primaryCode)}`,
+        {
+          headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(10_000),
+        },
+      );
 
-    if (!cpRes.ok) throw new Error(`ClicknPay status check failed: ${cpRes.status}`);
+      if (!cpRes.ok) {
+        const body = await cpRes.text().catch(() => "");
+        console.error(`[clicknpay-verify] ClicknPay ${cpRes.status}:`, body);
+        // Return pending — transient API error, caller will retry
+        return json({ rawStatus: "UNKNOWN", paymentStatus: "pending", error: `ClicknPay API error ${cpRes.status}` });
+      }
 
-    const data = await cpRes.json() as { status?: string };
-    const rawStatus = (data.status ?? "").toUpperCase();
+      const data = await cpRes.json() as { status?: string };
+      cpStatus = (data.status ?? "").toUpperCase();
+    } catch (fetchErr) {
+      const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+      console.error("[clicknpay-verify] fetch error:", msg);
+      // Network / timeout — treat as pending so frontend keeps polling
+      return json({ rawStatus: "UNKNOWN", paymentStatus: "pending", error: `Network error: ${msg}` });
+    }
 
     const paymentStatus =
-      rawStatus === "SUCCESS" ? "paid" :
-      rawStatus === "FAILED" ? "failed" :
+      cpStatus === "SUCCESS" ? "paid" :
+      cpStatus === "FAILED"  ? "failed" :
       "pending";
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Snapshot pending orders BEFORE update — used to fire one-time notifications.
-    // If all orders are already paid (repeat poll), pendingOrders is empty → no re-notify.
-    const { data: pendingOrders } = await supabase
+    // ── 2. Snapshot pending orders BEFORE marking paid ─────────────────────────
+    // If we've already processed this reference (repeat poll), pendingOrders is empty.
+    const { data: pendingOrders, error: snapErr } = await supabase
       .from("orders")
-      .select("farmer_id, listing_title, quantity, unit")
+      .select("id, order_code, farmer_id, listing_title, quantity, unit, total_amount")
       .eq("payment_reference", primaryCode)
       .eq("payment_status", "pending");
 
-    // Update payment_status on all orders sharing this reference
-    const { error } = await supabase
+    if (snapErr) {
+      console.error("[clicknpay-verify] snapshot error:", snapErr.message);
+    }
+
+    // ── 3. Update order payment_status ────────────────────────────────────────
+    const { error: updateErr } = await supabase
       .from("orders")
       .update({ payment_status: paymentStatus } as never)
       .eq("payment_reference", primaryCode);
 
-    if (error) console.error("[clicknpay-verify] DB update error:", error.message);
+    if (updateErr) {
+      console.error("[clicknpay-verify] order update error:", updateErr.message);
+    }
 
-    // Notify each farmer exactly once when payment first lands
+    // ── 4. On first-time payment confirmation ─────────────────────────────────
     if (paymentStatus === "paid" && pendingOrders && pendingOrders.length > 0) {
-      // Group items by farmer_id so each seller gets one notification per checkout
+
+      // 4a. Create payout obligations (one per order row)
+      const obligations = pendingOrders
+        .filter((o) => !!o.farmer_id)
+        .map((o) => {
+          const gross = Number(o.total_amount ?? 0);
+          const fee   = Math.round(gross * PLATFORM_FEE_RATE * 100) / 100;
+          const net   = Math.round((gross - fee) * 100) / 100;
+          return {
+            order_id:          o.id,
+            seller_id:         o.farmer_id,
+            payment_reference: primaryCode,
+            gross_amount:      gross,
+            platform_fee:      fee,
+            net_amount:        net,
+            status:            "pending",
+          };
+        });
+
+      if (obligations.length > 0) {
+        const { error: oblErr } = await supabase
+          .from("payout_obligations")
+          .upsert(obligations, { onConflict: "order_id", ignoreDuplicates: true });
+        if (oblErr) {
+          console.error("[clicknpay-verify] payout_obligations upsert error:", oblErr.message);
+        } else {
+          console.log(`[clicknpay-verify] created ${obligations.length} payout obligation(s) for ref ${primaryCode}`);
+        }
+      }
+
+      // 4b. Notify each seller — one notification per seller, not per order
       const farmerMap = new Map<string, { listing_title: string; quantity: number; unit: string }[]>();
       for (const o of pendingOrders) {
         if (!o.farmer_id) continue;
@@ -72,13 +126,7 @@ serve(async (req) => {
         });
       }
 
-      const notifications: {
-        user_id: string;
-        type: string;
-        message: string;
-        link: string;
-      }[] = [];
-
+      const notifications: { user_id: string; type: string; message: string; link: string }[] = [];
       for (const [farmerId, orders] of farmerMap.entries()) {
         const summary =
           orders.length === 1
@@ -86,25 +134,24 @@ serve(async (req) => {
             : `${orders.length} items`;
         notifications.push({
           user_id: farmerId,
-          type: "order",
-          message: `New order paid: ${summary} — payment confirmed via ClicknPay`,
-          link: "/orders",
+          type:    "order",
+          message: `Payment confirmed: ${summary} — funds received via ClicknPay, payout pending.`,
+          link:    "/orders",
         });
       }
 
       if (notifications.length > 0) {
-        const { error: notifErr } = await supabase
-          .from("notifications")
-          .insert(notifications);
+        const { error: notifErr } = await supabase.from("notifications").insert(notifications);
         if (notifErr) {
           console.error("[clicknpay-verify] notification insert error:", notifErr.message);
         }
       }
     }
 
-    return json({ rawStatus, paymentStatus });
+    return json({ rawStatus: cpStatus, paymentStatus });
   } catch (err) {
-    console.error("[clicknpay-verify]", err);
-    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[clicknpay-verify] unhandled error:", msg);
+    return json({ error: msg, paymentStatus: "pending" }, 500);
   }
 });

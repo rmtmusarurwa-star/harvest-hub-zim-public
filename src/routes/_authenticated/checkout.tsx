@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import type { Database } from "@/integrations/supabase/types";
 
 type PaymentMethod = Database["public"]["Enums"]["payment_method"];
-type CnpState = "idle" | "waiting" | "failed";
+type CnpState = "idle" | "waiting" | "popup_closed" | "failed" | "timeout";
 
 export const Route = createFileRoute("/_authenticated/checkout")({
   component: CheckoutPage,
@@ -67,15 +67,19 @@ function CheckoutPage() {
   const [copied, setCopied] = useState(false);
 
   // ClicknPay popup + polling refs
-  const popupRef = useRef<Window | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const popupRef    = useRef<Window | null>(null);
+  const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const closedRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
 
   const reference = useMemo(() => generateOrderCode(), []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (pollRef.current)    clearInterval(pollRef.current);
+      if (closedRef.current)  clearInterval(closedRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 
@@ -133,36 +137,58 @@ function CheckoutPage() {
   }
 
   // ── ClicknPay flow ──────────────────────────────────────────────────────────
-  function stopPolling() {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
+  function stopAll() {
+    if (pollRef.current)    { clearInterval(pollRef.current);  pollRef.current = null; }
+    if (closedRef.current)  { clearInterval(closedRef.current); closedRef.current = null; }
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
   }
 
   function startPolling(primaryCode: string, codes: string) {
+    // Hard timeout — 10 minutes
+    timeoutRef.current = setTimeout(() => {
+      stopAll();
+      popupRef.current?.close();
+      setCnpState("timeout");
+      toast.error("Payment timed out. If you completed it, check your orders page.");
+    }, 10 * 60 * 1000);
+
+    // Watch for popup closure while still waiting
+    closedRef.current = setInterval(() => {
+      if (popupRef.current?.closed) {
+        if (closedRef.current) { clearInterval(closedRef.current); closedRef.current = null; }
+        setCnpState("popup_closed");
+      }
+    }, 800);
+
+    // Poll verify every 3 seconds
     pollRef.current = setInterval(async () => {
       try {
-        const { data } = await supabase.functions.invoke("clicknpay-verify", {
+        const { data, error } = await supabase.functions.invoke("clicknpay-verify", {
           body: { primaryCode },
         });
+
+        if (error) {
+          // Transient network / function error — keep polling, don't surface to user
+          console.warn("[poll] verify error (will retry):", error.message);
+          return;
+        }
 
         const status: string = data?.paymentStatus ?? "pending";
 
         if (status === "paid") {
-          stopPolling();
+          stopAll();
           popupRef.current?.close();
           clear();
           void navigate({ to: "/checkout/confirmation", search: { codes } });
         } else if (status === "failed") {
-          stopPolling();
+          stopAll();
           popupRef.current?.close();
           setCnpState("failed");
           setSubmitting(false);
         }
-        // 'pending' → keep polling; popup may be open or user approved on phone
+        // 'pending' → keep polling
       } catch (e) {
-        console.error("[poll]", e);
+        console.warn("[poll] unexpected error (will retry):", e);
       }
     }, 3000);
   }
@@ -224,7 +250,8 @@ function CheckoutPage() {
     if (error || !data?.paymeURL) {
       popup.close();
       popupRef.current = null;
-      toast.error(data?.error ?? error?.message ?? "Could not start payment");
+      const reason = data?.error ?? error?.message ?? "Could not start payment";
+      toast.error(`Payment error: ${reason}`);
       setSubmitting(false);
       return;
     }
@@ -281,31 +308,45 @@ function CheckoutPage() {
 
   return (
     <section className="relative mx-auto max-w-5xl space-y-6">
-      {/* ── ClicknPay waiting overlay ─────────────────────────────────────── */}
+      {/* ── ClicknPay waiting / status overlay ───────────────────────────── */}
       <AnimatePresence>
-        {cnpState === "waiting" && (
+        {(cnpState === "waiting" || cnpState === "popup_closed") && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-30 flex items-center justify-center rounded-3xl bg-background/80 backdrop-blur-sm"
           >
-            <div className="glass-strong flex flex-col items-center gap-5 rounded-2xl border border-secondary/20 p-10 text-center shadow-2xl">
-              <div className="relative">
-                <div className="absolute inset-0 animate-ping rounded-full bg-secondary/20" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-secondary" />
-              </div>
-              <div>
-                <p className="font-display text-xl">Waiting for payment</p>
-                <p className="mt-2 text-sm text-muted-foreground max-w-xs">
-                  {method === "ecocash" || method === "onemoney"
-                    ? "Check your phone and approve the payment prompt. This page updates automatically."
-                    : "Complete the payment in the popup window. Stay on this page."}
-                </p>
-              </div>
+            <div className="glass-strong flex flex-col items-center gap-5 rounded-2xl border border-secondary/20 p-10 text-center shadow-2xl max-w-sm mx-4">
+              {cnpState === "waiting" ? (
+                <>
+                  <div className="relative">
+                    <div className="absolute inset-0 animate-ping rounded-full bg-secondary/20" />
+                    <Loader2 className="relative h-12 w-12 animate-spin text-secondary" />
+                  </div>
+                  <div>
+                    <p className="font-display text-xl">Waiting for payment</p>
+                    <p className="mt-2 text-sm text-muted-foreground max-w-xs">
+                      {method === "ecocash" || method === "onemoney"
+                        ? "Check your phone and approve the payment prompt. This page updates automatically."
+                        : "Complete the payment in the popup window. Stay on this page."}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="h-10 w-10 animate-spin text-secondary/60" />
+                  <div>
+                    <p className="font-display text-xl">Payment window closed</p>
+                    <p className="mt-2 text-sm text-muted-foreground max-w-xs">
+                      Still checking if your payment went through. If you approved on your phone, keep this page open.
+                    </p>
+                  </div>
+                </>
+              )}
               <button
                 onClick={() => {
-                  stopPolling();
+                  stopAll();
                   popupRef.current?.close();
                   setCnpState("idle");
                   toast.info("Payment cancelled");
@@ -488,7 +529,25 @@ function CheckoutPage() {
                     <div>
                       <p className="text-sm font-medium">Payment declined</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        The payment wasn't completed. Try again or choose a different method.
+                        ClicknPay reported a failed payment. Try again or choose a different method.
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setCnpState("idle")}>
+                      Try again
+                    </Button>
+                  </div>
+                )}
+
+                {/* ── Payment timed out ─────────────────────────────────── */}
+                {cnpState === "timeout" && (
+                  <div className="flex flex-col items-center gap-4 py-2 text-center">
+                    <XCircle className="h-10 w-10 text-amber-400" />
+                    <div>
+                      <p className="text-sm font-medium">Payment window timed out</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        If you approved the payment, it may still process. Check your{" "}
+                        <Link to="/orders" className="text-secondary underline">orders page</Link>{" "}
+                        in a minute.
                       </p>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setCnpState("idle")}>
@@ -538,13 +597,13 @@ function CheckoutPage() {
             className="mt-5 w-full"
             size="lg"
             variant="secondary"
-            disabled={!method || submitting || cnpState === "waiting"}
+            disabled={!method || submitting || cnpState === "waiting" || cnpState === "popup_closed"}
             onClick={handleSubmit}
           >
             {submitting ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>
-            ) : cnpState === "waiting" ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Waiting…</>
+            ) : (cnpState === "waiting" || cnpState === "popup_closed") ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Checking payment…</>
             ) : (
               <><CheckCircle2 className="h-4 w-4" /> {buttonLabel ?? "Confirm & Pay"}</>
             )}

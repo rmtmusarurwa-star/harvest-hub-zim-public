@@ -98,6 +98,6 @@ export function useAuth() {
 export const ROLE_LABEL: Record<AppRole, string> = {
   farmer: "Farmer",
   buyer: "Buyer",
-  supplier: "Supplier",
+  supplier: "Shop Owner",
   transporter: "Transporter",
 };
