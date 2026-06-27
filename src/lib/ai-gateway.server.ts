@@ -1,50 +1,17 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-const LOVABLE_AIG_RUN_ID_HEADER = "X-Lovable-AIG-Run-ID";
-
-export function createLovableAiGatewayProvider(lovableApiKey: string, initialRunId?: string) {
-  let runId = initialRunId?.trim() || undefined;
-  let resolveRunId: (value: string | undefined) => void = () => {};
-  let runIdResolved = false;
-  const runIdReady = new Promise<string | undefined>((resolve) => {
-    resolveRunId = resolve;
-  });
-
-  const publishRunId = (value?: string) => {
-    const nextRunId = value?.trim() || undefined;
-    if (!runId && nextRunId) runId = nextRunId;
-    if (!runIdResolved) {
-      runIdResolved = true;
-      resolveRunId(runId);
-    }
-  };
-  if (runId) publishRunId(runId);
-
-  const provider = createOpenAICompatible({
-    name: "lovable",
-    baseURL: "https://ai.gateway.lovable.dev/v1",
+/**
+ * Returns an AI provider pointed at Google Gemini's OpenAI-compatible endpoint.
+ * Set GOOGLE_AI_API_KEY in your Cloudflare Workers secrets:
+ *   wrangler secret put GOOGLE_AI_API_KEY
+ * Get a free key at https://aistudio.google.com/apikey
+ */
+export function createHarvestAiProvider(apiKey: string) {
+  return createOpenAICompatible({
+    name: "harvest-ai",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     headers: {
-      "Lovable-API-Key": lovableApiKey,
-      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+      Authorization: `Bearer ${apiKey}`,
     },
-    fetch: async (input, init) => {
-      const headers = new Headers(init?.headers);
-      if (runId && !headers.has(LOVABLE_AIG_RUN_ID_HEADER)) {
-        headers.set(LOVABLE_AIG_RUN_ID_HEADER, runId);
-      }
-      try {
-        const response = await fetch(input, { ...init, headers });
-        publishRunId(response.headers.get(LOVABLE_AIG_RUN_ID_HEADER) ?? undefined);
-        return response;
-      } catch (error) {
-        publishRunId(undefined);
-        throw error;
-      }
-    },
-  });
-
-  return Object.assign(provider, {
-    getRunId: () => runId,
-    waitForRunId: () => (runId ? Promise.resolve(runId) : runIdReady),
   });
 }

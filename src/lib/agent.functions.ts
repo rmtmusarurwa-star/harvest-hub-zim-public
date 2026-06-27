@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createHarvestAiProvider } from "@/lib/ai-gateway.server";
 
 const AgentKind = z.enum(["sales", "buyers", "disease", "market", "transport"]);
 
@@ -35,7 +35,16 @@ Pick the single agent best suited to handle the request:
 Return a short summary (one sentence, max 14 words) plus up to 3 concrete,
 plausible result cards. Cards must be specific to Zimbabwe (real-sounding
 operator names, USD prices, real cities like Harare/Bulawayo/Mutare/Gweru).
-Score = your confidence the card fits the user's request (0-100).`;
+Score = your confidence the card fits the user's request (0-100).
+
+IMPORTANT: Respond ONLY with valid JSON. No markdown, no code fences. Schema:
+{
+  "agent": "<one of: sales|buyers|disease|market|transport>",
+  "summary": "<one sentence, max 14 words>",
+  "results": [
+    { "title": "...", "subtitle": "...", "meta": "...", "score": 85 }
+  ]
+}`;
 
 export const runAgentQuery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -46,28 +55,32 @@ export const runAgentQuery = createServerFn({ method: "POST" })
     return { query: q };
   })
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.GOOGLE_AI_API_KEY;
+    if (!key) throw new Error("AI service not configured. Set GOOGLE_AI_API_KEY.");
 
-    const gateway = createLovableAiGatewayProvider(key);
+    const provider = createHarvestAiProvider(key);
 
     let parsed: AgentResult;
     try {
-      const { experimental_output } = await generateText({
-        model: gateway("google/gemini-3-flash-preview"),
+      const { text } = await generateText({
+        model: provider("gemini-2.0-flash"),
         system: SYSTEM,
         prompt: data.query,
-        experimental_output: Output.object({ schema: AgentResponse }),
       });
-      parsed = experimental_output as AgentResult;
+
+      // Extract JSON — Gemini sometimes wraps in markdown fences
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON in AI response");
+      const raw = JSON.parse(jsonMatch[0]);
+      parsed = AgentResponse.parse(raw);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       const lower = msg.toLowerCase();
       if (lower.includes("429") || lower.includes("rate")) {
         throw new Error("Harvest AI is busy. Try again in a moment.");
       }
-      if (lower.includes("402") || lower.includes("credit")) {
-        throw new Error("AI credits exhausted. Please top up.");
+      if (lower.includes("401") || lower.includes("api key") || lower.includes("configured")) {
+        throw new Error("AI service not configured.");
       }
       throw new Error("Harvest AI couldn't respond. Try again.");
     }

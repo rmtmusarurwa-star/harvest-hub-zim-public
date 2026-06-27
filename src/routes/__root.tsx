@@ -98,8 +98,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Harvest Hub ZW is a premium agricultural commerce platform for Zimbabwe." },
       { property: "og:description", content: "Harvest Hub ZW is a premium agricultural commerce platform for Zimbabwe." },
       { name: "twitter:description", content: "Harvest Hub ZW is a premium agricultural commerce platform for Zimbabwe." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/45c06938-364b-4257-82e6-cb3d759880cd/id-preview-18a14c67--761d40ea-1abd-4984-97bd-6720996a93d3.lovable.app-1779322214530.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/45c06938-364b-4257-82e6-cb3d759880cd/id-preview-18a14c67--761d40ea-1abd-4984-97bd-6720996a93d3.lovable.app-1779322214530.png" },
+      { property: "og:image", content: "https://harvesthub.workers.dev/harvest-hub-logo.png" },
+      { name: "twitter:image", content: "https://harvesthub.workers.dev/harvest-hub-logo.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

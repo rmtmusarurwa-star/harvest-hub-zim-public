@@ -109,7 +109,7 @@ export function drawReportFooter(doc: jsPDF, tagline = "Stronger Farmers. Strong
   textColor(doc, BRAND_GOLD);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text("harvest-hub-zim.lovable.app", W - M, H - footerH / 2 + 4, { align: "right" });
+  doc.text("harvesthub.workers.dev", W - M, H - footerH / 2 + 4, { align: "right" });
 }
 
 /** A small uppercase section label used above tables/cards inside a report body. */

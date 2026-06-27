@@ -93,7 +93,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
       <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
         {navItems.map(({ to, label, icon: Icon }) => {
           const active =
-            to === "/" ? pathname === "/" : pathname.startsWith(to);
+            pathname === to || pathname.startsWith(to + "/");
           return (
             <Link
               key={to}
