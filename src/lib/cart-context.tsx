@@ -8,6 +8,30 @@ import {
 } from "react";
 import type { ListingRow } from "@/lib/marketplace-data";
 
+// ── Unit-aware quantity helpers ───────────────────────────────────────────────
+// Weight/volume units that support fractional quantities (step = 0.5, min = 0.5)
+const DECIMAL_UNITS = new Set([
+  "kg", "kgs", "kilogram", "kilograms",
+  "g", "gram", "grams",
+  "tonne", "tonnes", "ton", "tons",
+  "lb", "lbs", "pound", "pounds",
+  "l", "litre", "litres", "liter", "liters",
+  "ml", "millilitre", "milliliter",
+]);
+
+export function unitStep(unit: string): { step: number; min: number; isDecimal: boolean } {
+  const u = (unit ?? "").toLowerCase().trim();
+  const isDecimal = DECIMAL_UNITS.has(u);
+  return isDecimal
+    ? { step: 0.5, min: 0.5, isDecimal: true }
+    : { step: 1,   min: 1,   isDecimal: false };
+}
+
+/** Format a quantity cleanly: integers stay whole, decimals show 1dp */
+export function fmtQty(qty: number): string {
+  return qty % 1 === 0 ? String(qty) : qty.toFixed(1);
+}
+
 export type CartItem = {
   id: string;
   /** Explicit listings.id to store on order. Null for shop products (avoids FK violation). */
@@ -77,7 +101,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const ex = prev.find((p) => p.id === l.id);
           if (ex) {
             return prev.map((p) =>
-              p.id === l.id ? { ...p, quantity: p.quantity + qty } : p,
+              p.id === l.id ? { ...p, quantity: Math.round((p.quantity + qty) * 100) / 100 } : p,
             );
           }
           return [
@@ -102,7 +126,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const ex = prev.find((p) => p.id === item.id);
           if (ex) {
             return prev.map((p) =>
-              p.id === item.id ? { ...p, quantity: p.quantity + qty } : p,
+              p.id === item.id ? { ...p, quantity: Math.round((p.quantity + qty) * 100) / 100 } : p,
             );
           }
           return [...prev, { ...item, quantity: qty }];
@@ -110,9 +134,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsOpen(true);
       },
       remove: (id) => setItems((prev) => prev.filter((p) => p.id !== id)),
+      // Allow fractional quantities (e.g., 0.5 kg); min 0.01 — UI controls enforce the per-unit minimum
       setQty: (id, qty) =>
         setItems((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, quantity: Math.max(1, qty) } : p)),
+          prev.map((p) => (p.id === id ? { ...p, quantity: Math.max(0.01, Math.round(qty * 100) / 100) } : p)),
         ),
       clear: () => setItems([]),
     };

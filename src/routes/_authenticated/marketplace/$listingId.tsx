@@ -24,7 +24,7 @@ import {
   MOCK_LISTINGS,
   type ListingRow,
 } from "@/lib/marketplace-data";
-import { useCart } from "@/lib/cart-context";
+import { useCart, unitStep } from "@/lib/cart-context";
 import { Button } from "@/components/ui/button";
 import { CategoryIcon } from "@/components/brand/CategoryIcon";
 
@@ -103,6 +103,7 @@ function ListingDetailPage() {
   }
 
   const price = Number(listing.price);
+  const { step, min, isDecimal } = unitStep(listing.unit);
   const fresh = freshnessLabel(listing.created_at);
   const farmerName =
     farmerProfile.data?.full_name?.trim() ||
@@ -184,20 +185,27 @@ function ListingDetailPage() {
                 <span className="text-xs uppercase tracking-widest text-muted-foreground">Qty</span>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    onClick={() => setQty((q) => Math.max(min, Math.round((q - step) * 100) / 100))}
                     className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
                   >
                     <Minus className="h-3.5 w-3.5" />
                   </button>
                   <input
                     type="number"
-                    min={1}
+                    min={min}
+                    step={step}
                     value={qty}
-                    onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v) && v > 0) {
+                        setQty(isDecimal ? Math.max(min, v) : Math.max(min, Math.round(v)));
+                      }
+                    }}
                     className="h-8 w-16 rounded-md border border-white/10 bg-white/[0.02] text-center text-sm"
                   />
+                  <span className="text-xs text-muted-foreground">{listing.unit}</span>
                   <button
-                    onClick={() => setQty((q) => q + 1)}
+                    onClick={() => setQty((q) => Math.round((q + step) * 100) / 100)}
                     className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
                   >
                     <Plus className="h-3.5 w-3.5" />

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { MapPin, Star, Truck, Users, Sparkles } from "lucide-react";
+import { MapPin, Minus, Plus, Star, Truck, Users, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   CATEGORY_LABEL,
@@ -8,7 +9,7 @@ import {
   type ListingRow,
 } from "@/lib/marketplace-data";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/lib/cart-context";
+import { useCart, unitStep } from "@/lib/cart-context";
 import { CategoryIcon } from "@/components/brand/CategoryIcon";
 
 const CATEGORY_GRADIENT: Record<ListingRow["category"], string> = {
@@ -25,6 +26,19 @@ export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay
   const buyers = liveBuyers(listing.id);
   const { add } = useCart();
   const price = Number(listing.price);
+  const { step, min, isDecimal } = unitStep(listing.unit);
+  const [qty, setLocalQty] = useState(min);
+
+  const decrement = () =>
+    setLocalQty((q) => Math.max(min, Math.round((q - step) * 100) / 100));
+  const increment = () =>
+    setLocalQty((q) => Math.round((q + step) * 100) / 100);
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    add(listing, qty);
+    setLocalQty(min);
+  };
 
   return (
     <motion.div
@@ -98,16 +112,43 @@ export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay
           <span className="ml-auto text-[10px] text-muted-foreground">{fresh.text}</span>
         </div>
 
-        <div className="mt-4 flex gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            className="flex-1"
-            onClick={(e) => {
-              e.preventDefault();
-              add(listing, 1);
-            }}
+        {/* Quantity picker */}
+        <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.02] px-1.5 py-1">
+          <button
+            onClick={decrement}
+            className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
+            aria-label="Decrease quantity"
           >
+            <Minus className="h-3 w-3" />
+          </button>
+          <input
+            type="number"
+            min={min}
+            step={step}
+            value={qty}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (!isNaN(v) && v > 0) {
+                setLocalQty(isDecimal ? Math.max(min, v) : Math.max(min, Math.round(v)));
+              }
+            }}
+            className="h-7 w-10 bg-transparent text-center text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <span className="text-[10px] text-muted-foreground">{listing.unit}</span>
+          <span className="ml-auto font-mono text-sm text-secondary">
+            ${(price * qty).toFixed(2)}
+          </span>
+          <button
+            onClick={increment}
+            className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
+            aria-label="Increase quantity"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+
+        <div className="mt-2 flex gap-2">
+          <Button size="sm" variant="secondary" className="flex-1" onClick={handleAdd}>
             Add to Cart
           </Button>
           <Button asChild size="sm" variant="outline" className="flex-1">

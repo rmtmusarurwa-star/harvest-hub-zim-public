@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
@@ -8,6 +8,7 @@ import {
   Mail,
   MapPin,
   MessageCircle,
+  Minus,
   Phone,
   Plus,
   ShoppingCart,
@@ -22,7 +23,7 @@ import {
   type ShopProductRow,
   type ShopRow,
 } from "@/lib/shops-data";
-import { useCart } from "@/lib/cart-context";
+import { useCart, unitStep, fmtQty } from "@/lib/cart-context";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/shops/$shopId")({
@@ -89,7 +90,7 @@ function ShopDetailPage() {
       )}`
     : null;
 
-  const handleAdd = (p: ShopProductRow) => {
+  const handleAdd = (p: ShopProductRow, qty: number) => {
     addItem({
       id: p.id,
       listing_id: null, // shop products are not in listings table — prevent FK violation
@@ -99,7 +100,7 @@ function ShopDetailPage() {
       location: shop.location,
       image_url: p.image_url,
       farmer_id: shop.owner_id,
-    });
+    }, qty);
   };
 
   return (
@@ -205,7 +206,7 @@ function ShopDetailPage() {
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {products.map((p, i) => (
-                  <ProductCard key={p.id} product={p} delay={i * 0.03} onAdd={() => handleAdd(p)} />
+                  <ProductCard key={p.id} product={p} delay={i * 0.03} onAdd={(qty) => handleAdd(p, qty)} />
                 ))}
               </div>
             )}
@@ -255,9 +256,23 @@ function ProductCard({
 }: {
   product: ShopProductRow;
   delay: number;
-  onAdd: () => void;
+  onAdd: (qty: number) => void;
 }) {
   const inStock = product.stock_quantity > 0;
+  const price = Number(product.price);
+  const { step, min, isDecimal } = unitStep(product.unit);
+  const [qty, setLocalQty] = useState(min);
+
+  const decrement = () =>
+    setLocalQty((q) => Math.max(min, Math.round((q - step) * 100) / 100));
+  const increment = () =>
+    setLocalQty((q) => Math.round((q + step) * 100) / 100);
+
+  const handleAdd = () => {
+    onAdd(qty);
+    setLocalQty(min);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -282,7 +297,7 @@ function ProductCard({
           <h4 className="text-sm font-medium leading-tight">{product.name}</h4>
           <div className="text-right">
             <div className="font-display text-lg text-secondary">
-              ${Number(product.price).toFixed(2)}
+              ${price.toFixed(2)}
             </div>
             <div className="text-[10px] text-muted-foreground">per {product.unit}</div>
           </div>
@@ -290,12 +305,51 @@ function ProductCard({
         {product.description && (
           <p className="line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
         )}
+
+        {/* Quantity stepper */}
+        <div className="mt-1 flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.02] px-1.5 py-1">
+          <button
+            onClick={decrement}
+            disabled={!inStock}
+            className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5 disabled:opacity-40"
+            aria-label="Decrease"
+          >
+            <Minus className="h-3 w-3" />
+          </button>
+          <input
+            type="number"
+            min={min}
+            step={step}
+            value={qty}
+            disabled={!inStock}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (!isNaN(v) && v > 0) {
+                setLocalQty(isDecimal ? Math.max(min, v) : Math.max(min, Math.round(v)));
+              }
+            }}
+            className="h-7 w-10 bg-transparent text-center text-sm disabled:opacity-40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <span className="text-[10px] text-muted-foreground">{product.unit}</span>
+          <span className="ml-auto font-mono text-xs text-secondary">
+            ${(price * qty).toFixed(2)}
+          </span>
+          <button
+            onClick={increment}
+            disabled={!inStock}
+            className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5 disabled:opacity-40"
+            aria-label="Increase"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+
         <Button
           size="sm"
           variant="secondary"
-          className="mt-auto gap-2"
+          className="mt-1 gap-2"
           disabled={!inStock}
-          onClick={onAdd}
+          onClick={handleAdd}
         >
           <Plus className="h-4 w-4" /> Add to Cart
         </Button>
