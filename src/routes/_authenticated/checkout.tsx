@@ -71,6 +71,7 @@ function CheckoutPage() {
   const pollRef        = useRef<ReturnType<typeof setInterval> | null>(null);
   const closedRef      = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef     = useRef<ReturnType<typeof setTimeout>  | null>(null);
+  const fallbackRef    = useRef<ReturnType<typeof setTimeout>  | null>(null);
   // Store current transaction so message listener + closed watcher can access them
   const primaryCodeRef = useRef<string | null>(null);
   const codesRef       = useRef<string | null>(null);
@@ -80,9 +81,10 @@ function CheckoutPage() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (pollRef.current)    clearInterval(pollRef.current);
-      if (closedRef.current)  clearInterval(closedRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (pollRef.current)     clearInterval(pollRef.current);
+      if (closedRef.current)   clearInterval(closedRef.current);
+      if (timeoutRef.current)  clearTimeout(timeoutRef.current);
+      if (fallbackRef.current) clearTimeout(fallbackRef.current);
     };
   }, []);
 
@@ -160,6 +162,7 @@ function CheckoutPage() {
     if (pollRef.current)    { clearInterval(pollRef.current);  pollRef.current = null; }
     if (closedRef.current)  { clearInterval(closedRef.current); closedRef.current = null; }
     if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    if (fallbackRef.current){ clearTimeout(fallbackRef.current); fallbackRef.current = null; }
   }
 
   // Shared verify-and-act logic — called by both the poll interval AND the
@@ -176,11 +179,16 @@ function CheckoutPage() {
       const status: string = data?.paymentStatus ?? "pending";
       if (status === "paid") {
         stopAll();
+        // Clear refs before navigating so fallback timer won't double-navigate
+        primaryCodeRef.current = null;
+        codesRef.current = null;
         popupRef.current?.close();
         clear();
-        void navigate({ to: "/checkout/confirmation", search: { codes } });
+        void navigate({ to: "/checkout/confirmation", search: { codes, primaryCode } });
       } else if (status === "failed") {
         stopAll();
+        primaryCodeRef.current = null;
+        codesRef.current = null;
         popupRef.current?.close();
         setCnpState("failed");
         setSubmitting(false);
@@ -214,6 +222,19 @@ function CheckoutPage() {
         setCnpState("popup_closed");
         // Immediate verify — don't wait for next poll tick
         void verifyNowRef.current(primaryCode, codes);
+        // Fallback: if verify hasn't navigated after 8 s (ClicknPay API lag),
+        // take the user to the confirmation page anyway — it will poll itself.
+        fallbackRef.current = setTimeout(() => {
+          if (!primaryCodeRef.current) return; // verifyNow already navigated
+          const pc = primaryCodeRef.current;
+          const c = codesRef.current!;
+          primaryCodeRef.current = null;
+          codesRef.current = null;
+          stopAll();
+          popupRef.current?.close();
+          clear();
+          void navigate({ to: "/checkout/confirmation", search: { codes: c, primaryCode: pc } });
+        }, 8_000);
       }
     }, 800);
 
@@ -265,6 +286,7 @@ function CheckoutPage() {
         buyerId: user.id,
         buyerEmail: user.email ?? "",
         paymentMethod: method,
+        appOrigin: window.location.origin, // tells edge fn the correct returnUrl domain
         items: items.map((it) => ({
           id: it.listing_id !== undefined ? it.listing_id : (it.id.startsWith("mock-") ? null : it.id),
           farmer_id: it.farmer_id,

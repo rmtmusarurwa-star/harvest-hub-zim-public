@@ -32,11 +32,12 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const { buyerId, buyerEmail, paymentMethod, items, customerPhone } =
+    const { buyerId, buyerEmail, paymentMethod, items, customerPhone, appOrigin } =
       await req.json() as {
         buyerId: string;
         buyerEmail?: string;
         paymentMethod?: string;
+        appOrigin?: string;
         items: Array<{
           id: string;
           farmer_id?: string;
@@ -71,26 +72,34 @@ serve(async (req) => {
     const { data: inserted, error: dbErr } = await supabase
       .from("orders")
       .insert(orderRows)
-      .select("order_code, listing_title, quantity, unit, unit_price");
+      .select("order_code, listing_title, quantity, unit, unit_price, total_amount");
 
     if (dbErr) throw new Error(dbErr.message);
 
     const codes = inserted!.map((o: { order_code: string }) => o.order_code);
 
-    // The popup will land here after ClicknPay payment; it auto-closes via window.close()
-    const returnUrl = `${APP_URL}/checkout/payment-return`;
+    // Use the origin reported by the browser (always the correct deployed domain).
+    // Falls back to the APP_URL env secret, then the hardcoded default.
+    const baseUrl =
+      (appOrigin as string | undefined)?.trim() ||
+      Deno.env.get("APP_URL") ||
+      "https://harvest-hub-zim.harvesthub.workers.dev";
+    const returnUrl = `${baseUrl}/checkout/payment-return`;
 
+    // ClicknPay only supports integer quantities — always send quantity:1 with
+    // price = total line amount. The actual qty and unit go in the description.
     const productsList = inserted!.map((o: {
       listing_title: string;
       quantity: number;
       unit: string;
       unit_price: number;
+      total_amount: number;
     }, i: number) => ({
       id: i,
       productName: o.listing_title ?? "Farm Produce",
-      description: `${o.quantity} ${o.unit}`,
-      price: Number(o.unit_price),
-      quantity: Number(o.quantity),
+      description: `${Number(o.quantity)} ${o.unit}`,
+      price: Number(o.total_amount ?? (Number(o.unit_price) * Number(o.quantity))),
+      quantity: 1,
     }));
 
     const clicknpayBody = {

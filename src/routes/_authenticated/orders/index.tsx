@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, Package, ShoppingBag, ClipboardList } from "lucide-react";
+import { AlertTriangle, ArrowRight, Package, RefreshCw, ShoppingBag, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -10,6 +10,7 @@ import {
   FULFILLMENT_STATUS_COLOR,
   type ExtendedOrderRow,
 } from "@/lib/order-utils";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/orders/")({
@@ -18,8 +19,9 @@ export const Route = createFileRoute("/_authenticated/orders/")({
 
 function OrdersPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: orders = [], isLoading, error, refetch } = useQuery({
     queryKey: ["all-orders", user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -38,12 +40,39 @@ function OrdersPage() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl text-foreground">Orders</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Track purchases and manage incoming sales
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-2xl text-foreground">Orders</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Track purchases and manage incoming sales
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-muted-foreground"
+          onClick={() => {
+            void queryClient.invalidateQueries({ queryKey: ["all-orders", user?.id] });
+            void refetch();
+          }}
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Refresh
+        </Button>
       </div>
+
+      {/* Query error banner */}
+      {error && (
+        <div className="flex items-start gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <span className="font-medium">Could not load orders.</span>
+            <span className="ml-2 text-rose-300/70">
+              {(error as Error).message}
+            </span>
+          </div>
+        </div>
+      )}
 
       <Tabs defaultValue="purchases">
         <TabsList>

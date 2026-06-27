@@ -15,6 +15,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as CheckoutPaymentReturnRouteImport } from './routes/checkout.payment-return'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReceiptsRouteImport } from './routes/_authenticated/receipts'
 import { Route as AuthenticatedMarketIntelligenceRouteImport } from './routes/_authenticated/market-intelligence'
 import { Route as AuthenticatedFinancialHubRouteImport } from './routes/_authenticated/financial-hub'
@@ -26,24 +28,22 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedTransportIndexRouteImport } from './routes/_authenticated/transport/index'
 import { Route as AuthenticatedShopsIndexRouteImport } from './routes/_authenticated/shops/index'
-import { Route as AuthenticatedShopsSetupRouteImport } from './routes/_authenticated/shops/setup'
-import { Route as AuthenticatedShopsManageRouteImport } from './routes/_authenticated/shops/manage'
+import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedFarmersIndexRouteImport } from './routes/_authenticated/farmers/index'
 import { Route as AuthenticatedEquipmentIndexRouteImport } from './routes/_authenticated/equipment/index'
 import { Route as AuthenticatedTransportVehicleIdRouteImport } from './routes/_authenticated/transport/$vehicleId'
+import { Route as AuthenticatedShopsSetupRouteImport } from './routes/_authenticated/shops/setup'
+import { Route as AuthenticatedShopsManageRouteImport } from './routes/_authenticated/shops/manage'
 import { Route as AuthenticatedShopsShopIdRouteImport } from './routes/_authenticated/shops/$shopId'
 import { Route as AuthenticatedProfileEditRouteImport } from './routes/_authenticated/profile.edit'
 import { Route as AuthenticatedProfileUserIdRouteImport } from './routes/_authenticated/profile.$userId'
+import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders/$orderId'
 import { Route as AuthenticatedMarketplaceListingIdRouteImport } from './routes/_authenticated/marketplace/$listingId'
 import { Route as AuthenticatedFarmersFarmerIdRouteImport } from './routes/_authenticated/farmers/$farmerId'
 import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment/$equipmentId'
 import { Route as AuthenticatedCommunityPostIdRouteImport } from './routes/_authenticated/community.$postId'
 import { Route as AuthenticatedCheckoutConfirmationRouteImport } from './routes/_authenticated/checkout.confirmation'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders/index'
-import { Route as AuthenticatedOrdersOrderIdRouteImport } from './routes/_authenticated/orders/$orderId'
-import { Route as CheckoutPaymentReturnRouteImport } from './routes/checkout.payment-return'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -72,6 +72,16 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const CheckoutPaymentReturnRoute = CheckoutPaymentReturnRouteImport.update({
+  id: '/checkout/payment-return',
+  path: '/checkout/payment-return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedReceiptsRoute = AuthenticatedReceiptsRouteImport.update({
@@ -132,6 +142,12 @@ const AuthenticatedShopsIndexRoute = AuthenticatedShopsIndexRouteImport.update({
   path: '/shops/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedOrdersIndexRoute =
+  AuthenticatedOrdersIndexRouteImport.update({
+    id: '/orders/',
+    path: '/orders/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMarketplaceIndexRoute =
   AuthenticatedMarketplaceIndexRouteImport.update({
     id: '/marketplace/',
@@ -156,22 +172,21 @@ const AuthenticatedTransportVehicleIdRoute =
     path: '/transport/$vehicleId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedShopsShopIdRoute =
-  AuthenticatedShopsShopIdRouteImport.update({
-    id: '/shops/$shopId',
-    path: '/shops/$shopId',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedShopsSetupRoute =
-  AuthenticatedShopsSetupRouteImport.update({
-    id: '/shops/setup',
-    path: '/shops/setup',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
+const AuthenticatedShopsSetupRoute = AuthenticatedShopsSetupRouteImport.update({
+  id: '/shops/setup',
+  path: '/shops/setup',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedShopsManageRoute =
   AuthenticatedShopsManageRouteImport.update({
     id: '/shops/manage',
     path: '/shops/manage',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedShopsShopIdRoute =
+  AuthenticatedShopsShopIdRouteImport.update({
+    id: '/shops/$shopId',
+    path: '/shops/$shopId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedProfileEditRoute =
@@ -184,6 +199,12 @@ const AuthenticatedProfileUserIdRoute =
   AuthenticatedProfileUserIdRouteImport.update({
     id: '/profile/$userId',
     path: '/profile/$userId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedOrdersOrderIdRoute =
+  AuthenticatedOrdersOrderIdRouteImport.update({
+    id: '/orders/$orderId',
+    path: '/orders/$orderId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMarketplaceListingIdRoute =
@@ -216,28 +237,6 @@ const AuthenticatedCheckoutConfirmationRoute =
     path: '/confirmation',
     getParentRoute: () => AuthenticatedCheckoutRoute,
   } as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedOrdersIndexRoute =
-  AuthenticatedOrdersIndexRouteImport.update({
-    id: '/orders/',
-    path: '/orders/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedOrdersOrderIdRoute =
-  AuthenticatedOrdersOrderIdRouteImport.update({
-    id: '/orders/$orderId',
-    path: '/orders/$orderId',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const CheckoutPaymentReturnRoute = CheckoutPaymentReturnRouteImport.update({
-  id: '/checkout/payment-return',
-  path: '/checkout/payment-return',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -254,26 +253,26 @@ export interface FileRoutesByFullPath {
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/receipts': typeof AuthenticatedReceiptsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/community/$postId': typeof AuthenticatedCommunityPostIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/profile/$userId': typeof AuthenticatedProfileUserIdRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
-  '/shops/setup': typeof AuthenticatedShopsSetupRoute
   '/shops/manage': typeof AuthenticatedShopsManageRoute
+  '/shops/setup': typeof AuthenticatedShopsSetupRoute
   '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/orders/': typeof AuthenticatedOrdersIndexRoute
   '/shops/': typeof AuthenticatedShopsIndexRoute
   '/transport/': typeof AuthenticatedTransportIndexRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/orders/': typeof AuthenticatedOrdersIndexRoute
-  '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
-  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -289,27 +288,27 @@ export interface FileRoutesByTo {
   '/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/receipts': typeof AuthenticatedReceiptsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
   '/': typeof AuthenticatedIndexRoute
   '/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/community/$postId': typeof AuthenticatedCommunityPostIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/profile/$userId': typeof AuthenticatedProfileUserIdRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
-  '/shops/setup': typeof AuthenticatedShopsSetupRoute
   '/shops/manage': typeof AuthenticatedShopsManageRoute
+  '/shops/setup': typeof AuthenticatedShopsSetupRoute
   '/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/equipment': typeof AuthenticatedEquipmentIndexRoute
   '/farmers': typeof AuthenticatedFarmersIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
+  '/orders': typeof AuthenticatedOrdersIndexRoute
   '/shops': typeof AuthenticatedShopsIndexRoute
   '/transport': typeof AuthenticatedTransportIndexRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/orders': typeof AuthenticatedOrdersIndexRoute
-  '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
-  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -327,27 +326,27 @@ export interface FileRoutesById {
   '/_authenticated/financial-hub': typeof AuthenticatedFinancialHubRoute
   '/_authenticated/market-intelligence': typeof AuthenticatedMarketIntelligenceRoute
   '/_authenticated/receipts': typeof AuthenticatedReceiptsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/checkout/confirmation': typeof AuthenticatedCheckoutConfirmationRoute
   '/_authenticated/community/$postId': typeof AuthenticatedCommunityPostIdRoute
   '/_authenticated/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/_authenticated/farmers/$farmerId': typeof AuthenticatedFarmersFarmerIdRoute
   '/_authenticated/marketplace/$listingId': typeof AuthenticatedMarketplaceListingIdRoute
+  '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
   '/_authenticated/profile/$userId': typeof AuthenticatedProfileUserIdRoute
   '/_authenticated/profile/edit': typeof AuthenticatedProfileEditRoute
   '/_authenticated/shops/$shopId': typeof AuthenticatedShopsShopIdRoute
-  '/_authenticated/shops/setup': typeof AuthenticatedShopsSetupRoute
   '/_authenticated/shops/manage': typeof AuthenticatedShopsManageRoute
+  '/_authenticated/shops/setup': typeof AuthenticatedShopsSetupRoute
   '/_authenticated/transport/$vehicleId': typeof AuthenticatedTransportVehicleIdRoute
   '/_authenticated/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/_authenticated/farmers/': typeof AuthenticatedFarmersIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
   '/_authenticated/shops/': typeof AuthenticatedShopsIndexRoute
   '/_authenticated/transport/': typeof AuthenticatedTransportIndexRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
-  '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
-  '/checkout/payment-return': typeof CheckoutPaymentReturnRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -366,26 +365,26 @@ export interface FileRouteTypes {
     | '/financial-hub'
     | '/market-intelligence'
     | '/receipts'
+    | '/settings'
+    | '/checkout/payment-return'
     | '/checkout/confirmation'
     | '/community/$postId'
     | '/equipment/$equipmentId'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
+    | '/orders/$orderId'
     | '/profile/$userId'
     | '/profile/edit'
     | '/shops/$shopId'
-    | '/shops/setup'
     | '/shops/manage'
+    | '/shops/setup'
     | '/transport/$vehicleId'
     | '/equipment/'
     | '/farmers/'
     | '/marketplace/'
+    | '/orders/'
     | '/shops/'
     | '/transport/'
-    | '/settings'
-    | '/orders/'
-    | '/orders/$orderId'
-    | '/checkout/payment-return'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -401,27 +400,27 @@ export interface FileRouteTypes {
     | '/financial-hub'
     | '/market-intelligence'
     | '/receipts'
+    | '/settings'
+    | '/checkout/payment-return'
     | '/'
     | '/checkout/confirmation'
     | '/community/$postId'
     | '/equipment/$equipmentId'
     | '/farmers/$farmerId'
     | '/marketplace/$listingId'
+    | '/orders/$orderId'
     | '/profile/$userId'
     | '/profile/edit'
     | '/shops/$shopId'
-    | '/shops/setup'
     | '/shops/manage'
+    | '/shops/setup'
     | '/transport/$vehicleId'
     | '/equipment'
     | '/farmers'
     | '/marketplace'
+    | '/orders'
     | '/shops'
     | '/transport'
-    | '/settings'
-    | '/orders'
-    | '/orders/$orderId'
-    | '/checkout/payment-return'
   id:
     | '__root__'
     | '/_authenticated'
@@ -438,27 +437,27 @@ export interface FileRouteTypes {
     | '/_authenticated/financial-hub'
     | '/_authenticated/market-intelligence'
     | '/_authenticated/receipts'
+    | '/_authenticated/settings'
+    | '/checkout/payment-return'
     | '/_authenticated/'
     | '/_authenticated/checkout/confirmation'
     | '/_authenticated/community/$postId'
     | '/_authenticated/equipment/$equipmentId'
     | '/_authenticated/farmers/$farmerId'
     | '/_authenticated/marketplace/$listingId'
+    | '/_authenticated/orders/$orderId'
     | '/_authenticated/profile/$userId'
     | '/_authenticated/profile/edit'
     | '/_authenticated/shops/$shopId'
-    | '/_authenticated/shops/setup'
     | '/_authenticated/shops/manage'
+    | '/_authenticated/shops/setup'
     | '/_authenticated/transport/$vehicleId'
     | '/_authenticated/equipment/'
     | '/_authenticated/farmers/'
     | '/_authenticated/marketplace/'
+    | '/_authenticated/orders/'
     | '/_authenticated/shops/'
     | '/_authenticated/transport/'
-    | '/_authenticated/settings'
-    | '/_authenticated/orders/'
-    | '/_authenticated/orders/$orderId'
-    | '/checkout/payment-return'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -512,6 +511,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/checkout/payment-return': {
+      id: '/checkout/payment-return'
+      path: '/checkout/payment-return'
+      fullPath: '/checkout/payment-return'
+      preLoaderRoute: typeof CheckoutPaymentReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/receipts': {
@@ -591,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShopsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/orders/': {
+      id: '/_authenticated/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof AuthenticatedOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/marketplace/': {
       id: '/_authenticated/marketplace/'
       path: '/marketplace'
@@ -619,13 +639,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTransportVehicleIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/shops/$shopId': {
-      id: '/_authenticated/shops/$shopId'
-      path: '/shops/$shopId'
-      fullPath: '/shops/$shopId'
-      preLoaderRoute: typeof AuthenticatedShopsShopIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/shops/setup': {
       id: '/_authenticated/shops/setup'
       path: '/shops/setup'
@@ -640,6 +653,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedShopsManageRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/shops/$shopId': {
+      id: '/_authenticated/shops/$shopId'
+      path: '/shops/$shopId'
+      fullPath: '/shops/$shopId'
+      preLoaderRoute: typeof AuthenticatedShopsShopIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/profile/edit': {
       id: '/_authenticated/profile/edit'
       path: '/profile/edit'
@@ -652,6 +672,13 @@ declare module '@tanstack/react-router' {
       path: '/profile/$userId'
       fullPath: '/profile/$userId'
       preLoaderRoute: typeof AuthenticatedProfileUserIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/orders/$orderId': {
+      id: '/_authenticated/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/orders/$orderId'
+      preLoaderRoute: typeof AuthenticatedOrdersOrderIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/marketplace/$listingId': {
@@ -688,34 +715,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/checkout/confirmation'
       preLoaderRoute: typeof AuthenticatedCheckoutConfirmationRouteImport
       parentRoute: typeof AuthenticatedCheckoutRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/orders/': {
-      id: '/_authenticated/orders/'
-      path: '/orders'
-      fullPath: '/orders/'
-      preLoaderRoute: typeof AuthenticatedOrdersIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/orders/$orderId': {
-      id: '/_authenticated/orders/$orderId'
-      path: '/orders/$orderId'
-      fullPath: '/orders/$orderId'
-      preLoaderRoute: typeof AuthenticatedOrdersOrderIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/checkout/payment-return': {
-      id: '/checkout/payment-return'
-      path: '/checkout/payment-return'
-      fullPath: '/checkout/payment-return'
-      preLoaderRoute: typeof CheckoutPaymentReturnRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -758,24 +757,24 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinancialHubRoute: typeof AuthenticatedFinancialHubRoute
   AuthenticatedMarketIntelligenceRoute: typeof AuthenticatedMarketIntelligenceRoute
   AuthenticatedReceiptsRoute: typeof AuthenticatedReceiptsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedEquipmentEquipmentIdRoute: typeof AuthenticatedEquipmentEquipmentIdRoute
   AuthenticatedFarmersFarmerIdRoute: typeof AuthenticatedFarmersFarmerIdRoute
   AuthenticatedMarketplaceListingIdRoute: typeof AuthenticatedMarketplaceListingIdRoute
+  AuthenticatedOrdersOrderIdRoute: typeof AuthenticatedOrdersOrderIdRoute
   AuthenticatedProfileUserIdRoute: typeof AuthenticatedProfileUserIdRoute
   AuthenticatedProfileEditRoute: typeof AuthenticatedProfileEditRoute
   AuthenticatedShopsShopIdRoute: typeof AuthenticatedShopsShopIdRoute
-  AuthenticatedShopsSetupRoute: typeof AuthenticatedShopsSetupRoute
   AuthenticatedShopsManageRoute: typeof AuthenticatedShopsManageRoute
+  AuthenticatedShopsSetupRoute: typeof AuthenticatedShopsSetupRoute
   AuthenticatedTransportVehicleIdRoute: typeof AuthenticatedTransportVehicleIdRoute
   AuthenticatedEquipmentIndexRoute: typeof AuthenticatedEquipmentIndexRoute
   AuthenticatedFarmersIndexRoute: typeof AuthenticatedFarmersIndexRoute
   AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
+  AuthenticatedOrdersIndexRoute: typeof AuthenticatedOrdersIndexRoute
   AuthenticatedShopsIndexRoute: typeof AuthenticatedShopsIndexRoute
   AuthenticatedTransportIndexRoute: typeof AuthenticatedTransportIndexRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedOrdersIndexRoute: typeof AuthenticatedOrdersIndexRoute
-  AuthenticatedOrdersOrderIdRoute: typeof AuthenticatedOrdersOrderIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -788,26 +787,26 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinancialHubRoute: AuthenticatedFinancialHubRoute,
   AuthenticatedMarketIntelligenceRoute: AuthenticatedMarketIntelligenceRoute,
   AuthenticatedReceiptsRoute: AuthenticatedReceiptsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedEquipmentEquipmentIdRoute:
     AuthenticatedEquipmentEquipmentIdRoute,
   AuthenticatedFarmersFarmerIdRoute: AuthenticatedFarmersFarmerIdRoute,
   AuthenticatedMarketplaceListingIdRoute:
     AuthenticatedMarketplaceListingIdRoute,
+  AuthenticatedOrdersOrderIdRoute: AuthenticatedOrdersOrderIdRoute,
   AuthenticatedProfileUserIdRoute: AuthenticatedProfileUserIdRoute,
   AuthenticatedProfileEditRoute: AuthenticatedProfileEditRoute,
   AuthenticatedShopsShopIdRoute: AuthenticatedShopsShopIdRoute,
-  AuthenticatedShopsSetupRoute: AuthenticatedShopsSetupRoute,
   AuthenticatedShopsManageRoute: AuthenticatedShopsManageRoute,
+  AuthenticatedShopsSetupRoute: AuthenticatedShopsSetupRoute,
   AuthenticatedTransportVehicleIdRoute: AuthenticatedTransportVehicleIdRoute,
   AuthenticatedEquipmentIndexRoute: AuthenticatedEquipmentIndexRoute,
   AuthenticatedFarmersIndexRoute: AuthenticatedFarmersIndexRoute,
   AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
+  AuthenticatedOrdersIndexRoute: AuthenticatedOrdersIndexRoute,
   AuthenticatedShopsIndexRoute: AuthenticatedShopsIndexRoute,
   AuthenticatedTransportIndexRoute: AuthenticatedTransportIndexRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedOrdersIndexRoute: AuthenticatedOrdersIndexRoute,
-  AuthenticatedOrdersOrderIdRoute: AuthenticatedOrdersOrderIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
