@@ -48,18 +48,31 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SYSTEM_PROMPT = `You are the Harvest Hub assistant — helping farmers and buyers across our markets
-buy, sell, and get information by chatting in plain language, over WhatsApp or the web.
-Be concise (this may be read on a basic phone). Use the tools you're given rather than
-guessing at prices, listings, or weather. When a farmer describes produce to sell, confirm
-the details back to them in plain language BEFORE calling create_listing — there is no UI
-here to catch typos, so confirmation is mandatory. Reply in the user's language if it is
-not English.
+const SYSTEM_PROMPT = `You are Harvest AI — the agentic assistant for Harvest Hub, a Zimbabwean
+agricultural marketplace. You help farmers and buyers buy, sell, track orders, book transport,
+and get real-time market and weather information by chatting in plain language.
 
-When calling get_weather or get_market_price, always extract the location or commodity from
-the user's MOST RECENT message — never reuse one from earlier in the conversation. If the
-latest message names a different place or item than before, call the tool with that new one,
-even if an earlier turn already covered a different location/commodity.`;
+TOOLS YOU HAVE:
+- search_listings: find active produce/livestock listings
+- create_listing: list produce or livestock for sale (confirm details first)
+- place_order: buy from a listing (confirm listing, quantity, and payment method first)
+- get_my_listings: show the user their own listings
+- get_my_orders: show the user's purchase or sales orders
+- request_transport: post a transport request to find a driver (confirm details first)
+- update_listing: change price, quantity, description, or mark as sold
+- get_market_price: current commodity prices from live listings
+- get_weather: weather for any location (Open-Meteo, free, keyless)
+
+RULES:
+- Be concise — this may be read on a basic phone or WhatsApp.
+- For any action that creates or modifies data (create_listing, place_order, request_transport,
+  update_listing) you MUST read the details back to the user and get explicit confirmation
+  BEFORE calling the tool. There is no UI to catch mistakes.
+- Use real tools rather than guessing at prices, availability, or weather.
+- For get_weather and get_market_price, always use the location/commodity from the user's
+  MOST RECENT message — never reuse one from an earlier turn.
+- Reply in the user's language if it is not English (Shona and Ndebele are common).
+- If the user asks what you can do, list your capabilities briefly.`;
 
 const TOOLS = [
   {
@@ -112,6 +125,86 @@ const TOOLS = [
       type: "object",
       properties: { location: { type: "string" } },
       required: ["location"],
+    },
+  },
+  {
+    name: "place_order",
+    description: "Place a purchase order on behalf of the current user for a specific listing. Confirm listing_id, quantity, and payment method with the user BEFORE calling this. Only call once the user has explicitly confirmed.",
+    input_schema: {
+      type: "object",
+      properties: {
+        listing_id: { type: "string", description: "UUID of the listing to order from" },
+        quantity: { type: "number", description: "How many units to order" },
+        payment_method: {
+          type: "string",
+          enum: ["ecocash", "onemoney", "zipit", "cash_on_delivery", "card"],
+          description: "Payment method the buyer will use",
+        },
+        notes: { type: "string", description: "Optional message to the farmer" },
+      },
+      required: ["listing_id", "quantity", "payment_method"],
+    },
+  },
+  {
+    name: "get_my_listings",
+    description: "Get the current user's own marketplace listings. Use to review, update, or close their listings.",
+    input_schema: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["active", "sold", "expired", "all"],
+          description: "Filter by listing status. Defaults to 'active'.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "get_my_orders",
+    description: "Get the current user's orders — either as a buyer (orders they placed) or as a farmer (orders received on their listings).",
+    input_schema: {
+      type: "object",
+      properties: {
+        role: {
+          type: "string",
+          enum: ["buyer", "farmer"],
+          description: "Fetch orders where the user is the buyer or the farmer/seller",
+        },
+      },
+      required: ["role"],
+    },
+  },
+  {
+    name: "request_transport",
+    description: "Post a transport request to find a vehicle/driver. Confirm details with the user before calling.",
+    input_schema: {
+      type: "object",
+      properties: {
+        pickup: { type: "string", description: "Pickup location (town or address)" },
+        destination: { type: "string", description: "Drop-off destination" },
+        cargo: { type: "string", description: "What is being transported, e.g. '500 kg maize'" },
+        estimated_weight_kg: { type: "number", description: "Approximate weight in kg" },
+        scheduled_date: { type: "string", description: "Date in YYYY-MM-DD format, optional" },
+        budget: { type: "number", description: "Maximum budget in USD, 0 if unknown" },
+        contact_phone: { type: "string", description: "Contact phone number for the driver to call" },
+      },
+      required: ["pickup", "destination", "cargo", "estimated_weight_kg", "contact_phone"],
+    },
+  },
+  {
+    name: "update_listing",
+    description: "Update the price, quantity, or description of one of the current user's own listings. Only call with fields the user explicitly wants to change.",
+    input_schema: {
+      type: "object",
+      properties: {
+        listing_id: { type: "string", description: "UUID of the listing to update" },
+        price: { type: "number", description: "New price per unit in USD, optional" },
+        quantity: { type: "number", description: "New available quantity, optional" },
+        description: { type: "string", description: "Updated description, optional" },
+        status: { type: "string", enum: ["active", "sold", "expired"], description: "Mark as sold/expired, optional" },
+      },
+      required: ["listing_id"],
     },
   },
 ];
@@ -240,6 +333,120 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: { farm
       } catch (err) {
         return { error: (err as Error).message };
       }
+    }
+
+    case "place_order": {
+      if (!ctx.farmerId) return { error: "No linked account — cannot place an order." };
+      // look up the listing to get farmer_id, price, title
+      const { data: listing, error: listingErr } = await supabase
+        .from("listings")
+        .select("id, title, farmer_id, price, unit, quantity, status")
+        .eq("id", String(input.listing_id))
+        .single();
+      if (listingErr || !listing) return { error: "Listing not found." };
+      if (listing.status !== "active") return { error: "This listing is no longer active." };
+      if (listing.farmer_id === ctx.farmerId) return { error: "You cannot order your own listing." };
+      const qty = Number(input.quantity);
+      if (qty <= 0) return { error: "Quantity must be greater than 0." };
+      const totalAmount = qty * Number(listing.price);
+      const orderCode = `ORD-${Date.now().toString(36).toUpperCase()}`;
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .insert({
+          order_code: orderCode,
+          buyer_id: ctx.farmerId,
+          farmer_id: listing.farmer_id,
+          listing_id: listing.id,
+          listing_title: listing.title,
+          quantity: qty,
+          unit: listing.unit,
+          unit_price: listing.price,
+          total_amount: totalAmount,
+          payment_method: String(input.payment_method),
+          notes: input.notes ? String(input.notes) : null,
+        })
+        .select("id, order_code, total_amount")
+        .single();
+      if (orderErr) return { error: orderErr.message };
+      return {
+        success: true,
+        order_code: order.order_code,
+        total_amount_usd: order.total_amount,
+        message: `Order ${order.order_code} placed for ${qty} ${listing.unit} of ${listing.title} — total $${totalAmount.toFixed(2)} USD.`,
+      };
+    }
+
+    case "get_my_listings": {
+      if (!ctx.farmerId) return { error: "No linked account." };
+      const statusFilter = String(input.status ?? "active");
+      let q = supabase
+        .from("listings")
+        .select("id, title, category, price, unit, quantity, status, location, created_at")
+        .eq("farmer_id", ctx.farmerId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      const { data, error } = await q;
+      if (error) return { error: error.message };
+      return { listings: data ?? [], count: (data ?? []).length };
+    }
+
+    case "get_my_orders": {
+      if (!ctx.farmerId) return { error: "No linked account." };
+      const role = String(input.role ?? "buyer");
+      const column = role === "farmer" ? "farmer_id" : "buyer_id";
+      const { data, error } = await supabase
+        .from("orders")
+        .select("order_code, listing_title, quantity, unit, unit_price, total_amount, payment_method, payment_status, created_at")
+        .eq(column, ctx.farmerId)
+        .order("created_at", { ascending: false })
+        .limit(15);
+      if (error) return { error: error.message };
+      return { orders: data ?? [], role, count: (data ?? []).length };
+    }
+
+    case "request_transport": {
+      if (!ctx.farmerId) return { error: "No linked account." };
+      const { data, error } = await supabase
+        .from("transport_requests")
+        .insert({
+          poster_id: ctx.farmerId,
+          pickup: String(input.pickup),
+          destination: String(input.destination),
+          cargo: String(input.cargo),
+          estimated_weight_kg: Number(input.estimated_weight_kg) || 0,
+          scheduled_date: input.scheduled_date ? String(input.scheduled_date) : null,
+          budget: Number(input.budget) || 0,
+          contact_phone: String(input.contact_phone),
+        })
+        .select("id")
+        .single();
+      if (error) return { error: error.message };
+      return {
+        success: true,
+        request_id: data.id,
+        message: `Transport request posted from ${input.pickup} to ${input.destination}. Drivers will see your request and can respond.`,
+      };
+    }
+
+    case "update_listing": {
+      if (!ctx.farmerId) return { error: "No linked account." };
+      // verify ownership
+      const { data: existing, error: fetchErr } = await supabase
+        .from("listings")
+        .select("id, farmer_id")
+        .eq("id", String(input.listing_id))
+        .single();
+      if (fetchErr || !existing) return { error: "Listing not found." };
+      if (existing.farmer_id !== ctx.farmerId) return { error: "You can only update your own listings." };
+      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (input.price !== undefined) updates.price = Number(input.price);
+      if (input.quantity !== undefined) updates.quantity = Number(input.quantity);
+      if (input.description !== undefined) updates.description = String(input.description);
+      if (input.status !== undefined) updates.status = String(input.status);
+      const { error: updateErr } = await supabase.from("listings").update(updates).eq("id", String(input.listing_id));
+      if (updateErr) return { error: updateErr.message };
+      return { success: true, updated_fields: Object.keys(updates).filter((k) => k !== "updated_at") };
     }
 
     default:

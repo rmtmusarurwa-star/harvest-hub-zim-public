@@ -5,4 +5,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "dist/server/index.mjs",
   "assets": { "directory": "dist/client" },
+  "vars": {
+    "SUPABASE_URL": "https://cpjqbznhidqjugyeptkw.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_OHEv7F1GxECM3hUnjGVbbw_UtTYFACS"
+  }
 }
