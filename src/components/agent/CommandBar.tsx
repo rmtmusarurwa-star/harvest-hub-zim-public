@@ -1,8 +1,61 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, ArrowRight, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { askHarvestAi } from "@/lib/agent-client";
+
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={i} className="font-semibold text-foreground">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
+function RichText({ content }: { content: string }) {
+  const lines = content
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const blocks: ReactNode[] = [];
+  let bullets: string[] = [];
+
+  const flushBullets = () => {
+    if (bullets.length === 0) return;
+    blocks.push(
+      <ul key={`ul-${blocks.length}`} className="my-1 space-y-1">
+        {bullets.map((item, i) => (
+          <li key={i} className="flex gap-1.5 leading-relaxed">
+            <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-secondary" />
+            <span>{renderInline(item)}</span>
+          </li>
+        ))}
+      </ul>,
+    );
+    bullets = [];
+  };
+
+  lines.forEach((line, idx) => {
+    const bulletMatch = line.match(/^[-*]\s+(.*)/);
+    if (bulletMatch) {
+      bullets.push(bulletMatch[1]);
+    } else {
+      flushBullets();
+      blocks.push(
+        <p key={`p-${idx}`} className="leading-relaxed">
+          {renderInline(line)}
+        </p>,
+      );
+    }
+  });
+  flushBullets();
+  return <div className="space-y-1.5">{blocks}</div>;
+}
 
 const PROMPTS = [
   "Sell 500 broilers",
@@ -131,9 +184,9 @@ export function CommandBar() {
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-xl border border-white/5 bg-white/[0.04] px-4 py-3 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap"
+                className="rounded-xl border border-white/5 bg-white/[0.04] px-4 py-3 text-sm text-foreground/90"
               >
-                {reply}
+                <RichText content={reply} />
               </motion.div>
             )}
           </motion.div>
