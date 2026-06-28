@@ -164,11 +164,11 @@ function PublicProfilePage() {
 
       <div className="glass-strong rounded-2xl p-6 sm:p-8">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-          <Avatar className="h-[200px] w-[200px] ring-2 ring-secondary/30 shrink-0">
+          <Avatar className="h-24 w-24 shrink-0 ring-2 ring-secondary/30 sm:h-32 sm:w-32 lg:h-[160px] lg:w-[160px]">
             {profile.avatar_url && (
               <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
             )}
-            <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
+            <AvatarFallback className="text-2xl sm:text-3xl lg:text-4xl">{initials}</AvatarFallback>
           </Avatar>
 
           <div className="flex-1 space-y-3 text-center sm:text-left">

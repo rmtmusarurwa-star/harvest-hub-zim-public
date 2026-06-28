@@ -123,7 +123,7 @@ function ListingDetailPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className={`glass relative aspect-square overflow-hidden rounded-3xl bg-gradient-to-br ${CATEGORY_GRADIENT[listing.category]}`}
+          className={`glass relative aspect-[4/3] overflow-hidden rounded-3xl bg-gradient-to-br lg:aspect-square ${CATEGORY_GRADIENT[listing.category]}`}
         >
           {listing.image_url ? (
             <img
@@ -186,9 +186,9 @@ function ListingDetailPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setQty((q) => Math.max(min, Math.round((q - step) * 100) / 100))}
-                    className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
+                    className="grid h-10 w-10 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
                   >
-                    <Minus className="h-3.5 w-3.5" />
+                    <Minus className="h-4 w-4" />
                   </button>
                   <input
                     type="number"
@@ -201,14 +201,14 @@ function ListingDetailPage() {
                         setQty(isDecimal ? Math.max(min, v) : Math.max(min, Math.round(v)));
                       }
                     }}
-                    className="h-8 w-16 rounded-md border border-white/10 bg-white/[0.02] text-center text-sm"
+                    className="h-10 w-16 rounded-md border border-white/10 bg-white/[0.02] text-center text-sm"
                   />
                   <span className="text-xs text-muted-foreground">{listing.unit}</span>
                   <button
                     onClick={() => setQty((q) => Math.round((q + step) * 100) / 100)}
-                    className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
+                    className="grid h-10 w-10 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-4 w-4" />
                   </button>
                 </div>
                 <span className="ml-auto font-mono text-sm text-foreground">
@@ -271,7 +271,7 @@ function ListingDetailPage() {
               </div>
               <button
                 onClick={() => requireAuth(() => { add(listing, qty); open(); })}
-                className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
+                className="w-full py-2 text-center text-xs text-muted-foreground hover:text-foreground"
               >
                 Buy now — go to checkout
               </button>

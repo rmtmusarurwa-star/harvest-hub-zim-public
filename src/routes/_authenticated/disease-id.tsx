@@ -528,12 +528,14 @@ function DiseaseIdPage() {
       </motion.div>
 
       <Tabs defaultValue="checker">
-        <TabsList className="bg-white/[0.03]">
-          <TabsTrigger value="checker">Symptom checker</TabsTrigger>
-          <TabsTrigger value="photo">Photo diagnosis</TabsTrigger>
-          <TabsTrigger value="library">Disease library</TabsTrigger>
-          <TabsTrigger value="vets">Vet directory</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-0.5">
+          <TabsList className="bg-white/[0.03]">
+            <TabsTrigger value="checker">Symptom checker</TabsTrigger>
+            <TabsTrigger value="photo">Photo diagnosis</TabsTrigger>
+            <TabsTrigger value="library">Disease library</TabsTrigger>
+            <TabsTrigger value="vets">Vet directory</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="checker" className="mt-4">
           <SymptomCheckerTab />
@@ -888,14 +890,12 @@ function PhotoDiagnosisTab() {
       setResult(match);
       if (!match) {
         setError(
-          diagnosis.diseaseId
-            ? `Model returned an unrecognised disease id (${diagnosis.diseaseId}).`
-            : "No confident match — try a clearer, closer photo of the affected area.",
+          "No confident match found. Try a clearer, closer photo of the affected area, or use the Symptom Checker for a manual diagnosis.",
         );
       }
     } catch (err) {
       setError(
-        "Harvest AI vision isn't connected yet — the diagnose-photo function needs to be deployed (supabase functions deploy diagnose-photo) with an ANTHROPIC_API_KEY secret set.",
+        "Photo diagnosis is temporarily unavailable. Please use the Symptom Checker tab, or try again later.",
       );
       console.error("[PhotoDiagnosisTab]", err);
     } finally {

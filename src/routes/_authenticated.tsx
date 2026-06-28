@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Menu, X } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/lib/auth-context";
 import { Wordmark } from "@/components/brand/Wordmark";
@@ -59,14 +59,20 @@ function AuthenticatedLayout() {
   if (pathname === "/") return <Outlet />;
 
   // Guests on marketplace / market-intelligence: minimal public nav
+  return <GuestLayout />;
+}
+
+function GuestLayout() {
+  const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <div className="min-h-screen ambient-glow mesh-bg">
       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
-          <Link to="/">
+          <Link to="/" onClick={() => setMobileOpen(false)}>
             <Wordmark size={32} />
           </Link>
 
+          {/* Desktop nav */}
           <nav className="hidden items-center gap-6 md:flex">
             <Link
               to="/marketplace"
@@ -85,7 +91,7 @@ function AuthenticatedLayout() {
           <div className="flex items-center gap-3">
             <Link
               to="/login"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
             >
               Sign in
             </Link>
@@ -95,8 +101,45 @@ function AuthenticatedLayout() {
             >
               Get Started
             </Link>
+            {/* Mobile hamburger */}
+            <button
+              className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5 md:hidden"
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile dropdown */}
+        {mobileOpen && (
+          <div className="border-t border-white/5 bg-background/95 px-4 pb-4 pt-3 md:hidden">
+            <nav className="flex flex-col gap-1">
+              <Link
+                to="/marketplace"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+              >
+                Marketplace
+              </Link>
+              <Link
+                to="/market-intelligence"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+              >
+                Market Prices
+              </Link>
+              <Link
+                to="/login"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+              >
+                Sign in
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-8 lg:px-6">

@@ -75,7 +75,7 @@ function ConfirmationPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primaryCode]);
 
-  const { data: orders, isLoading } = useQuery({
+  const { data: orders, isLoading, error: ordersError } = useQuery({
     queryKey: ["orders", codes],
     queryFn: async (): Promise<OrderRow[]> => {
       const { data, error } = await supabase
@@ -92,6 +92,20 @@ function ConfirmationPage() {
       <div className="grid place-items-center py-20 text-sm text-muted-foreground">
         <Loader2 className="mb-3 h-6 w-6 animate-spin opacity-50" />
         Finalising your order…
+      </div>
+    );
+  }
+
+  if (ordersError) {
+    return (
+      <div className="grid place-items-center gap-4 py-20 text-center">
+        <Clock className="h-10 w-10 text-amber-400/60" />
+        <p className="text-sm font-medium text-foreground">Could not load order details</p>
+        <p className="text-xs text-muted-foreground max-w-sm">
+          Your payment was submitted — the order may still be processing. Check{" "}
+          <Link to="/orders" className="text-secondary underline">your orders</Link> in a few moments,
+          or <button onClick={() => window.location.reload()} className="text-secondary underline">refresh this page</button>.
+        </p>
       </div>
     );
   }

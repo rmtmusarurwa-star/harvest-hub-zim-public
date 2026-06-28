@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Filter, Plus, Search, ShoppingCart, Star } from "lucide-react";
+import { AlertTriangle, Filter, Plus, Search, ShoppingCart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -49,7 +49,7 @@ function MarketplacePage() {
     action();
   }
 
-  const { data: dbListings = [] } = useQuery({
+  const { data: dbListings = [], error: listingsError } = useQuery({
     queryKey: ["listings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -98,7 +98,7 @@ function MarketplacePage() {
               Marketplace
             </span>
           </div>
-          <h1 className="font-display text-3xl leading-tight md:text-5xl">
+          <h1 className="font-display text-3xl leading-tight sm:text-4xl md:text-5xl">
             Zimbabwe's Farm Marketplace
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -163,7 +163,7 @@ function MarketplacePage() {
               <button
                 key={c.value}
                 onClick={() => setCategory(c.value)}
-                className={`relative whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition ${
+                className={`relative min-h-[40px] whitespace-nowrap rounded-full px-3 py-2 text-xs transition ${
                   active
                     ? "bg-secondary text-secondary-foreground"
                     : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
@@ -175,6 +175,17 @@ function MarketplacePage() {
           })}
         </div>
       </div>
+
+      {/* DB error banner — still shows mock listings so the page is useful */}
+      {listingsError && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            <span className="font-medium">Live listings unavailable.</span>
+            <span className="ml-2 text-amber-300/70">Showing demo data — check your connection and try refreshing.</span>
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
         {/* Filter sidebar */}

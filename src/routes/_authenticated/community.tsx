@@ -4,11 +4,13 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
+  AlertTriangle,
   MessageSquare,
   Heart,
   Sparkles,
   Lightbulb,
   Plus,
+  RefreshCw,
   Search,
   TrendingUp,
   Image as ImageIcon,
@@ -65,6 +67,7 @@ function CommunityPage() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<PostWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sort, setSort] = useState<"latest" | "trending">("latest");
@@ -77,10 +80,11 @@ function CommunityPage() {
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) {
-      toast.error("Could not load posts");
+      setLoadError(error.message);
       setLoading(false);
       return;
     }
+    setLoadError(null);
     const rows = (postsData ?? []) as ForumPostRow[];
     const authorIds = Array.from(new Set(rows.map((r) => r.author_id)));
     const postIds = rows.map((r) => r.id);
@@ -239,7 +243,21 @@ function CommunityPage() {
             </div>
           </div>
 
-          {loading ? (
+          {loadError ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-300">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="flex-1">
+                <span className="font-medium">Could not load posts.</span>
+                <span className="ml-2 text-rose-300/70">{loadError}</span>
+              </div>
+              <button
+                onClick={() => load()}
+                className="flex items-center gap-1 rounded-lg border border-rose-500/30 px-2.5 py-1 text-xs hover:bg-rose-500/10"
+              >
+                <RefreshCw className="h-3 w-3" /> Retry
+              </button>
+            </div>
+          ) : loading ? (
             <div className="glass rounded-2xl border border-white/5 py-12 text-center text-muted-foreground">
               Loading posts...
             </div>

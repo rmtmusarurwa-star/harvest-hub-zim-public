@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
+  AlertTriangle,
   CalendarIcon,
   Download,
   Eye,
@@ -93,7 +94,7 @@ function ReceiptsPage() {
   const [page, setPage] = useState(1);
   const [viewing, setViewing] = useState<OrderRow | null>(null);
 
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: orders = [], isLoading, error: ordersError } = useQuery({
     queryKey: ["receipts", me],
     enabled: !!me,
     queryFn: async (): Promise<OrderRow[]> => {
@@ -274,6 +275,17 @@ function ReceiptsPage() {
           </p>
         </div>
       </header>
+
+      {/* Error banner */}
+      {ordersError && (
+        <div className="flex items-start gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <span className="font-medium">Could not load receipts.</span>
+            <span className="ml-2 text-rose-300/70">{(ordersError as Error).message}</span>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="glass rounded-2xl border border-white/5 p-4">

@@ -23,6 +23,7 @@ import {
   type ShopProductRow,
   type ShopRow,
 } from "@/lib/shops-data";
+import { PAYMENT_STATUS_LABEL } from "@/lib/order-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -293,7 +294,7 @@ function ShopManagePage() {
         </div>
 
         {/* Stats */}
-        <div className="mt-5 grid grid-cols-3 gap-3">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             { label: "Products", value: products.length },
             { label: "Total orders", value: salesOrders.length, sub: `${pendingCount} pending` },
@@ -408,11 +409,11 @@ function ShopManagePage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1.5">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditProduct(p)}>
-                      <Edit2 className="h-3.5 w-3.5" />
+                    <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => openEditProduct(p)}>
+                      <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => { void deleteProduct(p); }}>
-                      <Trash2 className="h-3.5 w-3.5" />
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive hover:text-destructive" onClick={() => { void deleteProduct(p); }}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -446,7 +447,7 @@ function ShopManagePage() {
                       ? "bg-red-500/15 text-red-400"
                       : "bg-amber-500/15 text-amber-400"
                   }`}>
-                    {o.payment_status}
+                    {PAYMENT_STATUS_LABEL[o.payment_status as keyof typeof PAYMENT_STATUS_LABEL] ?? o.payment_status}
                   </span>
                   <span className="font-mono text-secondary">${Number(o.total_amount).toFixed(2)}</span>
                   <span className="text-xs text-muted-foreground">
@@ -468,7 +469,7 @@ function ShopManagePage() {
                   <Edit2 className="h-3.5 w-3.5" /> Edit
                 </Button>
               </div>
-              <dl className="grid grid-cols-2 gap-3 text-sm">
+              <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                 {[
                   ["Name", s.name],
                   ["Category", categoryLabel(s.category)],

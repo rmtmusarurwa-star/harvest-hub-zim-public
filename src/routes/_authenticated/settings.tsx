@@ -56,7 +56,7 @@ function SettingsPage() {
   const [form, setForm] = useState<PayoutForm>(EMPTY_FORM);
 
   // ── Load payout settings ────────────────────────────────────────────────────
-  const { data: payout, isLoading: payoutLoading } = useQuery({
+  const { data: payout, isLoading: payoutLoading, error: payoutError } = useQuery({
     queryKey: ["payout-settings", user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -273,6 +273,11 @@ function SettingsPage() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading…
+          </div>
+        ) : payoutError ? (
+          <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm text-rose-300">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            Could not load payout settings: {(payoutError as Error).message}
           </div>
         ) : (
           <>

@@ -78,7 +78,8 @@ function FulfillmentTimeline({ status }: { status: FulfillmentStatus }) {
           <span className="font-medium">Order cancelled</span>
         </div>
       ) : (
-        <ol className="flex items-start">
+        <div className="overflow-x-auto pb-1">
+        <ol className="flex min-w-[320px] items-start">
           {steps.map((step, i) => {
             const done = i <= activeIdx;
             const active = i === activeIdx;
@@ -123,6 +124,7 @@ function FulfillmentTimeline({ status }: { status: FulfillmentStatus }) {
             );
           })}
         </ol>
+        </div>
       )}
     </div>
   );
@@ -244,7 +246,7 @@ function OrderDetailPage() {
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [notes, setNotes] = useState("");
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading, error: orderError } = useQuery({
     queryKey: ["order-detail", orderId],
     enabled: !!user,
     queryFn: async () => {
@@ -321,6 +323,19 @@ function OrderDetailPage() {
         {[...Array(4)].map((_, i) => (
           <div key={i} className="glass h-24 animate-pulse rounded-2xl bg-white/[0.03]" />
         ))}
+      </div>
+    );
+  }
+
+  if (orderError) {
+    return (
+      <div className="glass rounded-2xl p-10 text-center">
+        <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-rose-400/60" />
+        <p className="text-sm font-medium text-foreground">Could not load order</p>
+        <p className="mt-1 text-xs text-muted-foreground">{(orderError as Error).message}</p>
+        <Link to="/orders" className="mt-4 inline-block text-sm text-secondary hover:underline">
+          ← Back to orders
+        </Link>
       </div>
     );
   }
@@ -444,7 +459,7 @@ function OrderDetailPage() {
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span className="flex-1">Cancel this order?</span>
                 <button
-                  className="font-medium hover:text-rose-200"
+                  className="rounded px-3 py-2 font-medium hover:text-rose-200"
                   disabled={updateStatus.isPending}
                   onClick={() =>
                     updateStatus.mutate({
@@ -456,7 +471,7 @@ function OrderDetailPage() {
                   {updateStatus.isPending ? "…" : "Yes, cancel"}
                 </button>
                 <button
-                  className="text-muted-foreground hover:text-foreground"
+                  className="rounded px-3 py-2 text-muted-foreground hover:text-foreground"
                   onClick={() => setCancelConfirm(false)}
                 >
                   Keep
@@ -489,7 +504,7 @@ function OrderDetailPage() {
         </div>
 
         {/* Info grid */}
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+        <dl className="grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
           <InfoRow label="Payment method" value={PAYMENT_METHOD_LABEL[order.payment_method]} />
           <InfoRow
             label="Payment status"

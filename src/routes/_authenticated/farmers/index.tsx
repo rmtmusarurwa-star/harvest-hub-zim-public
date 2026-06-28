@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Filter, Search, Users } from "lucide-react";
+import { AlertTriangle, Filter, Search, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   MOCK_FARMERS,
@@ -25,7 +25,7 @@ function FarmersDirectoryPage() {
   const [minRating, setMinRating] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data: dbFarmers = [] } = useQuery({
+  const { data: dbFarmers = [], error: farmersError } = useQuery({
     queryKey: ["farmers-directory"],
     queryFn: async () => {
       const { data: profiles, error } = await supabase
@@ -113,6 +113,16 @@ function FarmersDirectoryPage() {
           </p>
         </div>
       </motion.div>
+
+      {farmersError && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <span className="font-medium">Could not load live farmer profiles.</span>
+            <span className="ml-2 text-amber-300/70">Showing demo data.</span>
+          </div>
+        </div>
+      )}
 
       <div className="glass rounded-2xl p-4">
         <div className="flex flex-col gap-3 sm:flex-row">

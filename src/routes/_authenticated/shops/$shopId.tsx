@@ -182,39 +182,8 @@ function ShopDetailPage() {
       </motion.div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-6">
-          <div className="glass rounded-2xl p-5">
-            <h2 className="font-display text-lg">About</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {shop.description || "No description provided."}
-            </p>
-          </div>
-
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-lg">Inventory</h2>
-              <span className="text-xs text-muted-foreground">
-                {products.length} {products.length === 1 ? "product" : "products"}
-              </span>
-            </div>
-            {products.length === 0 ? (
-              <div className="glass grid place-items-center rounded-2xl p-10 text-center">
-                <p className="text-sm text-muted-foreground">
-                  This shop hasn't listed any products yet.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {products.map((p, i) => (
-                  <ProductCard key={p.id} product={p} delay={i * 0.03} onAdd={(qty) => handleAdd(p, qty)} />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Contact */}
-        <aside className="space-y-3">
+        {/* Contact aside — shown first on mobile for quick access */}
+        <aside className="space-y-3 lg:order-last lg:col-start-2">
           <div className="glass space-y-3 rounded-2xl p-5">
             <h3 className="text-xs uppercase tracking-widest text-secondary/80">Contact</h3>
             {shop.phone && (
@@ -244,6 +213,37 @@ function ShopDetailPage() {
             </div>
           </div>
         </aside>
+
+        <div className="space-y-6 lg:col-start-1 lg:row-start-1">
+          <div className="glass rounded-2xl p-5">
+            <h2 className="font-display text-lg">About</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {shop.description || "No description provided."}
+            </p>
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-lg">Inventory</h2>
+              <span className="text-xs text-muted-foreground">
+                {products.length} {products.length === 1 ? "product" : "products"}
+              </span>
+            </div>
+            {products.length === 0 ? (
+              <div className="glass grid place-items-center rounded-2xl p-10 text-center">
+                <p className="text-sm text-muted-foreground">
+                  This shop hasn't listed any products yet.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {products.map((p, i) => (
+                  <ProductCard key={p.id} product={p} delay={i * 0.03} onAdd={(qty) => handleAdd(p, qty)} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -311,10 +311,10 @@ function ProductCard({
           <button
             onClick={decrement}
             disabled={!inStock}
-            className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5 disabled:opacity-40"
+            className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5 disabled:opacity-40"
             aria-label="Decrease"
           >
-            <Minus className="h-3 w-3" />
+            <Minus className="h-3.5 w-3.5" />
           </button>
           <input
             type="number"
@@ -328,7 +328,7 @@ function ProductCard({
                 setLocalQty(isDecimal ? Math.max(min, v) : Math.max(min, Math.round(v)));
               }
             }}
-            className="h-7 w-10 bg-transparent text-center text-sm disabled:opacity-40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="h-9 w-10 bg-transparent text-center text-sm disabled:opacity-40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <span className="text-[10px] text-muted-foreground">{product.unit}</span>
           <span className="ml-auto font-mono text-xs text-secondary">
@@ -337,10 +337,10 @@ function ProductCard({
           <button
             onClick={increment}
             disabled={!inStock}
-            className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5 disabled:opacity-40"
+            className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5 disabled:opacity-40"
             aria-label="Increase"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
 

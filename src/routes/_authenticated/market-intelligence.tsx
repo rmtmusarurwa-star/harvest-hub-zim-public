@@ -31,6 +31,7 @@ import {
   textColor,
 } from "@/lib/pdf-report";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { COMMODITIES, commodityChangePct } from "@/lib/market-data";
 
 export const Route = createFileRoute("/_authenticated/market-intelligence")({
@@ -151,6 +152,8 @@ function MarketIntelligencePage() {
 
       drawReportFooter(doc);
       doc.save(`harvest-hub-market-report-${Date.now()}.pdf`);
+    } catch {
+      toast.error("Failed to generate PDF — please try again");
     } finally {
       setDownloading(false);
     }

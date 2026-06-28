@@ -88,10 +88,10 @@ export function CartDrawer() {
                                     setQty(it.id, next);
                                   }
                                 }}
-                                className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
+                                className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
                                 aria-label="Decrease"
                               >
-                                <Minus className="h-3 w-3" />
+                                <Minus className="h-3.5 w-3.5" />
                               </button>
                               <span className="min-w-[2.5rem] text-center text-sm">
                                 {fmtQty(it.quantity)}
@@ -101,17 +101,17 @@ export function CartDrawer() {
                                 onClick={() =>
                                   setQty(it.id, Math.round((it.quantity + step) * 100) / 100)
                                 }
-                                className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
+                                className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
                                 aria-label="Increase"
                               >
-                                <Plus className="h-3 w-3" />
+                                <Plus className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => remove(it.id)}
-                                className="ml-auto grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:text-rose-400"
+                                className="ml-auto grid h-9 w-9 place-items-center rounded-md text-muted-foreground hover:text-rose-400"
                                 aria-label="Remove"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                           </div>

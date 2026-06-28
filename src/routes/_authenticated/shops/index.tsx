@@ -163,7 +163,7 @@ function ShopsPage() {
           <p className="text-sm text-muted-foreground">No shops match your filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((s, i) => (
             <ShopCard key={s.id} shop={s} delay={i * 0.04} />
           ))}

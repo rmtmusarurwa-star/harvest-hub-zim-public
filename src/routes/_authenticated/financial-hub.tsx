@@ -151,6 +151,7 @@ function FinancialHubPage() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [buyerNames, setBuyerNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const isFarmer = profile?.role === "farmer";
   const userId = user?.id ?? "";
@@ -168,10 +169,11 @@ function FinancialHubPage() {
         .order("created_at", { ascending: false });
       if (!mounted) return;
       if (error) {
-        toast.error("Failed to load orders");
+        setFetchError(error.message);
         setLoading(false);
         return;
       }
+      setFetchError(null);
       const rows = (data ?? []) as OrderRow[];
       setOrders(rows);
 
@@ -214,6 +216,22 @@ function FinancialHubPage() {
             : "Your spending and order history."}
         </p>
       </div>
+
+      {fetchError && (
+        <div className="flex items-start gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-300">
+          <RotateCcw className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer hover:opacity-70" onClick={() => { setFetchError(null); setLoading(true); }} />
+          <div>
+            <span className="font-medium">Could not load financial data.</span>
+            <span className="ml-2 text-rose-300/70">{fetchError}</span>
+            <button
+              onClick={() => { setFetchError(null); setLoading(true); }}
+              className="ml-3 underline hover:no-underline"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="py-16 text-center text-muted-foreground">Loading…</div>
@@ -380,13 +398,17 @@ function FarmerView({
     });
 
     drawReportFooter(doc);
-    doc.save(`harvest-hub-statement-${Date.now()}.pdf`);
+    try {
+      doc.save(`harvest-hub-statement-${Date.now()}.pdf`);
+    } catch {
+      toast.error("Failed to generate PDF — please try again");
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard
           icon={<TrendingUp className="h-5 w-5" />}
           label="Revenue (Month)"
@@ -586,7 +608,7 @@ function BuyerView({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard
           icon={<ShoppingBag className="h-5 w-5" />}
           label="Spent (Month)"

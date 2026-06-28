@@ -116,10 +116,10 @@ export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay
         <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.02] px-1.5 py-1">
           <button
             onClick={decrement}
-            className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
+            className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
             aria-label="Decrease quantity"
           >
-            <Minus className="h-3 w-3" />
+            <Minus className="h-3.5 w-3.5" />
           </button>
           <input
             type="number"
@@ -132,7 +132,7 @@ export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay
                 setLocalQty(isDecimal ? Math.max(min, v) : Math.max(min, Math.round(v)));
               }
             }}
-            className="h-7 w-10 bg-transparent text-center text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="h-9 w-10 bg-transparent text-center text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <span className="text-[10px] text-muted-foreground">{listing.unit}</span>
           <span className="ml-auto font-mono text-sm text-secondary">
@@ -140,10 +140,10 @@ export function ListingCard({ listing, delay = 0 }: { listing: ListingRow; delay
           </span>
           <button
             onClick={increment}
-            className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
+            className="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-muted-foreground hover:bg-white/5"
             aria-label="Increase quantity"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
 

@@ -36,7 +36,7 @@ function DashboardPage() {
           <div className="mb-2 flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-secondary" />
             <span className="text-[11px] uppercase tracking-[0.22em] text-secondary/80">
-              Dashboard · Harare
+              Dashboard{profile?.location ? ` · ${profile.location}` : ""}
             </span>
           </div>
           <h1 className="font-display text-3xl leading-tight md:text-5xl">
@@ -58,7 +58,7 @@ function DashboardPage() {
       <StatCards />
       <QuickActions />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_280px] lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <VolumeChart />
           <ActivityFeed />
