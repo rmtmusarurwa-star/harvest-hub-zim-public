@@ -306,6 +306,18 @@ function OrderDetailPage() {
         .update({ fulfillment_status: status as never, fulfillment_notes: fulfillment_notes ?? null } as never)
         .eq("id", orderId);
       if (error) throw error;
+
+      // Notify the buyer of the status change
+      if (order?.buyer_id) {
+        const label = FULFILLMENT_STATUS_LABEL[status];
+        const itemName = order.listing_title ?? "your order";
+        await supabase.from("notifications").insert({
+          user_id: order.buyer_id,
+          type: "order_status",
+          message: `${itemName} is now ${label.toLowerCase()}.`,
+          link: `/orders/${orderId}`,
+        } as never);
+      }
     },
     onSuccess: (_data, vars) => {
       toast.success(`Order ${FULFILLMENT_STATUS_LABEL[vars.status].toLowerCase()}`);

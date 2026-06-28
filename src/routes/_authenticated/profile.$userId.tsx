@@ -95,9 +95,10 @@ function PublicProfilePage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("farmer_reviews")
-        .select("rating")
-        .eq("farmer_id", userId);
-      return data ?? [];
+        .select("id, rating, comment, created_at, reviewer_id")
+        .eq("farmer_id", userId)
+        .order("created_at", { ascending: false });
+      return (data ?? []) as { id: string; rating: number; comment: string; created_at: string; reviewer_id: string }[];
     },
   });
 
@@ -308,6 +309,41 @@ function PublicProfilePage() {
                   </div>
                 </div>
               </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isFarmer && reviews.length > 0 && (
+        <div className="glass rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-xl">Reviews</h2>
+            {avgRating !== null && (
+              <div className="flex items-center gap-1.5 text-sm">
+                <Star className="h-4 w-4 fill-secondary text-secondary" />
+                <span className="font-medium">{avgRating}</span>
+                <span className="text-muted-foreground">({reviews.length})</span>
+              </div>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {reviews.slice(0, 6).map((r) => (
+              <div key={r.id} className="rounded-xl border border-white/5 bg-white/[0.02] p-4 space-y-2">
+                <div className="flex items-center gap-1">
+                  {[1,2,3,4,5].map((n) => (
+                    <Star
+                      key={n}
+                      className={`h-3.5 w-3.5 ${n <= r.rating ? "fill-secondary text-secondary" : "text-white/20"}`}
+                    />
+                  ))}
+                  <span className="ml-auto text-[10px] text-muted-foreground">
+                    {new Date(r.created_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
+                  </span>
+                </div>
+                {r.comment && (
+                  <p className="text-sm text-foreground/85 leading-relaxed">{r.comment}</p>
+                )}
+              </div>
             ))}
           </div>
         </div>
