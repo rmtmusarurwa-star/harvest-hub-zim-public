@@ -149,6 +149,8 @@ function CommunityPage() {
       if (t) clearTimeout(t);
       supabase.removeChannel(channel);
     };
+  // load is recreated each render; adding it would cause an infinite loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const filtered = useMemo(() => {

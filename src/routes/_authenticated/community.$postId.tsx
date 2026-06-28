@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -50,9 +50,13 @@ function PostDetailPage() {
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const initialLoadDone = useRef(false);
 
   const load = async () => {
-    setLoading(true);
+    // Only show the full-page loading spinner on the very first load.
+    // Background refreshes (triggered by realtime) should be silent so
+    // posting a comment doesn't wipe the page and look like a hard refresh.
+    if (!initialLoadDone.current) setLoading(true);
     const { data: p, error } = await supabase
       .from("forum_posts")
       .select("*")
@@ -125,6 +129,7 @@ function PostDetailPage() {
     });
     setReactions(grouped);
     setLoading(false);
+    initialLoadDone.current = true;
   };
 
   useEffect(() => {
@@ -408,6 +413,7 @@ function PostDetailPage() {
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">{reply.length}/2000</span>
             <Button
+              type="button"
               variant="secondary"
               onClick={submitComment}
               disabled={submitting || !reply.trim()}

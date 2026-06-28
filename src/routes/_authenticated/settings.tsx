@@ -60,8 +60,7 @@ function SettingsPage() {
     queryKey: ["payout-settings", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      // payout_settings is added via migration — cast to any until types are regenerated
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // payout_settings is added via migration — cast until types are regenerated
       const { data } = await (supabase as any)
         .from("payout_settings")
         .select("*")
@@ -80,7 +79,6 @@ function SettingsPage() {
   const { mutate: savePayout, isPending: saving } = useMutation({
     mutationFn: async (values: PayoutForm) => {
       if (!user) throw new Error("Not authenticated");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("payout_settings")
         .upsert({ user_id: user.id, ...values }, { onConflict: "user_id" });

@@ -290,9 +290,10 @@ function FarmerView({
 
   // Monthly net income chart (last 6 months)
   const chartData = useMemo(() => {
+    const _now = new Date(); // captured inside memo so it doesn't drift into deps
     const months: { key: string; label: string; revenue: number; expenses: number }[] = [];
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const d = new Date(_now.getFullYear(), _now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       months.push({
         key,

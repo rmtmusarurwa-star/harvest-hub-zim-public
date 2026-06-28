@@ -150,9 +150,11 @@ function ChatPage() {
     })();
   }, [search.listing, search.farmer, search.user, user, navigate, qc]);
 
-  // Sync search.c -> activeId
+  // Sync search.c -> activeId. Intentionally omit activeId from deps — adding
+  // it would overwrite user-selected conversations whenever state changes.
   useEffect(() => {
     if (search.c && search.c !== activeId) setActiveId(search.c);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search.c]);
 
   const conversations = useQuery({

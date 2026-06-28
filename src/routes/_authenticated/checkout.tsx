@@ -75,6 +75,9 @@ function CheckoutPage() {
   // Store current transaction so message listener + closed watcher can access them
   const primaryCodeRef = useRef<string | null>(null);
   const codesRef       = useRef<string | null>(null);
+  // Must be declared before any early return so hooks are always called in the
+  // same order. verifyNow is a hoisted function declaration so this is safe.
+  const verifyNowRef = useRef(verifyNow);
 
   const reference = useMemo(() => generateOrderCode(), []);
 
@@ -101,8 +104,7 @@ function CheckoutPage() {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // empty deps intentional — handler uses refs, not captured values
 
   if (items.length === 0) {
     return (
@@ -199,9 +201,8 @@ function CheckoutPage() {
     }
   }
 
-  // Stable ref so the postMessage useEffect (empty deps) can call the latest
-  // verifyNow without stale-closure issues
-  const verifyNowRef = useRef(verifyNow);
+  // Keep the ref's current value up-to-date on every render so closures stay fresh.
+  // (The useRef declaration was moved above the early return to satisfy Rules of Hooks.)
   verifyNowRef.current = verifyNow;
 
   function startPolling(primaryCode: string, codes: string) {
