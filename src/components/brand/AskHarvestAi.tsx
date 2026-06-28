@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, Send, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -78,9 +78,50 @@ export function AskHarvestAi() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const conversationIdRef = useRef<string | undefined>(undefined);
+  const sendingRef = useRef(false);
+
+  // Listen for agent card launches from AgentControlCenter
+  useEffect(() => {
+    function handleLaunch(e: Event) {
+      const { message } = (e as CustomEvent<{ message: string }>).detail;
+      setOpen(true);
+      if (!sendingRef.current) {
+        sendDirect(message);
+      }
+    }
+    window.addEventListener("harvest-agent-launch", handleLaunch);
+    return () => window.removeEventListener("harvest-agent-launch", handleLaunch);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!user) return null;
   const userId = user.id;
+
+  async function sendDirect(text: string) {
+    if (!text.trim() || sendingRef.current) return;
+    setMessages((m) => [...m, { role: "user", content: text }]);
+    setInput("");
+    setSending(true);
+    sendingRef.current = true;
+    try {
+      const res = await askHarvestAi(text, userId, conversationIdRef.current);
+      conversationIdRef.current = res.conversationId;
+      setMessages((m) => [...m, { role: "assistant", content: res.reply || "…" }]);
+    } catch (err) {
+      let detail = (err as Error).message || "Unknown error";
+      const context = (err as { context?: Response }).context;
+      if (context) {
+        try {
+          const body = await context.clone().json();
+          if (body?.error) detail = body.error;
+        } catch { /* not JSON */ }
+      }
+      setMessages((m) => [...m, { role: "error", content: `Harvest AI error: ${detail}` }]);
+    } finally {
+      setSending(false);
+      sendingRef.current = false;
+    }
+  }
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -89,6 +130,7 @@ export function AskHarvestAi() {
     setMessages((m) => [...m, { role: "user", content: text }]);
     setInput("");
     setSending(true);
+    sendingRef.current = true;
     try {
       const res = await askHarvestAi(text, userId, conversationIdRef.current);
       conversationIdRef.current = res.conversationId;
@@ -111,6 +153,7 @@ export function AskHarvestAi() {
       console.error("[AskHarvestAi]", err);
     } finally {
       setSending(false);
+      sendingRef.current = false;
     }
   }
 

@@ -280,6 +280,30 @@ async function getRealMarketPrice(commodity: string) {
   };
 }
 
+// Maps each tool name → which agent card it belongs to
+const TOOL_AGENT_MAP = {
+  create_listing:    "sales",
+  update_listing:    "sales",
+  get_my_listings:   "sales",
+  search_listings:   "buyers",
+  place_order:       "buyers",
+  get_market_price:  "market",
+  get_weather:       "market",
+  request_transport: "transport",
+} as const;
+
+// Human-readable title for each tool action shown in the card feed
+const TOOL_LOG_TITLE = {
+  create_listing:    "Created a new listing",
+  update_listing:    "Updated a listing",
+  get_my_listings:   "Checked your listings",
+  search_listings:   "Searched the marketplace",
+  place_order:       "Placed an order",
+  get_market_price:  "Fetched commodity prices",
+  get_weather:       "Checked weather forecast",
+  request_transport: "Posted a transport request",
+} as const;
+
 async function runTool(name: string, input: Record<string, unknown>, ctx: { farmerId: string | null }) {
   switch (name) {
     case "search_listings": {
@@ -571,6 +595,26 @@ serve(async (req) => {
       for (const tu of toolUses) {
         const result = await runTool(tu.name, tu.input, { farmerId });
         toolResults.push({ type: "tool_result", tool_use_id: tu.id, content: JSON.stringify(result) });
+
+        // Log activity so the Agent Control Center cards show real history
+        if (farmerId) {
+          const agentType = TOOL_AGENT_MAP[tu.name as keyof typeof TOOL_AGENT_MAP] ?? "sales";
+          const logTitle = TOOL_LOG_TITLE[tu.name as keyof typeof TOOL_LOG_TITLE] ?? tu.name;
+          const detail = (() => {
+            const r = result as Record<string, unknown>;
+            if (r?.title) return String(r.title);
+            if (r?.name) return String(r.name);
+            if (r?.error) return `⚠ ${r.error}`;
+            if (Array.isArray(r)) return `${r.length} result${r.length === 1 ? "" : "s"}`;
+            return null;
+          })();
+          await supabase.from("agent_activity_log").insert({
+            user_id: farmerId,
+            agent: agentType,
+            title: logTitle,
+            detail,
+          }).then(() => {/* fire-and-forget */});
+        }
       }
       claudeMessages.push({ role: "user", content: toolResults });
     }
