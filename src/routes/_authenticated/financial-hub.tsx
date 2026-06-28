@@ -333,74 +333,198 @@ function FarmerView({
   };
 
   const handleExportPDF = () => {
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const W = doc.internal.pageSize.getWidth();
-    const M = 36;
-    let y = drawReportHeader(doc, {
-      title: "Financial Statement",
-      subtitle: "Farmer revenue & expense report",
-    });
-
-    const range =
-      orders.length > 0
-        ? `${new Date(orders[orders.length - 1].created_at).toLocaleDateString("en-GB")} — ${new Date(
-            orders[0].created_at,
-          ).toLocaleDateString("en-GB")}`
-        : "No transactions yet";
-    textColor(doc, TEXT_MUTED);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(`Statement period: ${range}`, M, y);
-    y += 20;
-
-    // Summary card — 4 stat tiles
-    const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
-    const netIncome = revenueAllTime - totalExpenses;
-    const stats: [string, string, [number, number, number]][] = [
-      ["Total Revenue", fmt(revenueAllTime), SUCCESS],
-      ["Pending Payments", fmt(pendingAmount), WARN],
-      ["Total Expenses", `-${fmt(totalExpenses)}`, DANGER],
-      ["Net Income", fmt(netIncome), BRAND_GREEN],
-    ];
-    const cardGap = 12;
-    const cardW = (W - 2 * M - 3 * cardGap) / 4;
-    const cardH = 56;
-    stats.forEach(([label, value, color], i) => {
-      const x = M + i * (cardW + cardGap);
-      roundedCard(doc, x, y, cardW, cardH, BG_SOFT);
-      textColor(doc, TEXT_MUTED);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(7.5);
-      doc.text(label.toUpperCase(), x + 12, y + 18);
-      textColor(doc, color);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.text(value, x + 12, y + 40);
-    });
-    y += cardH + 24;
-
-    sectionLabel(doc, "Transaction History", M, y);
-    y += 10;
-
-    autoTable(doc, {
-      startY: y,
-      margin: { left: M, right: M },
-      head: [["Date", "Buyer", "Product", "Method", "Status", "Amount"]],
-      body: orders.map((o) => [
-        new Date(o.created_at).toLocaleDateString("en-GB"),
-        buyerNames[o.buyer_id] || "Buyer",
-        o.listing_title,
-        o.payment_method.replace(/_/g, " "),
-        o.payment_status,
-        fmt(Number(o.total_amount)),
-      ]),
-      ...TABLE_STYLE,
-    });
-
-    drawReportFooter(doc);
     try {
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const W = doc.internal.pageSize.getWidth();
+      const M = 36;
+      const contentW = W - 2 * M;
+      let y = drawReportHeader(doc, {
+        title: "Financial Statement",
+        subtitle: "Farmer revenue & expense report",
+      });
+
+      // Period line
+      const range =
+        orders.length > 0
+          ? `${new Date(orders[orders.length - 1].created_at).toLocaleDateString("en-GB")} — ${new Date(
+              orders[0].created_at,
+            ).toLocaleDateString("en-GB")}`
+          : "No transactions on record";
+      textColor(doc, TEXT_MUTED);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.text(`Statement period: ${range}`, M, y);
+      y += 22;
+
+      // ── KPI TILES with colored accent strips ─────────────────────────────
+      const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+      const netIncome     = revenueAllTime - totalExpenses;
+      const kpiDefs: [string, string, string, [number, number, number]][] = [
+        ["TOTAL REVENUE",    "All time income",   fmt(revenueAllTime),    SUCCESS],
+        ["THIS MONTH",       "Confirmed sales",   fmt(revenueThisMonth),  BRAND_GREEN],
+        ["PENDING",          "Awaiting payment",  fmt(pendingAmount),     WARN],
+        ["NET INCOME",       "Revenue − expenses", fmt(netIncome),        netIncome >= 0 ? SUCCESS : DANGER],
+      ];
+      const kpiGap = 10;
+      const kpiW   = (contentW - kpiGap * 3) / 4;
+      const kpiH   = 72;
+      kpiDefs.forEach(([label, sub, value, color], i) => {
+        const x = M + i * (kpiW + kpiGap);
+        roundedCard(doc, x, y, kpiW, kpiH, [255, 255, 255]);
+        // accent strip
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.roundedRect(x, y, 5, kpiH, 4, 4, "F");
+        doc.rect(x + 2, y, 3, kpiH, "F");
+        // label
+        textColor(doc, color);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.5);
+        doc.text(label, x + 12, y + 16);
+        // value
+        doc.setFontSize(15);
+        doc.text(value, x + 12, y + 42);
+        // sub
+        textColor(doc, TEXT_MUTED);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.text(sub, x + 12, y + 58);
+      });
+      y += kpiH + 26;
+
+      // ── MONTHLY REVENUE BAR CHART ─────────────────────────────────────────
+      sectionLabel(doc, "Monthly Revenue — Last 6 Months", M, y);
+      y += 14;
+
+      const chartH  = 80;
+      const barGap  = 8;
+      const nBars   = chartData.length;
+      const barW    = (contentW - barGap * (nBars - 1)) / nBars;
+      const maxRev  = Math.max(...chartData.map((d) => d.revenue), 1);
+
+      // Grid lines (2)
+      doc.setDrawColor(220, 225, 220);
+      doc.setLineWidth(0.4);
+      [0.33, 0.66, 1].forEach((frac) => {
+        const gy = y + chartH * (1 - frac);
+        doc.line(M, gy, M + contentW, gy);
+        textColor(doc, TEXT_MUTED);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6);
+        doc.text(fmt(maxRev * frac), M - 4, gy + 2, { align: "right" });
+      });
+
+      chartData.forEach((d, i) => {
+        const bx    = M + i * (barW + barGap);
+        const revH  = (d.revenue / maxRev) * chartH;
+        const expH  = Math.min((d.expenses / maxRev) * chartH, revH); // cap at rev bar
+
+        // Revenue bar (green)
+        doc.setFillColor(22, 128, 71);
+        doc.roundedRect(bx, y + chartH - revH, barW, revH, 3, 3, "F");
+        doc.rect(bx, y + chartH - revH + 3, barW, Math.max(revH - 3, 0), "F");
+
+        // Expenses overlay (red, translucent-ish via lighter shade)
+        if (d.expenses > 0) {
+          doc.setFillColor(220, 80, 80);
+          doc.roundedRect(bx + 2, y + chartH - expH, barW - 4, expH, 2, 2, "F");
+          doc.rect(bx + 2, y + chartH - expH + 2, barW - 4, Math.max(expH - 2, 0), "F");
+        }
+
+        // Month label
+        textColor(doc, TEXT_MUTED);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.text(d.label, bx + barW / 2, y + chartH + 11, { align: "center" });
+
+        // Value label on bar (only if enough space)
+        if (revH > 14) {
+          textColor(doc, [255, 255, 255]);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(6.5);
+          doc.text(fmt(d.revenue), bx + barW / 2, y + chartH - revH + 10, { align: "center" });
+        }
+      });
+
+      // Legend
+      y += chartH + 22;
+      [[22, 128, 71, "Revenue"], [220, 80, 80, "Expenses"]].forEach(([r, g, b, label], i) => {
+        const lx = M + i * 90;
+        doc.setFillColor(r as number, g as number, b as number);
+        doc.roundedRect(lx, y, 10, 7, 2, 2, "F");
+        textColor(doc, TEXT_MUTED);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.text(label as string, lx + 14, y + 6.5);
+      });
+      y += 20;
+
+      // ── EXPENSE BREAKDOWN ─────────────────────────────────────────────────
+      if (expenses.length > 0) {
+        sectionLabel(doc, "Expense Breakdown", M, y);
+        y += 10;
+        autoTable(doc, {
+          startY: y,
+          margin: { left: M, right: M },
+          head: [["Date", "Category", "Description", "Amount"]],
+          body: expenses.slice(0, 15).map((e) => [
+            new Date(e.date).toLocaleDateString("en-GB"),
+            e.category,
+            e.description || "—",
+            `-${fmt(e.amount)}`,
+          ]),
+          ...TABLE_STYLE,
+          columnStyles: {
+            3: { halign: "right", textColor: [185, 28, 28], fontStyle: "bold" },
+          },
+        });
+        y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 22;
+      }
+
+      // ── TRANSACTION HISTORY ───────────────────────────────────────────────
+      if (y + 60 > doc.internal.pageSize.getHeight() - 60) {
+        doc.addPage();
+        y = 40;
+      }
+      sectionLabel(doc, "Transaction History", M, y);
+      y += 10;
+
+      const statusColors: Record<string, [number, number, number]> = {
+        paid: SUCCESS,
+        pending: WARN,
+        awaiting_confirmation: WARN,
+        failed: DANGER,
+        refunded: [110, 120, 115],
+      };
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: M, right: M },
+        head: [["Date", "Buyer", "Product", "Method", "Status", "Amount"]],
+        body: orders.map((o) => [
+          new Date(o.created_at).toLocaleDateString("en-GB"),
+          buyerNames[o.buyer_id] || "Buyer",
+          o.listing_title,
+          o.payment_method.replace(/_/g, " "),
+          o.payment_status.replace(/_/g, " "),
+          fmt(Number(o.total_amount)),
+        ]),
+        ...TABLE_STYLE,
+        columnStyles: {
+          5: { halign: "right", fontStyle: "bold" },
+        },
+        didDrawCell: (data) => {
+          if (data.section === "body" && data.column.index === 4) {
+            const status = orders[data.row.index]?.payment_status ?? "";
+            const c = statusColors[status] ?? TEXT_MUTED;
+            doc.setTextColor(c[0], c[1], c[2]);
+          }
+        },
+      });
+
+      drawReportFooter(doc);
       doc.save(`harvest-hub-statement-${Date.now()}.pdf`);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to generate PDF — please try again");
     }
   };
