@@ -108,7 +108,7 @@ function PublicProfilePage() {
     queryFn: async () => {
       const { count } = await supabase
         .from("orders")
-        .select("id", { count: "exact", head: true })
+        .select("id", { count: "exact" })
         .eq("farmer_id", userId)
         .eq("payment_status", "paid");
       return count ?? 0;

@@ -84,17 +84,19 @@ export function StatCards() {
     async function load() {
       const [farmersRes, buyersRes, listingsCountRes, volumeRes] =
         await Promise.all([
+          // Use select("id") not head:true — head sends a HEAD request whose
+          // Content-Range header is stripped by Cloudflare Workers, returning null.
           supabase
             .from("profiles")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact" })
             .eq("role", "farmer"),
           supabase
             .from("profiles")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact" })
             .in("role", ["buyer", "supplier", "transporter"]),
           supabase
             .from("listings")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact" })
             .eq("status", "active"),
           supabase
             .from("listings")

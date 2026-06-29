@@ -52,8 +52,8 @@ function useLiveStats() {
   useEffect(() => {
     async function load() {
       const [farmersRes, listingsRes, valueRes] = await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "farmer"),
-        supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("profiles").select("id", { count: "exact" }).eq("role", "farmer"),
+        supabase.from("listings").select("id", { count: "exact" }).eq("status", "active"),
         supabase.from("listings").select("price, quantity").eq("status", "active"),
       ]);
       const value = (valueRes.data ?? []).reduce(

@@ -221,23 +221,23 @@ function OverviewTab() {
     startOfMonth.setHours(0, 0, 0, 0);
 
     const [u, f, b, l, o, rev, pv, susp, rep] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
-      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "farmer"),
-      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "buyer"),
-      supabase.from("listings").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("profiles").select("id", { count: "exact" }),
+      supabase.from("profiles").select("id", { count: "exact" }).eq("role", "farmer"),
+      supabase.from("profiles").select("id", { count: "exact" }).eq("role", "buyer"),
+      supabase.from("listings").select("id", { count: "exact" }).eq("status", "active"),
       supabase
         .from("orders")
-        .select("id", { count: "exact", head: true })
+        .select("id", { count: "exact" })
         .gte("created_at", startOfMonth.toISOString()),
       supabase.from("orders").select("total_amount").gte("created_at", startOfMonth.toISOString()),
       supabase
         .from("verification_requests")
-        .select("id", { count: "exact", head: true })
+        .select("id", { count: "exact" })
         .eq("status", "pending"),
-      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("suspended", true),
+      supabase.from("profiles").select("id", { count: "exact" }).eq("suspended", true),
       supabase
         .from("fraud_reports")
-        .select("id", { count: "exact", head: true })
+        .select("id", { count: "exact" })
         .eq("status", "open"),
     ]);
     const revenue = (rev.data ?? []).reduce((s, r: any) => s + Number(r.total_amount ?? 0), 0);
