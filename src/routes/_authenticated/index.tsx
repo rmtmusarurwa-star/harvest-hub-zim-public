@@ -18,6 +18,10 @@ import {
   CloudSun,
   TrendingUp,
   MessageSquare,
+  Quote,
+  Zap,
+  Wallet,
+  Phone,
 } from "lucide-react";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,6 +87,34 @@ const FEATURES = [
   { icon: Truck, title: "Transport", desc: "Post a request with your cargo, route and budget. Nearby drivers respond. You don't have to know anyone." },
   { icon: ShieldCheck, title: "Verified sellers", desc: "Every listing links to a real Harvest Hub account. One tap to report anything that looks off." },
   { icon: TrendingUp, title: "Dashboard", desc: "Your listings, orders, and revenue in one place. No spreadsheets." },
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Tendai Moyo",
+    role: "Maize farmer · Mashonaland West",
+    quote: "I used to sell through a broker who took 30% off the top. First week on Harvest Hub I sold 3 tonnes directly to a buyer in Harare. He paid via EcoCash — money was in my account the same day.",
+    initials: "TM",
+  },
+  {
+    name: "Sithembile Dube",
+    role: "Cattle farmer · Matabeleland South",
+    quote: "I listed 8 heifers on a Sunday evening. By Tuesday I had 4 serious inquiries and sold 6 of them. No phone calls to brokers, no waiting at the market. Just messages and a confirmed price.",
+    initials: "SD",
+  },
+  {
+    name: "Rudo Chinamasa",
+    role: "Tomato & pepper grower · Manicaland",
+    quote: "The AI told me tomatoes were selling for $0.38/kg in Harare when my broker was only offering $0.22. I used the platform to find a direct buyer and got $0.35. That difference paid my school fees.",
+    initials: "RC",
+  },
+];
+
+const PAYMENT_METHODS = [
+  { label: "EcoCash", icon: "📱", desc: "Instant mobile" },
+  { label: "OneMoney", icon: "📲", desc: "NetOne users" },
+  { label: "ZIPIT", icon: "🏦", desc: "Bank transfer" },
+  { label: "Cash", icon: "💵", desc: "On collection" },
 ];
 
 const AI_DEMOS = [
@@ -363,6 +395,130 @@ function LandingPage() {
             </motion.div>
           ))}
         </div>
+      </section>
+
+      {/* ── Middleman math ───────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
+        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="glass overflow-hidden rounded-3xl border border-secondary/10">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            {/* Left — the problem */}
+            <div className="p-8 lg:p-10 border-b border-white/5 lg:border-b-0 lg:border-r">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-red-500/10 border border-red-500/20 px-3 py-1 text-xs text-red-400">
+                ❌ The old way
+              </div>
+              <h3 className="font-display text-2xl mb-2">You sell beef worth $100.</h3>
+              <div className="space-y-3 mt-5">
+                <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                  <span className="text-foreground/70">You sell to broker</span>
+                  <span className="text-foreground">$100</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                  <span className="text-foreground/70">Broker takes 30–40%</span>
+                  <span className="text-red-400 font-semibold">− $35</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                  <span className="text-foreground/70">Transport you arranged</span>
+                  <span className="text-red-400">− $8</span>
+                </div>
+                <div className="flex justify-between items-center py-3 text-sm">
+                  <span className="font-semibold">You actually receive</span>
+                  <span className="font-display text-2xl text-red-400">$57</span>
+                </div>
+              </div>
+            </div>
+            {/* Right — the solution */}
+            <div className="p-8 lg:p-10">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-secondary/10 border border-secondary/20 px-3 py-1 text-xs text-secondary">
+                ✅ With Harvest Hub
+              </div>
+              <h3 className="font-display text-2xl mb-2">Keep almost everything.</h3>
+              <div className="space-y-3 mt-5">
+                <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                  <span className="text-foreground/70">Buyer pays you directly</span>
+                  <span className="text-foreground">$100</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                  <span className="text-foreground/70">Harvest Hub platform fee</span>
+                  <span className="text-secondary/70">− $2</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
+                  <span className="text-foreground/70">Transport (quoted via app)</span>
+                  <span className="text-foreground/50">− $5</span>
+                </div>
+                <div className="flex justify-between items-center py-3 text-sm">
+                  <span className="font-semibold">You actually receive</span>
+                  <span className="font-display text-2xl text-secondary">$93</span>
+                </div>
+              </div>
+              <div className="mt-4 rounded-xl bg-secondary/10 border border-secondary/20 px-4 py-3">
+                <p className="text-sm font-semibold text-secondary">That's $36 more per $100 sold.</p>
+                <p className="text-xs text-muted-foreground mt-0.5">On 10 tonnes of maize, that's a meaningful difference.</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── Testimonials ─────────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-10">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-secondary" />
+            <span className="text-[11px] uppercase tracking-[0.22em] text-secondary/80">From farmers like you</span>
+          </div>
+          <h2 className="font-display text-3xl md:text-4xl">Real farmers. Real results.</h2>
+        </motion.div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          {TESTIMONIALS.map(({ name, role, quote, initials }, i) => (
+            <motion.div
+              key={name}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+              className="glass rounded-2xl p-6 flex flex-col gap-4"
+            >
+              <Quote className="h-5 w-5 text-secondary/40" />
+              <p className="text-sm leading-relaxed text-foreground/80 flex-1">"{quote}"</p>
+              <div className="flex items-center gap-3 pt-2 border-t border-white/5">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary/20 text-xs font-bold text-secondary">
+                  {initials}
+                </div>
+                <div>
+                  <div className="text-sm font-semibold">{name}</div>
+                  <div className="text-xs text-muted-foreground">{role}</div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Payment trust strip ──────────────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
+        <motion.div initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="glass rounded-2xl px-6 py-5">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 justify-between">
+            <div className="flex items-center gap-2 shrink-0">
+              <Wallet className="h-4 w-4 text-secondary" />
+              <span className="text-sm font-semibold">Payments accepted:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 justify-center sm:justify-start">
+              {PAYMENT_METHODS.map(({ label, icon, desc }) => (
+                <div key={label} className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2">
+                  <span className="text-base">{icon}</span>
+                  <div>
+                    <div className="text-xs font-semibold">{label}</div>
+                    <div className="text-[10px] text-muted-foreground">{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Zap className="h-3.5 w-3.5 text-secondary" />
+              <span className="text-xs text-muted-foreground">Powered by <span className="text-foreground">ClicknPay</span></span>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* ── Shops showcase ───────────────────────────────────────────────── */}

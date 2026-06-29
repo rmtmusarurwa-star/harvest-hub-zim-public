@@ -15,6 +15,7 @@ import { VolumeChart } from "@/components/dashboard/VolumeChart";
 import { CommandBar } from "@/components/agent/CommandBar";
 import { AgentControlCenter } from "@/components/agent/AgentControlCenter";
 import { LiveActivityFeed } from "@/components/agent/LiveActivityFeed";
+import { FinancialSummaryCard } from "@/components/dashboard/FinancialSummaryCard";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -64,6 +65,8 @@ function DashboardPage() {
           <ActivityFeed />
         </div>
         <div className="space-y-6">
+          {/* Outstanding balances — shown to all users with pending amounts */}
+          <FinancialSummaryCard />
           <AgentControlCenter />
           <LiveActivityFeed />
           <WeatherWidget />

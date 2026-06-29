@@ -1288,6 +1288,7 @@ type Obligation = {
   status: string;
   created_at: string;
   // joined
+  sellerId: string;       // farmer_id from the related order
   sellerName: string;
   orderCode: string;
   ecocash_number: string;
@@ -1351,6 +1352,7 @@ function FinancialTab() {
           gross_amount: Number(o.gross_amount),
           platform_fee: Number(o.platform_fee),
           net_amount: Number(o.net_amount),
+          sellerId,
           sellerName: nameMap[sellerId] ?? "Unknown",
           orderCode: order.order_code ?? o.payment_reference,
           ecocash_number: payout.ecocash_number ?? "",
@@ -1381,6 +1383,25 @@ function FinancialTab() {
       })
       .eq("id", obl.id);
     if (error) return toast.error(error.message);
+
+    // Notify the seller their money has been sent
+    if (obl.sellerId) {
+      const payoutMethod = obl.ecocash_number
+        ? `EcoCash (${obl.ecocash_number})`
+        : obl.onemoney_number
+        ? `OneMoney (${obl.onemoney_number})`
+        : obl.bank_account_number
+        ? `${obl.bank_name || "your bank"} (${obl.bank_account_number})`
+        : "your registered account";
+
+      await supabase.from("notifications").insert({
+        user_id: obl.sellerId,
+        type:    "announcement",
+        message: `💸 Payout of $${obl.net_amount.toFixed(2)} has been sent to ${payoutMethod}. Order ref: ${obl.orderCode}. Check your account.`,
+        link:    "/orders",
+      });
+    }
+
     await logAction("disburse_payout", "payout_obligation", obl.id,
       `${obl.sellerName} · $${obl.net_amount.toFixed(2)}`);
     toast.success(`Payout marked as disbursed for ${obl.sellerName}`);
