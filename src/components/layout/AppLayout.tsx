@@ -13,14 +13,14 @@ export function AppLayout() {
   useDecorativeMotionGuard();
 
   return (
-    <div className="min-h-screen ambient-glow mesh-bg">
+    <div className="h-screen overflow-hidden ambient-glow mesh-bg">
       <FieldMapBackground />
       <Sidebar mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 
-      <div className="lg:pl-72">
+      <div className="lg:pl-72 h-full flex flex-col overflow-hidden">
         <Topbar onOpenMobile={() => setMobileOpen(true)} />
 
-        <main className="px-3 pb-10 pt-4 lg:px-6 lg:pt-6">
+        <main className="flex-1 min-h-0 overflow-y-auto px-3 pb-10 pt-4 lg:px-6 lg:pt-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

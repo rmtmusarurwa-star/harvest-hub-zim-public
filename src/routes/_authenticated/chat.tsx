@@ -221,7 +221,7 @@ function ChatPage() {
 
       return rows.map((r) => ({
         ...r,
-        listing: listingMap.get(r.listing_id) ?? null,
+        listing: r.listing_id ? (listingMap.get(r.listing_id) ?? null) : null,
         counterpart:
           profileMap.get(r.buyer_id === user!.id ? r.farmer_id : r.buyer_id) ?? null,
         last_message: lastByConvo.get(r.id) ?? null,
@@ -261,7 +261,7 @@ function ChatPage() {
   const [newChatOpen, setNewChatOpen] = useState(false);
 
   return (
-    <section className="h-[calc(100vh-7rem)] -mx-3 lg:-mx-6">
+    <section className="h-full -mx-3 lg:-mx-6 -mt-4 lg:-mt-6 -mb-10">
       <div className="glass-strong mx-3 lg:mx-6 h-full overflow-hidden rounded-2xl">
         <div className="grid h-full grid-cols-1 lg:grid-cols-[340px_1fr]">
           {/* Conversation list */}
@@ -288,7 +288,7 @@ function ChatPage() {
                 <Plus className="h-4 w-4" /> Start New Chat
               </Button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
               {conversations.isLoading && (
                 <div className="p-6 text-xs text-muted-foreground">Loading…</div>
               )}
@@ -310,6 +310,7 @@ function ChatPage() {
           <div className={cn("h-full", !activeId && "hidden lg:block")}>
             {activeConvo && user ? (
               <ChatThread
+                key={activeConvo.id}
                 convo={activeConvo}
                 currentUserId={user.id}
                 onBack={() => {
@@ -622,6 +623,23 @@ function ChatThread({
   const recordStartRef = useRef<number>(0);
   const recordTimerRef = useRef<number | null>(null);
 
+  // Cleanup recording on unmount (e.g. switching conversations mid-recording)
+  useEffect(() => {
+    return () => {
+      if (recordTimerRef.current) {
+        clearInterval(recordTimerRef.current);
+        recordTimerRef.current = null;
+      }
+      const mr = mediaRecorderRef.current;
+      if (mr) {
+        mr.onstop = null; // prevent upload firing after unmount
+        try { mr.stream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+        try { if (mr.state !== "inactive") mr.stop(); } catch { /* ignore */ }
+        mediaRecorderRef.current = null;
+      }
+    };
+  }, []);
+
   async function startRecording() {
     if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       toast.error("Voice recording isn't supported in this browser");
@@ -800,7 +818,7 @@ function ChatThread({
       </div>
 
       {/* Messages */}
-      <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-5">
+      <div ref={scrollerRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto overscroll-contain px-4 py-5">
         {messages.isLoading && (
           <div className="text-center text-xs text-muted-foreground">Loading…</div>
         )}

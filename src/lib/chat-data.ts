@@ -18,10 +18,10 @@ export type ChatMessage = {
 
 export type ChatConversation = {
   id: string;
-  listing_id: string;
+  listing_id: string | null;
   buyer_id: string;
   farmer_id: string;
-  last_message_at: string;
+  last_message_at: string | null;
   created_at: string;
   deleted_for_buyer: boolean;
   deleted_for_farmer: boolean;
@@ -55,8 +55,10 @@ export function initials(name: string) {
     .toUpperCase();
 }
 
-export function formatTime(iso: string) {
+export function formatTime(iso: string | null | undefined) {
+  if (!iso) return "";
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
   const now = new Date();
   const sameDay =
     d.getFullYear() === now.getFullYear() &&
