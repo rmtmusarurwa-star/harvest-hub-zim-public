@@ -27,6 +27,10 @@ import {
   BarChart3,
   ArrowUpRight,
   ArrowDownRight,
+  Copy,
+  CreditCard,
+  Phone,
+  Building2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -131,6 +135,7 @@ function AdminPage() {
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="payoutaccounts">Payout Accounts</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
@@ -164,6 +169,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="categories">
           <CategoriesTab />
+        </TabsContent>
+        <TabsContent value="payoutaccounts">
+          <PayoutAccountsTab />
         </TabsContent>
         <TabsContent value="announcements">
           <AnnouncementsTab />
@@ -2019,6 +2027,264 @@ function AnalyticsTab() {
           </tbody>
         </table>
       </motion.div>
+    </div>
+  );
+}
+
+// ============ PAYOUT ACCOUNTS ============
+type PayoutRow = {
+  user_id: string;
+  full_name: string;
+  ecocash_number: string | null;
+  onemoney_number: string | null;
+  bank_name: string | null;
+  bank_account_number: string | null;
+  bank_account_name: string | null;
+  pending_amount: number;
+  pending_count: number;
+};
+
+function PayoutAccountsTab() {
+  const [rows, setRows] = useState<PayoutRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+
+    // 1. Get all payout_settings
+    const { data: payouts } = await (supabase as any)
+      .from("payout_settings")
+      .select("user_id, ecocash_number, onemoney_number, bank_name, bank_account_number, bank_account_name");
+
+    if (!payouts || payouts.length === 0) { setRows([]); setLoading(false); return; }
+
+    const userIds = payouts.map((p: any) => p.user_id);
+
+    // 2. Get farmer names
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+    const nameMap: Record<string, string> = Object.fromEntries(
+      (profiles ?? []).map((p: any) => [p.id, p.full_name ?? "Unknown"])
+    );
+
+    // 3. Get pending payout_obligations for each farmer
+    const { data: obligations } = await (supabase as any)
+      .from("payout_obligations")
+      .select("id, order_id, net_amount, status")
+      .eq("status", "pending");
+
+    // Obligations link to orders → need farmer_id from orders
+    const oblOrderIds = (obligations ?? []).map((o: any) => o.order_id);
+    let orderFarmerMap: Record<string, string> = {};
+    if (oblOrderIds.length > 0) {
+      const { data: orderRows } = await supabase
+        .from("orders")
+        .select("id, farmer_id")
+        .in("id", oblOrderIds);
+      orderFarmerMap = Object.fromEntries(
+        (orderRows ?? []).map((r: any) => [r.id, r.farmer_id])
+      );
+    }
+
+    // Sum pending net_amount per farmer
+    const pendingMap: Record<string, { amount: number; count: number }> = {};
+    for (const obl of obligations ?? []) {
+      const farmerId = orderFarmerMap[obl.order_id];
+      if (!farmerId) continue;
+      const cur = pendingMap[farmerId] ?? { amount: 0, count: 0 };
+      cur.amount += Number(obl.net_amount ?? 0);
+      cur.count += 1;
+      pendingMap[farmerId] = cur;
+    }
+
+    const result: PayoutRow[] = payouts.map((p: any) => ({
+      user_id: p.user_id,
+      full_name: nameMap[p.user_id] ?? "Unknown",
+      ecocash_number: p.ecocash_number ?? null,
+      onemoney_number: p.onemoney_number ?? null,
+      bank_name: p.bank_name ?? null,
+      bank_account_number: p.bank_account_number ?? null,
+      bank_account_name: p.bank_account_name ?? null,
+      pending_amount: pendingMap[p.user_id]?.amount ?? 0,
+      pending_count: pendingMap[p.user_id]?.count ?? 0,
+    }));
+
+    // Sort: farmers with pending amounts first
+    result.sort((a, b) => b.pending_amount - a.pending_amount);
+    setRows(result);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  function copyText(text: string, key: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      toast.success("Copied!");
+      setTimeout(() => setCopied(null), 1500);
+    });
+  }
+
+  const filtered = rows.filter((r) => {
+    const q = search.toLowerCase();
+    return !q || r.full_name.toLowerCase().includes(q) ||
+      (r.ecocash_number ?? "").includes(q) ||
+      (r.onemoney_number ?? "").includes(q) ||
+      (r.bank_account_number ?? "").includes(q) ||
+      (r.bank_name ?? "").toLowerCase().includes(q);
+  });
+
+  const totalPending = rows.reduce((s, r) => s + r.pending_amount, 0);
+  const withPending = rows.filter((r) => r.pending_amount > 0).length;
+
+  return (
+    <div className="space-y-4">
+      {/* Summary banner */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Registered Accounts", value: rows.length, icon: Users },
+          { label: "With Pending Payouts", value: withPending, icon: Wallet },
+          { label: "Total Pending", value: `$${totalPending.toFixed(2)}`, icon: DollarSign },
+        ].map((c) => (
+          <div key={c.label} className="glass rounded-2xl p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
+              <c.icon className="h-4 w-4 text-secondary" />
+            </div>
+            <div className="mt-2 font-display text-2xl">{loading ? "—" : c.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, account number…"
+            className="pl-9"
+          />
+        </div>
+        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="py-12 text-center text-muted-foreground">
+          <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="glass rounded-2xl p-8 text-center text-muted-foreground">
+          <CreditCard className="mx-auto mb-2 h-8 w-8 opacity-40" />
+          No payout accounts registered yet
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((r) => (
+            <div
+              key={r.user_id}
+              className={`glass rounded-2xl p-4 transition-all ${r.pending_amount > 0 ? "ring-1 ring-secondary/30" : ""}`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                {/* Name + pending badge */}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-secondary/15 font-display text-sm text-secondary">
+                      {r.full_name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="font-medium">{r.full_name}</span>
+                    {r.pending_amount > 0 && (
+                      <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-[11px] font-semibold text-secondary">
+                        Owes ${r.pending_amount.toFixed(2)} ({r.pending_count} order{r.pending_count !== 1 ? "s" : ""})
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">{r.user_id.slice(0, 8)}</div>
+                </div>
+              </div>
+
+              {/* Payment methods */}
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {/* EcoCash */}
+                {r.ecocash_number && (
+                  <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 text-emerald-400" />
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">EcoCash</div>
+                        <div className="font-mono text-sm">{r.ecocash_number}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyText(r.ecocash_number!, `eco-${r.user_id}`)}
+                      className="ml-2 rounded-lg p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    >
+                      <Copy className={`h-3.5 w-3.5 ${copied === `eco-${r.user_id}` ? "text-secondary" : ""}`} />
+                    </button>
+                  </div>
+                )}
+
+                {/* OneMoney */}
+                {r.onemoney_number && (
+                  <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 text-blue-400" />
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">OneMoney</div>
+                        <div className="font-mono text-sm">{r.onemoney_number}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyText(r.onemoney_number!, `one-${r.user_id}`)}
+                      className="ml-2 rounded-lg p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    >
+                      <Copy className={`h-3.5 w-3.5 ${copied === `one-${r.user_id}` ? "text-secondary" : ""}`} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Bank */}
+                {r.bank_account_number && (
+                  <div className="flex items-center justify-between rounded-xl bg-white/[0.04] px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-3.5 w-3.5 text-amber-400" />
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {r.bank_name ?? "Bank"}
+                        </div>
+                        <div className="font-mono text-sm">{r.bank_account_number}</div>
+                        {r.bank_account_name && (
+                          <div className="text-[11px] text-muted-foreground">{r.bank_account_name}</div>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyText(r.bank_account_number!, `bank-${r.user_id}`)}
+                      className="ml-2 rounded-lg p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    >
+                      <Copy className={`h-3.5 w-3.5 ${copied === `bank-${r.user_id}` ? "text-secondary" : ""}`} />
+                    </button>
+                  </div>
+                )}
+
+                {/* No methods */}
+                {!r.ecocash_number && !r.onemoney_number && !r.bank_account_number && (
+                  <div className="rounded-xl bg-white/[0.02] px-3 py-2 text-xs text-muted-foreground">
+                    ⚠️ No payout methods registered
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
