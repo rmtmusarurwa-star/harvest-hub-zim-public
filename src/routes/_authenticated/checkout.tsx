@@ -51,6 +51,8 @@ const METHODS: {
   { id: "card", name: "Visa / Mastercard", desc: "Secure card payment via ClicknPay", icon: CreditCard, badge: "Secure" },
 ];
 
+const PLATFORM_FEE_RATE = 0.02; // 2% charged ON TOP to buyer
+
 function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const { user, profile } = useAuth();
@@ -128,21 +130,27 @@ function CheckoutPage() {
     proof_url: string | null,
   ) {
     if (!user) throw new Error("Not authenticated");
-    const rows = items.map((it) => ({
-      order_code: generateOrderCode(),
-      buyer_id: user.id,
-      farmer_id: !it.farmer_id || it.farmer_id === "mock" ? user.id : it.farmer_id,
-      listing_id: it.listing_id !== undefined ? it.listing_id : (it.id.startsWith("mock-") ? null : it.id),
-      listing_title: it.title,
-      quantity: it.quantity,
-      unit: it.unit,
-      unit_price: it.price,
-      total_amount: it.price * it.quantity,
-      payment_method: paymentMethod,
-      payment_status,
-      payment_reference,
-      proof_url,
-    }));
+    const rows = items.map((it) => {
+      const itemSubtotal   = Math.round(it.price * it.quantity * 100) / 100;
+      const itemFee        = Math.round(itemSubtotal * PLATFORM_FEE_RATE * 100) / 100;
+      const itemTotal      = Math.round((itemSubtotal + itemFee) * 100) / 100;
+      return {
+        order_code: generateOrderCode(),
+        buyer_id: user.id,
+        farmer_id: !it.farmer_id || it.farmer_id === "mock" ? user.id : it.farmer_id,
+        listing_id: it.listing_id !== undefined ? it.listing_id : (it.id.startsWith("mock-") ? null : it.id),
+        listing_title: it.title,
+        quantity: it.quantity,
+        unit: it.unit,
+        unit_price: it.price,
+        subtotal: itemSubtotal,      // product price (farmer's portion)
+        total_amount: itemTotal,     // buyer pays subtotal + 2% fee
+        payment_method: paymentMethod,
+        payment_status,
+        payment_reference,
+        proof_url,
+      };
+    });
     const { data, error } = await supabase.from("orders").insert(rows).select("order_code");
     if (error) throw error;
     return data.map((d) => d.order_code).join(",");
@@ -676,12 +684,12 @@ function CheckoutPage() {
             <span className="font-mono">${subtotal.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Platform fee</span>
-            <span className="font-mono">$0.00</span>
+            <span className="text-muted-foreground">Platform fee (2%)</span>
+            <span className="font-mono">${(subtotal * PLATFORM_FEE_RATE).toFixed(2)}</span>
           </div>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-xs uppercase tracking-widest text-muted-foreground">Total</span>
-            <span className="font-display text-3xl text-secondary">${subtotal.toFixed(2)}</span>
+            <span className="font-display text-3xl text-secondary">${(subtotal * (1 + PLATFORM_FEE_RATE)).toFixed(2)}</span>
           </div>
 
           <Button

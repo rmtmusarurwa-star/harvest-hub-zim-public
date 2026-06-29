@@ -53,26 +53,34 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    const PLATFORM_FEE_RATE = 0.02; // 2% charged TO the buyer on top of product price
+
     const primaryCode = genCode();
-    const orderRows = items.map((it, i) => ({
-      order_code: i === 0 ? primaryCode : genCode(),
-      buyer_id: buyerId,
-      farmer_id: it.farmer_id && it.farmer_id !== "mock" ? it.farmer_id : buyerId,
-      listing_id: it.id && !String(it.id).startsWith("mock-") ? it.id : null,
-      listing_title: it.title,
-      quantity: it.quantity,
-      unit: it.unit,
-      unit_price: it.price,
-      total_amount: it.price * it.quantity,
-      payment_method: paymentMethod ?? "card", // store the actual method, not 'clicknpay'
-      payment_status: "pending",
-      payment_reference: primaryCode,
-    }));
+    const orderRows = items.map((it, i) => {
+      const subtotal     = Math.round(it.price * it.quantity * 100) / 100;
+      const platformFee  = Math.round(subtotal * PLATFORM_FEE_RATE * 100) / 100;
+      const totalAmount  = Math.round((subtotal + platformFee) * 100) / 100;
+      return {
+        order_code: i === 0 ? primaryCode : genCode(),
+        buyer_id: buyerId,
+        farmer_id: it.farmer_id && it.farmer_id !== "mock" ? it.farmer_id : buyerId,
+        listing_id: it.id && !String(it.id).startsWith("mock-") ? it.id : null,
+        listing_title: it.title,
+        quantity: it.quantity,
+        unit: it.unit,
+        unit_price: it.price,
+        subtotal,                          // product cost, what farmer receives
+        total_amount: totalAmount,         // what buyer pays (subtotal + 2% fee)
+        payment_method: paymentMethod ?? "card",
+        payment_status: "pending",
+        payment_reference: primaryCode,
+      };
+    });
 
     const { data: inserted, error: dbErr } = await supabase
       .from("orders")
       .insert(orderRows)
-      .select("order_code, listing_title, quantity, unit, unit_price, total_amount");
+      .select("order_code, listing_title, quantity, unit, unit_price, subtotal, total_amount");
 
     if (dbErr) throw new Error(dbErr.message);
 
@@ -93,12 +101,14 @@ serve(async (req) => {
       quantity: number;
       unit: string;
       unit_price: number;
+      subtotal: number;
       total_amount: number;
     }, i: number) => ({
       id: i,
       productName: o.listing_title ?? "Farm Produce",
-      description: `${Number(o.quantity)} ${o.unit}`,
-      price: Number(o.total_amount ?? (Number(o.unit_price) * Number(o.quantity))),
+      // description shows product qty; price is the full buyer amount (subtotal + 2% fee)
+      description: `${Number(o.quantity)} ${o.unit} · incl. 2% platform fee`,
+      price: Number(o.total_amount),  // buyer charged subtotal + platform fee
       quantity: 1,
     }));
 

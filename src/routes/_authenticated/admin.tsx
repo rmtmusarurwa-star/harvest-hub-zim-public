@@ -1653,9 +1653,9 @@ function FinancialTab() {
                 <tr>
                   <th className="pb-2 text-left">Seller</th>
                   <th className="pb-2 text-left">Order</th>
-                  <th className="pb-2 text-left">Gross</th>
-                  <th className="pb-2 text-left">Fee 2%</th>
-                  <th className="pb-2 text-left font-semibold text-secondary">Net Due</th>
+                  <th className="pb-2 text-left">Buyer Paid</th>
+                  <th className="pb-2 text-left">Fee (buyer's 2%)</th>
+                  <th className="pb-2 text-left font-semibold text-secondary">Farmer Receives</th>
                   <th className="pb-2 text-left">Payout Method</th>
                   <th className="pb-2 text-right">Action</th>
                 </tr>
@@ -1682,7 +1682,7 @@ function FinancialTab() {
                       </td>
                       <td className="py-3 pr-3 font-mono text-xs text-muted-foreground">{obl.orderCode}</td>
                       <td className="py-3 pr-3 text-xs">${obl.gross_amount.toFixed(2)}</td>
-                      <td className="py-3 pr-3 text-xs text-muted-foreground">−${obl.platform_fee.toFixed(2)}</td>
+                      <td className="py-3 pr-3 text-xs text-amber-400">+${obl.platform_fee.toFixed(2)}</td>
                       <td className="py-3 pr-3 font-semibold text-secondary">${obl.net_amount.toFixed(2)}</td>
                       <td className="py-3 pr-3">
                         <div className="text-xs">{payoutMethod}</div>

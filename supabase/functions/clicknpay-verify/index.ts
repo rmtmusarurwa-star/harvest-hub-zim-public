@@ -69,7 +69,7 @@ serve(async (req) => {
     // If we've already processed this ref (repeat poll), pendingOrders is empty.
     const { data: pendingOrders, error: snapErr } = await supabase
       .from("orders")
-      .select("id, order_code, buyer_id, farmer_id, listing_title, quantity, unit, total_amount")
+      .select("id, order_code, buyer_id, farmer_id, listing_title, quantity, unit, subtotal, total_amount")
       .eq("payment_reference", primaryCode)
       .eq("payment_status", "pending");
 
@@ -93,16 +93,22 @@ serve(async (req) => {
       const obligations = pendingOrders
         .filter((o) => !!o.farmer_id)
         .map((o) => {
-          const gross = Number(o.total_amount ?? 0);
-          const fee   = Math.round(gross * PLATFORM_FEE_RATE * 100) / 100;
-          const net   = Math.round((gross - fee) * 100) / 100;
+          // subtotal = what the product cost (farmer's portion, 100%)
+          // total_amount = subtotal + 2% platform fee charged to buyer
+          // For legacy orders (subtotal not set), fall back to old formula.
+          const subtotal   = o.subtotal != null
+            ? Number(o.subtotal)
+            : Math.round(Number(o.total_amount ?? 0) / 1.02 * 100) / 100;
+          const total      = Number(o.total_amount ?? 0);
+          const fee        = Math.round((total - subtotal) * 100) / 100;
+          const net        = subtotal; // farmer receives 100% of product price
           return {
             order_id:          o.id,
             seller_id:         o.farmer_id,
             payment_reference: primaryCode,
-            gross_amount:      gross,
-            platform_fee:      fee,
-            net_amount:        net,
+            gross_amount:      total,   // total buyer paid (including fee)
+            platform_fee:      fee,     // 2% fee collected from buyer
+            net_amount:        net,     // what farmer gets (subtotal, 100%)
             status:            "pending",
           };
         });

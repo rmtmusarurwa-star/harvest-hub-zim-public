@@ -717,6 +717,7 @@ export type Database = {
           payment_status: Database["public"]["Enums"]["payment_status"]
           proof_url: string | null
           quantity: number
+          subtotal: number | null
           total_amount: number
           unit: string
           unit_price: number
@@ -736,6 +737,7 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           proof_url?: string | null
           quantity?: number
+          subtotal?: number | null
           total_amount?: number
           unit?: string
           unit_price?: number
@@ -755,6 +757,7 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           proof_url?: string | null
           quantity?: number
+          subtotal?: number | null
           total_amount?: number
           unit?: string
           unit_price?: number
