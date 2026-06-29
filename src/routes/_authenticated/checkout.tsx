@@ -345,6 +345,40 @@ function CheckoutPage() {
         // cash_on_delivery
         codes = await placeOrders(method, "pending", reference, null);
       }
+
+      // ── Notify buyer + farmers for manual payment methods ──────────────────
+      // (ClicknPay methods are handled server-side in clicknpay-verify edge fn)
+      if (user) {
+        const orderCount = items.length;
+        const methodLabel = method === "zipit" ? "ZIPIT transfer" : "Cash on Delivery";
+        const buyerMsg    = method === "zipit"
+          ? `📨 Order placed! We're waiting to confirm your ZIPIT payment. You'll be notified once approved.`
+          : `✅ Order confirmed! Pay the farmer on collection. Your ${orderCount === 1 ? "order has" : `${orderCount} orders have`} been placed.`;
+
+        type NotifInsert = { user_id: string; type: "order" | "announcement"; message: string; link: string };
+        const notifs: NotifInsert[] = [
+          { user_id: user.id, type: "order", message: buyerMsg, link: "/orders" },
+        ];
+
+        // One notification per unique farmer
+        const farmerIds = [...new Set(items.map((it) => it.farmer_id).filter((id): id is string => !!id && id !== "mock"))];
+        for (const farmerId of farmerIds) {
+          const farmerItems = items.filter((it) => it.farmer_id === farmerId);
+          const summary = farmerItems.length === 1
+            ? `${farmerItems[0].title} (${farmerItems[0].quantity} ${farmerItems[0].unit})`
+            : `${farmerItems.length} items`;
+          notifs.push({
+            user_id: farmerId,
+            type:    "order",
+            message: `🛒 New order via ${methodLabel}: ${summary} — check your orders.`,
+            link:    "/orders",
+          });
+        }
+
+        // Fire-and-forget — don't block navigation on this
+        void supabase.from("notifications").insert(notifs);
+      }
+
       clear();
       void navigate({ to: "/checkout/confirmation", search: { codes } });
     } catch (e) {

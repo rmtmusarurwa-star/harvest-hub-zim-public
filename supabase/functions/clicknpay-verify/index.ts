@@ -1,14 +1,15 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const CLICKNPAY_BASE = "https://backendservices.clicknpay.africa:2081";
-const PLATFORM_FEE_RATE = 0.02; // 2 % commission kept by Harvest Hub
+const CLICKNPAY_BASE    = "https://backendservices.clicknpay.africa:2081";
+const PLATFORM_FEE_RATE = 0.02; // 2% commission kept by Harvest Hub
+const ADMIN_EMAIL       = "rmtmusarurwa@icloud.com";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_URL              = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const cors = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -19,6 +20,17 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// ─── Helper: look up admin user ID (cached per invocation) ─────────────────
+async function getAdminUserId(supabase: ReturnType<typeof createClient>): Promise<string | null> {
+  try {
+    const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    return users.find((u) => u.email === ADMIN_EMAIL)?.id ?? null;
+  } catch (e) {
+    console.error("[clicknpay-verify] could not resolve admin ID:", e);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
@@ -26,66 +38,58 @@ serve(async (req) => {
     const { primaryCode } = await req.json() as { primaryCode: string };
     if (!primaryCode) return json({ error: "primaryCode required" }, 400);
 
-    // ── 1. Poll ClicknPay for order status ────────────────────────────────────
+    // ── 1. Poll ClicknPay for order status ───────────────────────────────────
     let cpStatus: string;
     try {
       const cpRes = await fetch(
         `${CLICKNPAY_BASE}/payme/orders/top-paid/${encodeURIComponent(primaryCode)}`,
-        {
-          headers: { "Content-Type": "application/json" },
-          signal: AbortSignal.timeout(10_000),
-        },
+        { headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(10_000) },
       );
-
       if (!cpRes.ok) {
         const body = await cpRes.text().catch(() => "");
         console.error(`[clicknpay-verify] ClicknPay ${cpRes.status}:`, body);
-        // Return pending — transient API error, caller will retry
         return json({ rawStatus: "UNKNOWN", paymentStatus: "pending", error: `ClicknPay API error ${cpRes.status}` });
       }
-
       const data = await cpRes.json() as { status?: string };
       cpStatus = (data.status ?? "").toUpperCase();
     } catch (fetchErr) {
       const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
       console.error("[clicknpay-verify] fetch error:", msg);
-      // Network / timeout — treat as pending so frontend keeps polling
       return json({ rawStatus: "UNKNOWN", paymentStatus: "pending", error: `Network error: ${msg}` });
     }
 
     const paymentStatus =
-      cpStatus === "SUCCESS" ? "paid" :
-      cpStatus === "FAILED"  ? "failed" :
+      cpStatus === "SUCCESS" ? "paid"    :
+      cpStatus === "FAILED"  ? "failed"  :
       "pending";
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // ── 2. Snapshot pending orders BEFORE marking paid ─────────────────────────
-    // If we've already processed this reference (repeat poll), pendingOrders is empty.
+    // ── 2. Snapshot pending orders BEFORE marking paid ───────────────────────
+    // If we've already processed this ref (repeat poll), pendingOrders is empty.
     const { data: pendingOrders, error: snapErr } = await supabase
       .from("orders")
-      .select("id, order_code, farmer_id, listing_title, quantity, unit, total_amount")
+      .select("id, order_code, buyer_id, farmer_id, listing_title, quantity, unit, total_amount")
       .eq("payment_reference", primaryCode)
       .eq("payment_status", "pending");
 
-    if (snapErr) {
-      console.error("[clicknpay-verify] snapshot error:", snapErr.message);
-    }
+    if (snapErr) console.error("[clicknpay-verify] snapshot error:", snapErr.message);
 
-    // ── 3. Update order payment_status ────────────────────────────────────────
+    // ── 3. Update order payment_status ───────────────────────────────────────
     const { error: updateErr } = await supabase
       .from("orders")
       .update({ payment_status: paymentStatus } as never)
       .eq("payment_reference", primaryCode);
 
-    if (updateErr) {
-      console.error("[clicknpay-verify] order update error:", updateErr.message);
-    }
+    if (updateErr) console.error("[clicknpay-verify] order update error:", updateErr.message);
 
-    // ── 4. On first-time payment confirmation ─────────────────────────────────
+    // ── 4. Resolve admin user ID (needed for both success + failure paths) ──
+    const adminId = await getAdminUserId(supabase);
+
+    // ── 5. PAID: create payout obligations + notify farmer, buyer, admin ─────
     if (paymentStatus === "paid" && pendingOrders && pendingOrders.length > 0) {
 
-      // 4a. Create payout obligations (one per order row)
+      // 5a. Payout obligations
       const obligations = pendingOrders
         .filter((o) => !!o.farmer_id)
         .map((o) => {
@@ -107,14 +111,14 @@ serve(async (req) => {
         const { error: oblErr } = await supabase
           .from("payout_obligations")
           .upsert(obligations, { onConflict: "order_id", ignoreDuplicates: true });
-        if (oblErr) {
-          console.error("[clicknpay-verify] payout_obligations upsert error:", oblErr.message);
-        } else {
-          console.log(`[clicknpay-verify] created ${obligations.length} payout obligation(s) for ref ${primaryCode}`);
-        }
+        if (oblErr) console.error("[clicknpay-verify] payout_obligations error:", oblErr.message);
+        else console.log(`[clicknpay-verify] created ${obligations.length} payout obligation(s) for ref ${primaryCode}`);
       }
 
-      // 4b. Notify each seller — one notification per seller, not per order
+      const totalAmount = pendingOrders.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+      const notifications: { user_id: string; type: string; message: string; link: string }[] = [];
+
+      // 5b. Farmer notifications (one per farmer, not per order)
       const farmerMap = new Map<string, { listing_title: string; quantity: number; unit: string }[]>();
       for (const o of pendingOrders) {
         if (!o.farmer_id) continue;
@@ -125,26 +129,81 @@ serve(async (req) => {
           unit: o.unit,
         });
       }
-
-      const notifications: { user_id: string; type: string; message: string; link: string }[] = [];
-      for (const [farmerId, orders] of farmerMap.entries()) {
-        const summary =
-          orders.length === 1
-            ? `${orders[0].listing_title} (${orders[0].quantity} ${orders[0].unit})`
-            : `${orders.length} items`;
+      for (const [farmerId, items] of farmerMap.entries()) {
+        const summary = items.length === 1
+          ? `${items[0].listing_title} (${items[0].quantity} ${items[0].unit})`
+          : `${items.length} items`;
         notifications.push({
           user_id: farmerId,
           type:    "order",
-          message: `Payment confirmed: ${summary} — funds received via ClicknPay, payout pending.`,
+          message: `💰 Payment confirmed: ${summary} — funds received via ClicknPay, payout pending.`,
           link:    "/orders",
+        });
+      }
+
+      // 5c. Buyer notifications (one per buyer)
+      const buyerIds = [...new Set(pendingOrders.map((o) => o.buyer_id).filter(Boolean))];
+      const itemCount = pendingOrders.length;
+      for (const buyerId of buyerIds) {
+        notifications.push({
+          user_id: buyerId,
+          type:    "order",
+          message: `✅ Payment confirmed! Your ${itemCount === 1 ? "order" : `${itemCount} orders`} (ref: ${primaryCode}) ${itemCount === 1 ? "has" : "have"} been placed successfully.`,
+          link:    "/orders",
+        });
+      }
+
+      // 5d. Admin notification
+      if (adminId) {
+        notifications.push({
+          user_id: adminId,
+          type:    "announcement",
+          message: `💳 Payment received: $${totalAmount.toFixed(2)} · Ref: ${primaryCode} · ${pendingOrders.length} item(s) · Payout required — check Financial tab.`,
+          link:    "/admin",
         });
       }
 
       if (notifications.length > 0) {
         const { error: notifErr } = await supabase.from("notifications").insert(notifications);
-        if (notifErr) {
-          console.error("[clicknpay-verify] notification insert error:", notifErr.message);
-        }
+        if (notifErr) console.error("[clicknpay-verify] notification insert error:", notifErr.message);
+        else console.log(`[clicknpay-verify] sent ${notifications.length} notification(s)`);
+      }
+    }
+
+    // ── 6. FAILED: notify buyer + admin ──────────────────────────────────────
+    if (paymentStatus === "failed") {
+      // Fetch buyer_ids (snapshot may be empty if already processed)
+      const { data: relatedOrders } = await supabase
+        .from("orders")
+        .select("buyer_id, total_amount")
+        .eq("payment_reference", primaryCode)
+        .limit(10);
+
+      const failedNotifs: { user_id: string; type: string; message: string; link: string }[] = [];
+
+      const buyerIds = [...new Set((relatedOrders ?? []).map((o: any) => o.buyer_id).filter(Boolean))];
+      for (const buyerId of buyerIds) {
+        failedNotifs.push({
+          user_id: buyerId,
+          type:    "order",
+          message: `❌ Payment failed (ref: ${primaryCode}). Please return to checkout and try again. Your cart has been saved.`,
+          link:    "/checkout",
+        });
+      }
+
+      if (adminId) {
+        const totalAttempted = (relatedOrders ?? []).reduce((s: number, o: any) => s + Number(o.total_amount ?? 0), 0);
+        failedNotifs.push({
+          user_id: adminId,
+          type:    "announcement",
+          message: `⚠️ Payment failed: $${totalAttempted.toFixed(2)} · Ref: ${primaryCode} — no action required.`,
+          link:    "/admin",
+        });
+      }
+
+      if (failedNotifs.length > 0) {
+        const { error: failErr } = await supabase.from("notifications").insert(failedNotifs);
+        if (failErr) console.error("[clicknpay-verify] failed notification error:", failErr.message);
       }
     }
 
