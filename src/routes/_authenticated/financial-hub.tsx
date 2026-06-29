@@ -680,7 +680,7 @@ function FarmerView({
                     <td className="py-2.5 font-medium text-foreground">
                       {o.listing_title}
                       <div className="text-xs text-muted-foreground">
-                        {o.quantity} {o.unit}
+                        {o.quantity} × {o.unit}
                       </div>
                     </td>
                     <td className="py-2.5 text-xs capitalize text-muted-foreground">

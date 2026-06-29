@@ -104,9 +104,11 @@ export function StatCards() {
             .eq("status", "active"),
         ]);
 
-      setFarmers(farmersRes.count ?? 0);
-      setBuyers(buyersRes.count ?? 0);
-      setListings(listingsCountRes.count ?? 0);
+      // count comes from Content-Range header; fall back to data.length if
+      // the header is stripped (e.g. by a proxy or CORS restriction).
+      setFarmers(farmersRes.count ?? farmersRes.data?.length ?? 0);
+      setBuyers(buyersRes.count ?? buyersRes.data?.length ?? 0);
+      setListings(listingsCountRes.count ?? listingsCountRes.data?.length ?? 0);
 
       if (volumeRes.data) {
         const total = volumeRes.data.reduce(

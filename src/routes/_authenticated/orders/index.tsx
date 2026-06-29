@@ -211,7 +211,7 @@ function OrderList({
                   {PAYMENT_STATUS_LABEL[order.payment_status]}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {order.quantity} {order.unit}
+                  {order.quantity} × {order.unit}
                 </span>
                 <span className="font-mono text-xs font-medium text-secondary">
                   ${Number(order.total_amount).toFixed(2)}

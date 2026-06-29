@@ -263,7 +263,7 @@ function ChatPage() {
   return (
     <section className="h-full -mx-3 lg:-mx-6 -mt-4 lg:-mt-6 -mb-10">
       <div className="glass-strong mx-3 lg:mx-6 h-full overflow-hidden rounded-2xl">
-        <div className="grid h-full grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div className="grid h-full grid-rows-1 grid-cols-1 lg:grid-cols-[340px_1fr]">
           {/* Conversation list */}
           <aside
             className={cn(
