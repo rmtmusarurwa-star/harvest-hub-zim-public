@@ -825,21 +825,37 @@ function ShopsTab() {
 // ============ ORDERS ============
 function OrdersTab() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   async function load() {
     setLoading(true);
     const { data } = await supabase
       .from("orders")
-      .select("id, order_code, listing_title, total_amount, payment_status, created_at")
+      .select("id, order_code, listing_title, total_amount, payment_status, payment_method, created_at, buyer_id, farmer_id, quantity, unit")
       .order("created_at", { ascending: false })
-      .limit(100);
-    setOrders(data ?? []);
+      .limit(200);
+    const rows = data ?? [];
+    setOrders(rows);
+
+    // Fetch buyer + farmer names in one query
+    const profileIds = Array.from(
+      new Set(rows.flatMap((r: any) => [r.buyer_id, r.farmer_id].filter(Boolean)))
+    );
+    if (profileIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", profileIds);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((p: any) => (map[p.id] = p.full_name || "Unknown"));
+      setNames(map);
+    }
     setLoading(false);
   }
-  useEffect(() => {
-    load();
-  }, []);
+
+  useEffect(() => { load(); }, []);
 
   async function updateStatus(o: any, payment_status: string) {
     const { error } = await supabase
@@ -852,59 +868,91 @@ function OrdersTab() {
     load();
   }
 
+  const filtered = orders.filter((o) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      o.order_code?.toLowerCase().includes(q) ||
+      o.listing_title?.toLowerCase().includes(q) ||
+      names[o.buyer_id]?.toLowerCase().includes(q) ||
+      names[o.farmer_id]?.toLowerCase().includes(q)
+    );
+  });
+
   return (
-    <div className="glass overflow-hidden rounded-2xl">
-      <table className="w-full text-sm">
-        <thead className="border-b border-white/5 bg-white/[0.02] text-xs uppercase tracking-wider text-muted-foreground">
-          <tr>
-            <th className="p-3 text-left">Order</th>
-            <th className="p-3 text-left">Product</th>
-            <th className="p-3 text-left">Amount</th>
-            <th className="p-3 text-left">Status</th>
-            <th className="p-3 text-right">Update</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <Input
+          placeholder="Search by name, product, or order code…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <span className="text-sm text-muted-foreground">{filtered.length} orders</span>
+      </div>
+      <div className="glass overflow-hidden rounded-2xl">
+        <table className="w-full text-sm">
+          <thead className="border-b border-white/5 bg-white/[0.02] text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
-              <td colSpan={5} className="p-6 text-center text-muted-foreground">
-                Loading...
-              </td>
+              <th className="p-3 text-left">Date</th>
+              <th className="p-3 text-left">Order</th>
+              <th className="p-3 text-left">Buyer</th>
+              <th className="p-3 text-left">Farmer</th>
+              <th className="p-3 text-left">Product</th>
+              <th className="p-3 text-left">Qty</th>
+              <th className="p-3 text-left">Amount</th>
+              <th className="p-3 text-left">Method</th>
+              <th className="p-3 text-left">Status</th>
+              <th className="p-3 text-right">Update</th>
             </tr>
-          ) : orders.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="p-6 text-center text-muted-foreground">
-                No orders
-              </td>
-            </tr>
-          ) : (
-            orders.map((o) => (
-              <tr key={o.id} className="border-b border-white/5">
-                <td className="p-3 font-mono text-xs">{o.order_code}</td>
-                <td className="p-3">{o.listing_title}</td>
-                <td className="p-3">${Number(o.total_amount).toFixed(2)}</td>
-                <td className="p-3">
-                  <Badge variant="outline">{o.payment_status}</Badge>
-                </td>
-                <td className="p-3 text-right">
-                  <Select value={o.payment_status} onValueChange={(v) => updateStatus(o, v)}>
-                    <SelectTrigger className="h-8 w-36 ml-auto">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["pending", "paid", "failed", "refunded"].map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={10} className="p-6 text-center text-muted-foreground">
+                  Loading...
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="p-6 text-center text-muted-foreground">
+                  {search ? "No orders match your search" : "No orders"}
+                </td>
+              </tr>
+            ) : (
+              filtered.map((o) => (
+                <tr key={o.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                  <td className="p-3 text-xs text-muted-foreground">
+                    {new Date(o.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  </td>
+                  <td className="p-3 font-mono text-xs">{o.order_code}</td>
+                  <td className="p-3">{names[o.buyer_id] || "—"}</td>
+                  <td className="p-3 text-muted-foreground">{names[o.farmer_id] || "—"}</td>
+                  <td className="p-3">{o.listing_title}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{o.quantity} × {o.unit}</td>
+                  <td className="p-3 font-medium text-secondary">${Number(o.total_amount).toFixed(2)}</td>
+                  <td className="p-3 text-xs capitalize text-muted-foreground">{o.payment_method?.replace(/_/g, " ")}</td>
+                  <td className="p-3">
+                    <Badge variant="outline">{o.payment_status}</Badge>
+                  </td>
+                  <td className="p-3 text-right">
+                    <Select value={o.payment_status} onValueChange={(v) => updateStatus(o, v)}>
+                      <SelectTrigger className="h-8 w-32 ml-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["pending", "awaiting_confirmation", "paid", "failed", "refunded"].map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
