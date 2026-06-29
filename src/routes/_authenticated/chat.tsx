@@ -288,7 +288,7 @@ function ChatPage() {
                 <Plus className="h-4 w-4" /> Start New Chat
               </Button>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
               {conversations.isLoading && (
                 <div className="p-6 text-xs text-muted-foreground">Loading…</div>
               )}
@@ -818,7 +818,7 @@ function ChatThread({
       </div>
 
       {/* Messages */}
-      <div ref={scrollerRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto overscroll-contain px-4 py-5">
+      <div ref={scrollerRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto overscroll-contain px-4 py-5" style={{ WebkitOverflowScrolling: "touch" }}>
         {messages.isLoading && (
           <div className="text-center text-xs text-muted-foreground">Loading…</div>
         )}
@@ -1021,7 +1021,7 @@ function MessageBubble({
           <OfferCard
             message={message}
             mine={mine}
-            canRespond={!mine && isFarmer && message.offer_status === "pending"}
+            canRespond={!mine && message.offer_status === "pending"}
             onRespond={onRespond}
             unit={unit}
           />
