@@ -14,6 +14,7 @@ import {
   Pencil,
   X,
   Check,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +50,7 @@ function PostDetailPage() {
   >([]);
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const initialLoadDone = useRef(false);
 
@@ -63,10 +65,13 @@ function PostDetailPage() {
       .eq("id", postId)
       .maybeSingle();
     if (error || !p) {
-      toast.error("Post not found");
+      const message = error?.message || "Post not found";
+      setLoadError(message);
+      toast.error(message);
       setLoading(false);
       return;
     }
+    setLoadError(null);
     setPost(p as ForumPostRow);
 
     const [{ data: authorProf }, { data: commentRows }, { data: reactRows }] = await Promise.all([
@@ -238,21 +243,19 @@ function PostDetailPage() {
       if (me) setCommentAuthors((m) => ({ ...m, [user.id]: me as Profile }));
     }
     setReply("");
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("forum_comments")
-      .insert({ post_id: postId, author_id: user.id, content })
-      .select("*")
-      .single();
+      .insert({ post_id: postId, author_id: user.id, content });
     setSubmitting(false);
-    if (error || !data) {
+    if (error) {
       console.error("Comment insert failed:", error);
-      toast.error(error?.message || "Could not post comment");
+      toast.error(error.message || "Could not post comment");
       setComments((prev) => prev.filter((c) => c.id !== tempId));
       setReply(content);
       return;
     }
-    // Swap the optimistic row for the real one
-    setComments((prev) => prev.map((c) => (c.id === tempId ? (data as ForumCommentRow) : c)));
+    toast.success("Reply posted");
+    void load();
   };
 
   const deleteComment = async (id: string) => {
@@ -300,6 +303,23 @@ function PostDetailPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl py-10 text-center text-muted-foreground">Loading...</div>
+    );
+  }
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4 py-10 text-center">
+        <p className="text-muted-foreground">Could not load this discussion.</p>
+        <p className="text-xs text-rose-300/80">{loadError}</p>
+        <div className="flex justify-center gap-2">
+          <Button variant="outline" onClick={() => void load()} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
+          <Button variant="secondary" onClick={() => navigate({ to: "/community" })}>
+            Back to forum
+          </Button>
+        </div>
+      </div>
     );
   }
   if (!post) {

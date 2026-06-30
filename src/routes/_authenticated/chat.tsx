@@ -12,8 +12,10 @@ import {
   Mic,
   MoreVertical,
   Plus,
+  RefreshCw,
   Search as SearchIcon,
   Send,
+  ShoppingCart,
   Square,
   Trash2,
   X,
@@ -40,6 +42,7 @@ import {
 } from "@/lib/chat-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCart } from "@/lib/cart-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -292,6 +295,21 @@ function ChatPage() {
               {conversations.isLoading && (
                 <div className="p-6 text-xs text-muted-foreground">Loading…</div>
               )}
+              {conversations.isError && (
+                <div className="space-y-3 p-5 text-xs text-muted-foreground">
+                  <p>Could not load chats right now.</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-2"
+                    onClick={() => conversations.refetch()}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Retry
+                  </Button>
+                </div>
+              )}
               {conversations.data?.length === 0 && (
                 <EmptyList />
               )}
@@ -426,6 +444,8 @@ function ChatThread({
   onBack: () => void;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const cart = useCart();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState("");
   const [showOffer, setShowOffer] = useState(false);
@@ -772,6 +792,7 @@ function ChatThread({
       <div className="flex items-center gap-3 border-b border-white/5 bg-black/20 px-4 py-3">
         <button
           onClick={onBack}
+          aria-label="Back to conversations"
           className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-white/5 hover:text-foreground lg:hidden"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -798,7 +819,10 @@ function ChatThread({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-white/5 hover:text-foreground">
+            <button
+              aria-label="Chat options"
+              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-white/5 hover:text-foreground"
+            >
               <MoreVertical className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
@@ -822,6 +846,23 @@ function ChatThread({
         {messages.isLoading && (
           <div className="text-center text-xs text-muted-foreground">Loading…</div>
         )}
+        {messages.isError && (
+          <div className="grid place-items-center py-10 text-center text-xs text-muted-foreground">
+            <div className="space-y-3">
+              <p>Could not load this conversation.</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => messages.refetch()}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
         <AnimatePresence initial={false}>
           {messages.data?.map((m) => (
             <MessageBubble
@@ -832,8 +873,27 @@ function ChatThread({
               onRespond={(status) =>
                 respondOffer.mutate({ id: m.id, status })
               }
+              onCheckout={() => {
+                if (!convo.listing || !m.offer_price || !m.offer_quantity) return;
+                cart.addItem(
+                  {
+                    id: `offer-${m.id}`,
+                    listing_id: convo.listing.id,
+                    title: `${convo.listing.title} accepted offer`,
+                    price: Number(m.offer_price),
+                    unit: convo.listing.unit,
+                    location: "",
+                    image_url: convo.listing.image_url,
+                    farmer_id: convo.farmer_id,
+                  },
+                  Number(m.offer_quantity)
+                );
+                toast.success("Accepted offer added to checkout");
+                navigate({ to: "/checkout" });
+              }}
               counterpartName={counterpartName}
               unit={convo.listing?.unit ?? "unit"}
+              hasListing={!!convo.listing}
             />
           ))}
         </AnimatePresence>
@@ -942,6 +1002,7 @@ function ChatThread({
               size="icon"
               onClick={() => setShowOffer((v) => !v)}
               title="Make offer"
+              aria-label="Make offer"
             >
               <HandCoins className="h-4 w-4" />
             </Button>
@@ -952,6 +1013,7 @@ function ChatThread({
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingMedia}
               title="Send photo"
+              aria-label="Send photo"
             >
               <ImageIcon className="h-4 w-4" />
             </Button>
@@ -962,6 +1024,7 @@ function ChatThread({
               onClick={startRecording}
               disabled={uploadingMedia}
               title="Record voice note"
+              aria-label="Record voice note"
             >
               <Mic className="h-4 w-4" />
             </Button>
@@ -971,7 +1034,11 @@ function ChatThread({
               placeholder="Message…"
               className="flex-1"
             />
-            <Button type="submit" disabled={!draft.trim() || sendText.isPending}>
+            <Button
+              type="submit"
+              disabled={!draft.trim() || sendText.isPending}
+              aria-label="Send message"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </>
@@ -987,15 +1054,19 @@ function MessageBubble({
   mine,
   isFarmer,
   onRespond,
+  onCheckout,
   counterpartName,
   unit,
+  hasListing,
 }: {
   message: ChatMessage;
   mine: boolean;
   isFarmer: boolean;
   onRespond: (status: "accepted" | "declined") => void;
+  onCheckout: () => void;
   counterpartName: string;
   unit: string;
+  hasListing: boolean;
 }) {
   const isOffer = message.type === "offer";
   return (
@@ -1023,7 +1094,9 @@ function MessageBubble({
             mine={mine}
             canRespond={!mine && message.offer_status === "pending"}
             onRespond={onRespond}
+            onCheckout={onCheckout}
             unit={unit}
+            canCheckout={mine && message.offer_status === "accepted" && hasListing}
           />
         ) : message.type === "image" && message.media_url ? (
           <a href={message.media_url} target="_blank" rel="noreferrer">
@@ -1066,13 +1139,17 @@ function OfferCard({
   mine,
   canRespond,
   onRespond,
+  onCheckout,
   unit,
+  canCheckout,
 }: {
   message: ChatMessage;
   mine: boolean;
   canRespond: boolean;
   onRespond: (status: "accepted" | "declined") => void;
+  onCheckout: () => void;
   unit: string;
+  canCheckout: boolean;
 }) {
   const price = Number(message.offer_price ?? 0);
   const qty = Number(message.offer_quantity ?? 0);
@@ -1098,7 +1175,9 @@ function OfferCard({
             <span className="text-amber-300">Awaiting response</span>
           )}
           {status === "accepted" && (
-            <span className="text-emerald-300">Accepted — listing marked sold</span>
+            <span className="text-emerald-300">
+              {mine ? "Accepted - ready for checkout" : "Accepted - buyer can pay from chat"}
+            </span>
           )}
           {status === "declined" && (
             <span className="text-rose-300">Declined</span>
@@ -1124,6 +1203,18 @@ function OfferCard({
             </Button>
           </div>
         )}
+        {canCheckout && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="mt-3 w-full gap-2"
+            onClick={onCheckout}
+          >
+            <ShoppingCart className="h-3.5 w-3.5" />
+            Pay this offer
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -1145,11 +1236,13 @@ function NewChatModal({
     Array<{ id: string; full_name: string; role: string; avatar_url: string | null }>
   >([]);
   const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const term = q.trim();
     setLoading(true);
+    setSearchError(null);
     const t = setTimeout(async () => {
       let query = supabase
         .from("profiles")
@@ -1158,7 +1251,12 @@ function NewChatModal({
         .limit(20);
       if (term) query = query.ilike("full_name", `%${term}%`);
       const { data, error } = await query;
-      if (!error) setResults((data ?? []) as any);
+      if (error) {
+        setSearchError(error.message || "Could not search users");
+        setResults([]);
+      } else {
+        setResults((data ?? []) as any);
+      }
       setLoading(false);
     }, 200);
     return () => clearTimeout(t);
@@ -1186,7 +1284,12 @@ function NewChatModal({
               Searching…
             </div>
           )}
-          {!loading && results.length === 0 && (
+          {!loading && searchError && (
+            <div className="p-4 text-center text-xs text-rose-300">
+              {searchError}
+            </div>
+          )}
+          {!loading && !searchError && results.length === 0 && (
             <div className="p-4 text-center text-xs text-muted-foreground">
               No users found
             </div>
