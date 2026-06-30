@@ -130,6 +130,7 @@ function AdminPage() {
           <TabsTrigger value="listings">Listings</TabsTrigger>
           <TabsTrigger value="shops">Shops</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="pendingpayments">Pending Payments</TabsTrigger>
           <TabsTrigger value="verification">Verification</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
@@ -154,6 +155,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="orders">
           <OrdersTab />
+        </TabsContent>
+        <TabsContent value="pendingpayments">
+          <PendingPaymentsTab />
         </TabsContent>
         <TabsContent value="verification">
           <VerificationTab />
@@ -235,10 +239,7 @@ function OverviewTab() {
         .select("id", { count: "exact" })
         .eq("status", "pending"),
       supabase.from("profiles").select("id", { count: "exact" }).eq("suspended", true),
-      supabase
-        .from("fraud_reports")
-        .select("id", { count: "exact" })
-        .eq("status", "open"),
+      supabase.from("fraud_reports").select("id", { count: "exact" }).eq("status", "open"),
     ]);
     const revenue = (rev.data ?? []).reduce((s, r: any) => s + Number(r.total_amount ?? 0), 0);
     setStats({
@@ -666,11 +667,16 @@ function ShopsTab() {
     setLoading(true);
     const { data } = await supabase
       .from("shops")
-      .select("id, name, category, location, province, verified, created_at, owner_id, phone, email")
+      .select(
+        "id, name, category, location, province, verified, created_at, owner_id, phone, email",
+      )
       .order("created_at", { ascending: false })
       .limit(200);
 
-    if (!data) { setLoading(false); return; }
+    if (!data) {
+      setLoading(false);
+      return;
+    }
 
     // Fetch owner names in one go
     const ownerIds = [...new Set(data.map((s: any) => s.owner_id))];
@@ -681,23 +687,25 @@ function ShopsTab() {
     const nameMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.full_name]));
 
     // Fetch product counts
-    const { data: products } = await supabase
-      .from("shop_products")
-      .select("shop_id");
+    const { data: products } = await supabase.from("shop_products").select("shop_id");
     const countMap: Record<string, number> = {};
     (products ?? []).forEach((p: any) => {
       countMap[p.shop_id] = (countMap[p.shop_id] ?? 0) + 1;
     });
 
-    setShops(data.map((s: any) => ({
-      ...s,
-      ownerName: nameMap[s.owner_id] ?? "Unknown",
-      productCount: countMap[s.id] ?? 0,
-    })));
+    setShops(
+      data.map((s: any) => ({
+        ...s,
+        ownerName: nameMap[s.owner_id] ?? "Unknown",
+        productCount: countMap[s.id] ?? 0,
+      })),
+    );
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const filtered = shops.filter((s) => {
     const q = search.toLowerCase();
@@ -706,7 +714,10 @@ function ShopsTab() {
 
   async function toggleVerify(s: any) {
     const next = !s.verified;
-    const { error } = await supabase.from("shops").update({ verified: next } as any).eq("id", s.id);
+    const { error } = await supabase
+      .from("shops")
+      .update({ verified: next } as any)
+      .eq("id", s.id);
     if (error) return toast.error(error.message);
     await logAction(next ? "verify_shop" : "unverify_shop", "shop", s.id, s.name);
     toast.success(next ? "Shop verified" : "Verification removed");
@@ -767,7 +778,8 @@ function ShopsTab() {
             {loading ? (
               <tr>
                 <td colSpan={7} className="p-6 text-center text-muted-foreground">
-                  <Loader2 className="inline h-4 w-4 animate-spin mr-2" />Loading…
+                  <Loader2 className="inline h-4 w-4 animate-spin mr-2" />
+                  Loading…
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
@@ -787,25 +799,36 @@ function ShopsTab() {
                     {CATEGORY_LABEL[s.category] ?? s.category}
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {s.location}<br />{s.province}
+                    {s.location}
+                    <br />
+                    {s.province}
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">{s.ownerName}</td>
                   <td className="p-3 text-center text-xs">{s.productCount}</td>
                   <td className="p-3">
                     {s.verified ? (
                       <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30">
-                        <BadgeCheck className="h-3 w-3 mr-1" />Verified
+                        <BadgeCheck className="h-3 w-3 mr-1" />
+                        Verified
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-muted-foreground">Unverified</Badge>
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Unverified
+                      </Badge>
                     )}
                   </td>
                   <td className="p-3 text-right space-x-1">
                     <Button size="sm" variant="outline" onClick={() => toggleVerify(s)}>
                       {s.verified ? (
-                        <><XCircle className="h-3.5 w-3.5 mr-1" />Unverify</>
+                        <>
+                          <XCircle className="h-3.5 w-3.5 mr-1" />
+                          Unverify
+                        </>
                       ) : (
-                        <><CheckCircle2 className="h-3.5 w-3.5 mr-1" />Verify</>
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                          Verify
+                        </>
                       )}
                     </Button>
                     <Button size="sm" variant="destructive" onClick={() => deleteShop(s)}>
@@ -833,7 +856,9 @@ function OrdersTab() {
     setLoading(true);
     const { data } = await supabase
       .from("orders")
-      .select("id, order_code, listing_title, total_amount, payment_status, payment_method, created_at, buyer_id, farmer_id, quantity, unit")
+      .select(
+        "id, order_code, listing_title, total_amount, payment_status, payment_method, created_at, buyer_id, farmer_id, quantity, unit",
+      )
       .order("created_at", { ascending: false })
       .limit(200);
     const rows = data ?? [];
@@ -841,7 +866,7 @@ function OrdersTab() {
 
     // Fetch buyer + farmer names in one query
     const profileIds = Array.from(
-      new Set(rows.flatMap((r: any) => [r.buyer_id, r.farmer_id].filter(Boolean)))
+      new Set(rows.flatMap((r: any) => [r.buyer_id, r.farmer_id].filter(Boolean))),
     );
     if (profileIds.length) {
       const { data: profs } = await supabase
@@ -855,7 +880,9 @@ function OrdersTab() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function updateStatus(o: any, payment_status: string) {
     const { error } = await supabase
@@ -923,15 +950,25 @@ function OrdersTab() {
               filtered.map((o) => (
                 <tr key={o.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                   <td className="p-3 text-xs text-muted-foreground">
-                    {new Date(o.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    {new Date(o.created_at).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </td>
                   <td className="p-3 font-mono text-xs">{o.order_code}</td>
                   <td className="p-3">{names[o.buyer_id] || "—"}</td>
                   <td className="p-3 text-muted-foreground">{names[o.farmer_id] || "—"}</td>
                   <td className="p-3">{o.listing_title}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{o.quantity} × {o.unit}</td>
-                  <td className="p-3 font-medium text-secondary">${Number(o.total_amount).toFixed(2)}</td>
-                  <td className="p-3 text-xs capitalize text-muted-foreground">{o.payment_method?.replace(/_/g, " ")}</td>
+                  <td className="p-3 text-xs text-muted-foreground">
+                    {o.quantity} × {o.unit}
+                  </td>
+                  <td className="p-3 font-medium text-secondary">
+                    ${Number(o.total_amount).toFixed(2)}
+                  </td>
+                  <td className="p-3 text-xs capitalize text-muted-foreground">
+                    {o.payment_method?.replace(/_/g, " ")}
+                  </td>
                   <td className="p-3">
                     <Badge variant="outline">{o.payment_status}</Badge>
                   </td>
@@ -941,9 +978,13 @@ function OrdersTab() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {["pending", "awaiting_confirmation", "paid", "failed", "refunded"].map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
+                        {["pending", "awaiting_confirmation", "paid", "failed", "refunded"].map(
+                          (s) => (
+                            <SelectItem key={s} value={s}>
+                              {s}
+                            </SelectItem>
+                          ),
+                        )}
                       </SelectContent>
                     </Select>
                   </td>
@@ -1336,7 +1377,7 @@ type Obligation = {
   status: string;
   created_at: string;
   // joined
-  sellerId: string;       // farmer_id from the related order
+  sellerId: string; // farmer_id from the related order
   sellerName: string;
   orderCode: string;
   ecocash_number: string;
@@ -1345,6 +1386,341 @@ type Obligation = {
   bank_account_number: string;
   bank_account_name: string;
 };
+
+type RawPayoutObligation = {
+  id: string;
+  order_id: string;
+  payment_reference: string;
+  gross_amount: number | string;
+  platform_fee: number | string;
+  net_amount: number | string;
+  status: string;
+  created_at: string;
+};
+
+type PayoutSettingRow = {
+  user_id: string;
+  ecocash_number: string | null;
+  onemoney_number: string | null;
+  bank_name: string | null;
+  bank_account_number: string | null;
+  bank_account_name: string | null;
+};
+
+function payoutLabel(
+  obl: Pick<
+    Obligation,
+    "ecocash_number" | "onemoney_number" | "bank_name" | "bank_account_number" | "bank_account_name"
+  >,
+) {
+  if (obl.ecocash_number) return `EcoCash · ${obl.ecocash_number}`;
+  if (obl.onemoney_number) return `OneMoney · ${obl.onemoney_number}`;
+  if (obl.bank_account_number)
+    return `${obl.bank_name || "Bank"} · ${obl.bank_account_number}${obl.bank_account_name ? ` · ${obl.bank_account_name}` : ""}`;
+  return "No payout method registered";
+}
+
+async function enrichPayoutObligations(rawObl: RawPayoutObligation[]): Promise<Obligation[]> {
+  if (rawObl.length === 0) return [];
+
+  const orderIds = rawObl.map((o) => o.order_id);
+  const { data: orderRows } = await supabase
+    .from("orders")
+    .select("id, order_code, farmer_id")
+    .in("id", orderIds);
+  const orderMap = Object.fromEntries((orderRows ?? []).map((r) => [r.id, r]));
+
+  const sellerIds = [...new Set((orderRows ?? []).map((r) => r.farmer_id).filter(Boolean))];
+
+  const [profilesRes, payoutRes] = await Promise.all([
+    sellerIds.length
+      ? supabase.from("profiles").select("id, full_name").in("id", sellerIds)
+      : Promise.resolve({ data: [] }),
+    sellerIds.length
+      ? // payout_settings exists in migrations but is not in generated Supabase types yet.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("payout_settings")
+          .select(
+            "user_id, ecocash_number, onemoney_number, bank_name, bank_account_number, bank_account_name",
+          )
+          .in("user_id", sellerIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const nameMap: Record<string, string> = Object.fromEntries(
+    (profilesRes.data ?? []).map((p) => [p.id, p.full_name ?? "Unknown"]),
+  );
+  const payoutMap: Record<string, PayoutSettingRow> = Object.fromEntries(
+    ((payoutRes.data ?? []) as PayoutSettingRow[]).map((p) => [p.user_id, p]),
+  );
+
+  return rawObl.map((o) => {
+    const order = orderMap[o.order_id] ?? {};
+    const sellerId = order.farmer_id ?? "";
+    const payout = payoutMap[sellerId] ?? {};
+    return {
+      ...o,
+      gross_amount: Number(o.gross_amount),
+      platform_fee: Number(o.platform_fee),
+      net_amount: Number(o.net_amount),
+      sellerId,
+      sellerName: nameMap[sellerId] ?? "Unknown",
+      orderCode: order.order_code ?? o.payment_reference,
+      ecocash_number: payout.ecocash_number ?? "",
+      onemoney_number: payout.onemoney_number ?? "",
+      bank_name: payout.bank_name ?? "",
+      bank_account_number: payout.bank_account_number ?? "",
+      bank_account_name: payout.bank_account_name ?? "",
+    };
+  });
+}
+
+async function markPayoutDisbursed(obl: Obligation, notes: string) {
+  // payout_obligations exists in migrations but is not in generated Supabase types yet.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from("payout_obligations")
+    .update({
+      status: "disbursed",
+      disbursed_at: new Date().toISOString(),
+      notes: notes || null,
+    })
+    .eq("id", obl.id);
+  if (error) throw error;
+
+  if (obl.sellerId) {
+    await supabase.from("notifications").insert({
+      user_id: obl.sellerId,
+      type: "announcement",
+      message: `Payout sent: $${obl.net_amount.toFixed(2)} for order ${obl.orderCode}. Destination: ${payoutLabel(obl)}${notes ? ` · Ref: ${notes}` : ""}.`,
+      link: "/dashboard",
+    });
+  }
+}
+
+function PendingPaymentsTab() {
+  const [rows, setRows] = useState<Obligation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [disbursing, setDisbursing] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+
+  async function load() {
+    setLoading(true);
+    // payout_obligations exists in migrations but is not in generated Supabase types yet.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
+      .from("payout_obligations")
+      .select(
+        "id, order_id, payment_reference, gross_amount, platform_fee, net_amount, status, created_at",
+      )
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+      .limit(300);
+    setRows(await enrichPayoutObligations((data ?? []) as RawPayoutObligation[]));
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function confirmDisbursement(obl: Obligation) {
+    try {
+      await markPayoutDisbursed(obl, notes.trim());
+      await logAction(
+        "disburse_payout",
+        "payout_obligation",
+        obl.id,
+        `${obl.sellerName} · $${obl.net_amount.toFixed(2)}`,
+      );
+      toast.success(`Payout marked as sent for ${obl.sellerName}`);
+      setDisbursing(null);
+      setNotes("");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not mark payout as sent");
+    }
+  }
+
+  const filtered = rows.filter((r) => {
+    const q = search.toLowerCase();
+    return (
+      !q ||
+      r.sellerName.toLowerCase().includes(q) ||
+      r.orderCode.toLowerCase().includes(q) ||
+      r.payment_reference.toLowerCase().includes(q) ||
+      payoutLabel(r).toLowerCase().includes(q)
+    );
+  });
+  const totalPending = filtered.reduce((s, r) => s + r.net_amount, 0);
+  const selected = rows.find((r) => r.id === disbursing) ?? null;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-3">
+        {[
+          { label: "Pending Settlements", value: filtered.length, icon: Wallet },
+          { label: "Amount To Send", value: `$${totalPending.toFixed(2)}`, icon: DollarSign },
+          {
+            label: "Oldest Pending",
+            value: filtered[0] ? new Date(filtered[0].created_at).toLocaleDateString("en-GB") : "—",
+            icon: History,
+          },
+        ].map((c) => (
+          <div key={c.label} className="glass rounded-2xl p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </span>
+              <c.icon className="h-4 w-4 text-secondary" />
+            </div>
+            <div className="mt-2 font-display text-2xl">{loading ? "—" : c.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search seller, account, or order…"
+            className="pl-9"
+          />
+        </div>
+        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      <div className="glass overflow-hidden rounded-2xl">
+        <table className="w-full text-sm">
+          <thead className="border-b border-white/5 bg-white/[0.02] text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="p-3 text-left">Paid</th>
+              <th className="p-3 text-left">Seller</th>
+              <th className="p-3 text-left">Order</th>
+              <th className="p-3 text-left">Buyer Paid</th>
+              <th className="p-3 text-left">Fee</th>
+              <th className="p-3 text-left">Send To Seller</th>
+              <th className="p-3 text-left">Payout Account</th>
+              <th className="p-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                  Loading pending payments...
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                  No pending seller payments to settle.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((r) => (
+                <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                  <td className="p-3 text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleDateString("en-GB")}
+                  </td>
+                  <td className="p-3">
+                    <div className="font-medium">{r.sellerName}</div>
+                    <div className="font-mono text-[11px] text-muted-foreground">
+                      {r.sellerId.slice(0, 8)}
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <div className="font-mono text-xs">{r.orderCode}</div>
+                    <div className="font-mono text-[11px] text-muted-foreground">
+                      {r.payment_reference}
+                    </div>
+                  </td>
+                  <td className="p-3">${r.gross_amount.toFixed(2)}</td>
+                  <td className="p-3 text-amber-400">${r.platform_fee.toFixed(2)}</td>
+                  <td className="p-3 font-semibold text-secondary">${r.net_amount.toFixed(2)}</td>
+                  <td className="p-3 text-xs">
+                    <div>{payoutLabel(r)}</div>
+                    {!r.ecocash_number && !r.onemoney_number && !r.bank_account_number && (
+                      <div className="mt-1 text-amber-400">Ask seller to add payout details</div>
+                    )}
+                  </td>
+                  <td className="p-3 text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setDisbursing(r.id);
+                        setNotes("");
+                      }}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                      Mark Sent
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setDisbursing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Seller Payment Sent</DialogTitle>
+          </DialogHeader>
+          {selected && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm space-y-2">
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Seller</span>
+                  <span className="font-medium">{selected.sellerName}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Amount</span>
+                  <span className="font-semibold text-secondary">
+                    ${selected.net_amount.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Destination</span>
+                  <span className="text-right text-xs">{payoutLabel(selected)}</span>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
+                  Transfer reference / notes
+                </label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g. EcoCash ref #ECO123456"
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDisbursing(null)}>
+              Cancel
+            </Button>
+            <Button onClick={() => selected && confirmDisbursement(selected)}>
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+              Confirm Sent
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
 
 function FinancialTab() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -1358,100 +1734,46 @@ function FinancialTab() {
     const [ordersRes, oblRes] = await Promise.all([
       supabase
         .from("orders")
-        .select("id, order_code, total_amount, payment_method, payment_status, listing_title, created_at")
+        .select(
+          "id, order_code, total_amount, payment_method, payment_status, listing_title, created_at",
+        )
         .order("created_at", { ascending: false })
         .limit(500),
       (supabase as any)
         .from("payout_obligations")
-        .select("id, order_id, payment_reference, gross_amount, platform_fee, net_amount, status, created_at")
+        .select(
+          "id, order_id, payment_reference, gross_amount, platform_fee, net_amount, status, created_at",
+        )
         .order("created_at", { ascending: false })
         .limit(200),
     ]);
 
     const rawOrders = ordersRes.data ?? [];
-    const rawObl: any[] = oblRes.data ?? [];
+    const rawObl = (oblRes.data ?? []) as RawPayoutObligation[];
 
-    // Enrich obligations: seller name from profiles, payout details from payout_settings
-    if (rawObl.length > 0) {
-      // Get seller IDs from the orders table for each obligation
-      const orderIds = rawObl.map((o: any) => o.order_id);
-      const { data: orderRows } = await supabase
-        .from("orders")
-        .select("id, order_code, farmer_id")
-        .in("id", orderIds);
-      const orderMap = Object.fromEntries((orderRows ?? []).map((r: any) => [r.id, r]));
-
-      const sellerIds = [...new Set((orderRows ?? []).map((r: any) => r.farmer_id).filter(Boolean))];
-
-      const [profilesRes, payoutRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name").in("id", sellerIds),
-        (supabase as any).from("payout_settings").select("user_id, ecocash_number, onemoney_number, bank_name, bank_account_number, bank_account_name").in("user_id", sellerIds),
-      ]);
-
-      const nameMap: Record<string, string> = Object.fromEntries((profilesRes.data ?? []).map((p: any) => [p.id, p.full_name ?? "Unknown"]));
-      const payoutMap: Record<string, any> = Object.fromEntries((payoutRes.data ?? []).map((p: any) => [p.user_id, p]));
-
-      const enriched: Obligation[] = rawObl.map((o: any) => {
-        const order = orderMap[o.order_id] ?? {};
-        const sellerId = order.farmer_id ?? "";
-        const payout = payoutMap[sellerId] ?? {};
-        return {
-          ...o,
-          gross_amount: Number(o.gross_amount),
-          platform_fee: Number(o.platform_fee),
-          net_amount: Number(o.net_amount),
-          sellerId,
-          sellerName: nameMap[sellerId] ?? "Unknown",
-          orderCode: order.order_code ?? o.payment_reference,
-          ecocash_number: payout.ecocash_number ?? "",
-          onemoney_number: payout.onemoney_number ?? "",
-          bank_name: payout.bank_name ?? "",
-          bank_account_number: payout.bank_account_number ?? "",
-          bank_account_name: payout.bank_account_name ?? "",
-        };
-      });
-      setObligations(enriched);
-    } else {
-      setObligations([]);
-    }
+    setObligations(await enrichPayoutObligations(rawObl));
 
     setOrders(rawOrders);
     setLoading(false);
   }
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    loadAll();
+  }, []);
 
   async function markDisbursed(obl: Obligation) {
-    const { error } = await (supabase as any)
-      .from("payout_obligations")
-      .update({
-        status: "disbursed",
-        disbursed_at: new Date().toISOString(),
-        notes: disburseNotes || null,
-      })
-      .eq("id", obl.id);
-    if (error) return toast.error(error.message);
-
-    // Notify the seller their money has been sent
-    if (obl.sellerId) {
-      const payoutMethod = obl.ecocash_number
-        ? `EcoCash (${obl.ecocash_number})`
-        : obl.onemoney_number
-        ? `OneMoney (${obl.onemoney_number})`
-        : obl.bank_account_number
-        ? `${obl.bank_name || "your bank"} (${obl.bank_account_number})`
-        : "your registered account";
-
-      await supabase.from("notifications").insert({
-        user_id: obl.sellerId,
-        type:    "announcement",
-        message: `💸 Payout of $${obl.net_amount.toFixed(2)} has been sent to ${payoutMethod}. Order ref: ${obl.orderCode}. Check your account.`,
-        link:    "/orders",
-      });
+    try {
+      await markPayoutDisbursed(obl, disburseNotes.trim());
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Could not mark payout as disbursed");
     }
 
-    await logAction("disburse_payout", "payout_obligation", obl.id,
-      `${obl.sellerName} · $${obl.net_amount.toFixed(2)}`);
+    await logAction(
+      "disburse_payout",
+      "payout_obligation",
+      obl.id,
+      `${obl.sellerName} · $${obl.net_amount.toFixed(2)}`,
+    );
     toast.success(`Payout marked as disbursed for ${obl.sellerName}`);
     setDisbursing(null);
     setDisburseNotes("");
@@ -1663,14 +1985,8 @@ function FinancialTab() {
               <tbody>
                 {pendingObligations.map((obl) => {
                   const hasMobile = obl.ecocash_number || obl.onemoney_number;
-                  const hasBank   = obl.bank_account_number;
-                  const payoutMethod = hasMobile
-                    ? obl.ecocash_number
-                      ? `EcoCash · ${obl.ecocash_number}`
-                      : `OneMoney · ${obl.onemoney_number}`
-                    : hasBank
-                    ? `${obl.bank_name || "Bank"} · ${obl.bank_account_number}`
-                    : "⚠️ No payout method registered";
+                  const hasBank = obl.bank_account_number;
+                  const payoutMethod = payoutLabel(obl);
 
                   return (
                     <tr key={obl.id} className="border-b border-white/5 hover:bg-white/[0.02]">
@@ -1680,14 +1996,22 @@ function FinancialTab() {
                           {new Date(obl.created_at).toLocaleDateString()}
                         </div>
                       </td>
-                      <td className="py-3 pr-3 font-mono text-xs text-muted-foreground">{obl.orderCode}</td>
+                      <td className="py-3 pr-3 font-mono text-xs text-muted-foreground">
+                        {obl.orderCode}
+                      </td>
                       <td className="py-3 pr-3 text-xs">${obl.gross_amount.toFixed(2)}</td>
-                      <td className="py-3 pr-3 text-xs text-amber-400">+${obl.platform_fee.toFixed(2)}</td>
-                      <td className="py-3 pr-3 font-semibold text-secondary">${obl.net_amount.toFixed(2)}</td>
+                      <td className="py-3 pr-3 text-xs text-amber-400">
+                        +${obl.platform_fee.toFixed(2)}
+                      </td>
+                      <td className="py-3 pr-3 font-semibold text-secondary">
+                        ${obl.net_amount.toFixed(2)}
+                      </td>
                       <td className="py-3 pr-3">
                         <div className="text-xs">{payoutMethod}</div>
                         {hasBank && obl.bank_account_name && (
-                          <div className="text-[11px] text-muted-foreground">{obl.bank_account_name}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {obl.bank_account_name}
+                          </div>
                         )}
                       </td>
                       <td className="py-3 text-right">
@@ -1695,7 +2019,10 @@ function FinancialTab() {
                           size="sm"
                           variant="outline"
                           className="border-secondary/30 text-secondary hover:bg-secondary/10"
-                          onClick={() => { setDisbursing(obl.id); setDisburseNotes(""); }}
+                          onClick={() => {
+                            setDisbursing(obl.id);
+                            setDisburseNotes("");
+                          }}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                           Mark Disbursed
@@ -1716,50 +2043,55 @@ function FinancialTab() {
           <DialogHeader>
             <DialogTitle>Confirm Disbursement</DialogTitle>
           </DialogHeader>
-          {disbursing && (() => {
-            const obl = obligations.find(o => o.id === disbursing)!;
-            return (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Seller</span>
-                    <span className="font-medium">{obl?.sellerName}</span>
+          {disbursing &&
+            (() => {
+              const obl = obligations.find((o) => o.id === disbursing)!;
+              return (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Seller</span>
+                      <span className="font-medium">{obl?.sellerName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Amount to send</span>
+                      <span className="font-semibold text-secondary">
+                        ${obl?.net_amount.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">To</span>
+                      <span className="text-right text-xs">
+                        {obl?.ecocash_number || obl?.onemoney_number
+                          ? `Mobile: ${obl.ecocash_number || obl.onemoney_number}`
+                          : obl?.bank_account_number
+                            ? `${obl.bank_name} · ${obl.bank_account_number}`
+                            : "No payout method"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount to send</span>
-                    <span className="font-semibold text-secondary">${obl?.net_amount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">To</span>
-                    <span className="text-right text-xs">
-                      {obl?.ecocash_number || obl?.onemoney_number
-                        ? `Mobile: ${obl.ecocash_number || obl.onemoney_number}`
-                        : obl?.bank_account_number
-                        ? `${obl.bank_name} · ${obl.bank_account_number}`
-                        : "No payout method"}
-                    </span>
+                  <div>
+                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
+                      Transaction ref / notes (optional)
+                    </label>
+                    <Textarea
+                      value={disburseNotes}
+                      onChange={(e) => setDisburseNotes(e.target.value)}
+                      placeholder="e.g. EcoCash ref #ECO123456…"
+                      rows={2}
+                    />
                   </div>
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
-                    Transaction ref / notes (optional)
-                  </label>
-                  <Textarea
-                    value={disburseNotes}
-                    onChange={(e) => setDisburseNotes(e.target.value)}
-                    placeholder="e.g. EcoCash ref #ECO123456…"
-                    rows={2}
-                  />
-                </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDisbursing(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDisbursing(null)}>
+              Cancel
+            </Button>
             <Button
               className="bg-secondary text-primary hover:bg-secondary/90"
               onClick={() => {
-                const obl = obligations.find(o => o.id === disbursing);
+                const obl = obligations.find((o) => o.id === disbursing);
                 if (obl) markDisbursed(obl);
               }}
             >
@@ -2125,9 +2457,15 @@ function PayoutAccountsTab() {
     // 1. Get all payout_settings
     const { data: payouts } = await (supabase as any)
       .from("payout_settings")
-      .select("user_id, ecocash_number, onemoney_number, bank_name, bank_account_number, bank_account_name");
+      .select(
+        "user_id, ecocash_number, onemoney_number, bank_name, bank_account_number, bank_account_name",
+      );
 
-    if (!payouts || payouts.length === 0) { setRows([]); setLoading(false); return; }
+    if (!payouts || payouts.length === 0) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
 
     const userIds = payouts.map((p: any) => p.user_id);
 
@@ -2137,7 +2475,7 @@ function PayoutAccountsTab() {
       .select("id, full_name")
       .in("id", userIds);
     const nameMap: Record<string, string> = Object.fromEntries(
-      (profiles ?? []).map((p: any) => [p.id, p.full_name ?? "Unknown"])
+      (profiles ?? []).map((p: any) => [p.id, p.full_name ?? "Unknown"]),
     );
 
     // 3. Get pending payout_obligations for each farmer
@@ -2154,9 +2492,7 @@ function PayoutAccountsTab() {
         .from("orders")
         .select("id, farmer_id")
         .in("id", oblOrderIds);
-      orderFarmerMap = Object.fromEntries(
-        (orderRows ?? []).map((r: any) => [r.id, r.farmer_id])
-      );
+      orderFarmerMap = Object.fromEntries((orderRows ?? []).map((r: any) => [r.id, r.farmer_id]));
     }
 
     // Sum pending net_amount per farmer
@@ -2188,7 +2524,9 @@ function PayoutAccountsTab() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   function copyText(text: string, key: string) {
     navigator.clipboard.writeText(text).then(() => {
@@ -2200,11 +2538,14 @@ function PayoutAccountsTab() {
 
   const filtered = rows.filter((r) => {
     const q = search.toLowerCase();
-    return !q || r.full_name.toLowerCase().includes(q) ||
+    return (
+      !q ||
+      r.full_name.toLowerCase().includes(q) ||
       (r.ecocash_number ?? "").includes(q) ||
       (r.onemoney_number ?? "").includes(q) ||
       (r.bank_account_number ?? "").includes(q) ||
-      (r.bank_name ?? "").toLowerCase().includes(q);
+      (r.bank_name ?? "").toLowerCase().includes(q)
+    );
   });
 
   const totalPending = rows.reduce((s, r) => s + r.pending_amount, 0);
@@ -2221,7 +2562,9 @@ function PayoutAccountsTab() {
         ].map((c) => (
           <div key={c.label} className="glass rounded-2xl p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</span>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </span>
               <c.icon className="h-4 w-4 text-secondary" />
             </div>
             <div className="mt-2 font-display text-2xl">{loading ? "—" : c.value}</div>
@@ -2271,11 +2614,14 @@ function PayoutAccountsTab() {
                     <span className="font-medium">{r.full_name}</span>
                     {r.pending_amount > 0 && (
                       <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-[11px] font-semibold text-secondary">
-                        Owes ${r.pending_amount.toFixed(2)} ({r.pending_count} order{r.pending_count !== 1 ? "s" : ""})
+                        Owes ${r.pending_amount.toFixed(2)} ({r.pending_count} order
+                        {r.pending_count !== 1 ? "s" : ""})
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">{r.user_id.slice(0, 8)}</div>
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">
+                    {r.user_id.slice(0, 8)}
+                  </div>
                 </div>
               </div>
 
@@ -2287,7 +2633,9 @@ function PayoutAccountsTab() {
                     <div className="flex items-center gap-2">
                       <Phone className="h-3.5 w-3.5 text-emerald-400" />
                       <div>
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">EcoCash</div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          EcoCash
+                        </div>
                         <div className="font-mono text-sm">{r.ecocash_number}</div>
                       </div>
                     </div>
@@ -2295,7 +2643,9 @@ function PayoutAccountsTab() {
                       onClick={() => copyText(r.ecocash_number!, `eco-${r.user_id}`)}
                       className="ml-2 rounded-lg p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
                     >
-                      <Copy className={`h-3.5 w-3.5 ${copied === `eco-${r.user_id}` ? "text-secondary" : ""}`} />
+                      <Copy
+                        className={`h-3.5 w-3.5 ${copied === `eco-${r.user_id}` ? "text-secondary" : ""}`}
+                      />
                     </button>
                   </div>
                 )}
@@ -2306,7 +2656,9 @@ function PayoutAccountsTab() {
                     <div className="flex items-center gap-2">
                       <Phone className="h-3.5 w-3.5 text-blue-400" />
                       <div>
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">OneMoney</div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          OneMoney
+                        </div>
                         <div className="font-mono text-sm">{r.onemoney_number}</div>
                       </div>
                     </div>
@@ -2314,7 +2666,9 @@ function PayoutAccountsTab() {
                       onClick={() => copyText(r.onemoney_number!, `one-${r.user_id}`)}
                       className="ml-2 rounded-lg p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
                     >
-                      <Copy className={`h-3.5 w-3.5 ${copied === `one-${r.user_id}` ? "text-secondary" : ""}`} />
+                      <Copy
+                        className={`h-3.5 w-3.5 ${copied === `one-${r.user_id}` ? "text-secondary" : ""}`}
+                      />
                     </button>
                   </div>
                 )}
@@ -2330,7 +2684,9 @@ function PayoutAccountsTab() {
                         </div>
                         <div className="font-mono text-sm">{r.bank_account_number}</div>
                         {r.bank_account_name && (
-                          <div className="text-[11px] text-muted-foreground">{r.bank_account_name}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {r.bank_account_name}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -2338,7 +2694,9 @@ function PayoutAccountsTab() {
                       onClick={() => copyText(r.bank_account_number!, `bank-${r.user_id}`)}
                       className="ml-2 rounded-lg p-1 text-muted-foreground hover:bg-white/5 hover:text-foreground"
                     >
-                      <Copy className={`h-3.5 w-3.5 ${copied === `bank-${r.user_id}` ? "text-secondary" : ""}`} />
+                      <Copy
+                        className={`h-3.5 w-3.5 ${copied === `bank-${r.user_id}` ? "text-secondary" : ""}`}
+                      />
                     </button>
                   </div>
                 )}
