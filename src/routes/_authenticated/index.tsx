@@ -19,9 +19,11 @@ import {
   TrendingUp,
   MessageSquare,
   Quote,
-  Zap,
   Wallet,
   Phone,
+  Landmark,
+  Banknote,
+  BadgeCheck,
 } from "lucide-react";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,19 +81,19 @@ function useLiveStats() {
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 const FARMER_STEPS = [
-  { icon: Package, step: "1", title: "Post a listing", desc: "Crop, livestock, equipment — takes about a minute. Set your price and location. That's it." },
+  { icon: Package, step: "1", title: "Post a listing", desc: "Add crop, livestock, or equipment details in about a minute. Set your price and location. That's it." },
   { icon: Users, step: "2", title: "Buyers come to you", desc: "No calling around. No middleman taking a cut. Buyers find your listing and reach out directly." },
   { icon: Truck, step: "3", title: "Move the goods", desc: "Post a transport request. Drivers quote. You pick one and coordinate delivery, all in one place." },
 ];
 
 const BUYER_STEPS = [
-  { icon: Store, step: "1", title: "Search what you need", desc: "Maize, tomatoes, cattle, a tractor — it's all here. Filter by province, price, quantity." },
+  { icon: Store, step: "1", title: "Search what you need", desc: "Maize, tomatoes, cattle, tractors, and more are all here. Filter by province, price, and quantity." },
   { icon: BarChart3, step: "2", title: "See the real price", desc: "Market prices are pulled from actual live listings, not a static table someone last updated in 2022." },
   { icon: ShoppingBag, step: "3", title: "Order and pay", desc: "EcoCash, ZipIt or cash on delivery. Place the order, track it, get your produce." },
 ];
 
 const FEATURES = [
-  { icon: Bot, title: "Harvest AI", desc: "Type a question in Shona, Ndebele or English. It pulls live data — prices, weather, disease symptoms — and answers in seconds. Also on WhatsApp." },
+  { icon: Bot, title: "Harvest AI", desc: "Type a question in Shona, Ndebele or English. It pulls live prices, weather, and disease guidance, then answers in seconds. Also on WhatsApp." },
   { icon: BarChart3, title: "Market prices", desc: "What's soya beans going for in Gweru right now? The data comes from active listings, not guesswork." },
   { icon: Store, title: "Agri-Shops", desc: "Agro-vets, feed suppliers, irrigation equipment and more. Open your own shop or browse verified stores across Zimbabwe." },
   { icon: Truck, title: "Transport", desc: "Post a request with your cargo, route and budget. Nearby drivers respond. You don't have to know anyone." },
@@ -103,7 +105,7 @@ const TESTIMONIALS = [
   {
     name: "Tendai Moyo",
     role: "Maize farmer · Mashonaland West",
-    quote: "I used to sell through a broker who took 30% off the top. First week on Harvest Hub I sold 3 tonnes directly to a buyer in Harare. He paid via EcoCash — money was in my account the same day.",
+    quote: "I used to sell through a broker who took 30% off the top. First week on Harvest Hub I sold 3 tonnes directly to a buyer in Harare. He paid via EcoCash, and the money was in my account the same day.",
     initials: "TM",
   },
   {
@@ -121,16 +123,16 @@ const TESTIMONIALS = [
 ];
 
 const PAYMENT_METHODS = [
-  { label: "EcoCash", icon: "📱", desc: "Instant mobile" },
-  { label: "OneMoney", icon: "📲", desc: "NetOne users" },
-  { label: "ZIPIT", icon: "🏦", desc: "Bank transfer" },
-  { label: "Cash", icon: "💵", desc: "On collection" },
+  { label: "EcoCash", icon: Phone, desc: "Mobile money" },
+  { label: "OneMoney", icon: Phone, desc: "NetOne wallet" },
+  { label: "ZIPIT", icon: Landmark, desc: "Bank transfer" },
+  { label: "Cash", icon: Banknote, desc: "On collection" },
 ];
 
 const AI_DEMOS = [
-  { q: "What's the tomato price in Harare today?", a: "Averaging $0.38/kg across 12 active listings. Cheapest is $0.30/kg — a farmer in Mazowe. Want me to contact them?" },
+  { q: "What's the tomato price in Harare today?", a: "Averaging $0.38/kg across 12 active listings. The cheapest is $0.30/kg from a farmer in Mazowe. Want me to contact them?" },
   { q: "My cattle have red eyes and won't eat", a: "Sounds like Pink Eye (IBK). Isolate the animal now and apply oxytetracycline eye ointment. If it's not improving in 3 days, call a vet." },
-  { q: "I need a truck, Mutare to Harare, 800kg maize", a: "Transport request posted. Drivers in your area will see it. Expect 2–4 quotes — usually within the hour." },
+  { q: "I need a truck, Mutare to Harare, 800kg maize", a: "Transport request posted. Drivers in your area will see it. Expect 2-4 quotes, usually within the hour." },
 ];
 
 // ─── Landing page ─────────────────────────────────────────────────────────────
@@ -234,7 +236,7 @@ function LandingPage() {
               transition={{ delay: 0.75, duration: 0.6 }}
               className="mt-6 max-w-xl text-base leading-relaxed text-foreground/70 md:text-lg"
             >
-              Zimbabwe's farm marketplace. List produce, find buyers, check prices, book transport — and ask an AI agent anything, in Shona, Ndebele or English.
+              Zimbabwe's farm marketplace. List produce, find buyers, check prices, book transport, and ask an AI agent anything in Shona, Ndebele or English.
             </motion.p>
 
             <motion.div
@@ -301,7 +303,7 @@ function LandingPage() {
           </div>
           <h2 className="font-display text-3xl md:text-4xl">Pick your side</h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground">
-            Farmer or buyer — same platform, different flow. Both take about three steps.
+            Farmer or buyer, same platform, different flow. Both take about three steps.
           </p>
         </motion.div>
 
@@ -380,7 +382,7 @@ function LandingPage() {
               </div>
               <h2 className="font-display text-3xl md:text-4xl">Ask it anything.</h2>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                Harvest AI speaks Shona, Ndebele and English. It doesn't guess — it pulls live data from the marketplace, weather APIs and real listings to give you an actual answer.
+                Harvest AI speaks Shona, Ndebele and English. It pulls live data from the marketplace, weather APIs and real listings to give you an actual answer.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
@@ -388,7 +390,7 @@ function LandingPage() {
                   "Crop and livestock disease identification",
                   "Weather at your location before you plant or ship",
                   "Place an order or book transport, all by chat",
-                  "On WhatsApp — no app download required",
+                  "On WhatsApp. No app download required",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2 text-sm text-foreground/80">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />{item}
@@ -520,7 +522,7 @@ function LandingPage() {
                   <span className="text-foreground">$100</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
-                  <span className="text-foreground/70">Broker takes 30–40%</span>
+                  <span className="text-foreground/70">Broker takes 30 to 40%</span>
                   <span className="text-red-400 font-semibold">− $35</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-white/5 text-sm">
@@ -589,26 +591,38 @@ function LandingPage() {
 
       {/* ── Payment trust strip ──────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
-        <motion.div initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="glass rounded-2xl px-6 py-5">
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 justify-between">
-            <div className="flex items-center gap-2 shrink-0">
-              <Wallet className="h-4 w-4 text-secondary" />
-              <span className="text-sm font-semibold">Payments accepted:</span>
+        <motion.div initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="glass rounded-2xl px-5 py-5 sm:px-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex max-w-sm items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-secondary/20 bg-secondary/10">
+                <Wallet className="h-4 w-4 text-secondary" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-foreground">Payments supported</div>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Secure checkout with clear records from order to seller settlement.
+                </p>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4 justify-center sm:justify-start">
-              {PAYMENT_METHODS.map(({ label, icon, desc }) => (
-                <div key={label} className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2">
-                  <span className="text-base">{icon}</span>
+            <div className="flex flex-wrap items-center gap-2.5 lg:justify-center">
+              {PAYMENT_METHODS.map(({ label, icon: Icon, desc }) => (
+                <div key={label} className="flex min-w-[132px] items-center gap-2.5 rounded-xl border border-white/8 bg-white/[0.035] px-3 py-2.5">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/[0.04] text-secondary">
+                    <Icon className="h-4 w-4" />
+                  </div>
                   <div>
-                    <div className="text-xs font-semibold">{label}</div>
+                    <div className="text-xs font-semibold text-foreground">{label}</div>
                     <div className="text-[10px] text-muted-foreground">{desc}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Zap className="h-3.5 w-3.5 text-secondary" />
-              <span className="text-xs text-muted-foreground">Powered by <span className="text-foreground">ClicknPay</span></span>
+            <div className="flex shrink-0 items-center gap-2 rounded-xl border border-secondary/15 bg-secondary/10 px-3.5 py-3">
+              <BadgeCheck className="h-4 w-4 text-secondary" />
+              <div>
+                <div className="text-xs font-semibold text-foreground">Powered by ClicknPay</div>
+                <div className="text-[10px] text-muted-foreground">Transparent transaction tracking</div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -627,7 +641,7 @@ function LandingPage() {
                 </div>
                 <h2 className="font-display text-3xl md:text-4xl">Everything your farm needs, in one place.</h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Browse agro-vets, feed suppliers, irrigation equipment, fertilizers and more — all verified and rated. Or open your own shop and reach buyers across all 10 provinces.
+                  Browse agro-vets, feed suppliers, irrigation equipment, fertilizers and more. Every shop is verified and rated. Or open your own shop and reach buyers across all 10 provinces.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link to="/shops" className="inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-primary transition hover:bg-secondary/90">
