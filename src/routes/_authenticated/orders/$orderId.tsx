@@ -36,6 +36,15 @@ export const Route = createFileRoute("/_authenticated/orders/$orderId")({
   component: OrderDetailPage,
 });
 
+function orderMoneySplit(order: ExtendedOrderRow) {
+  const row = order as ExtendedOrderRow & { subtotal?: number | string | null };
+  const total = Number(order.total_amount);
+  const subtotal =
+    row.subtotal == null ? Math.round((total / 1.02) * 100) / 100 : Number(row.subtotal);
+  const fee = Math.max(0, Math.round((total - subtotal) * 100) / 100);
+  return { subtotal, fee, total };
+}
+
 // ── Step icon helper ────────────────────────────────────────────────────────
 const STEP_ICONS: Record<FulfillmentStatus, typeof Package> = {
   pending: CircleDashed,
@@ -62,9 +71,7 @@ const NEXT_LABEL: Partial<Record<FulfillmentStatus, string>> = {
 function FulfillmentTimeline({ status }: { status: FulfillmentStatus }) {
   const isCancelled = status === "cancelled";
   const steps = isCancelled ? [...FULFILLMENT_STEPS] : FULFILLMENT_STEPS;
-  const activeIdx = isCancelled
-    ? -1
-    : steps.indexOf(status);
+  const activeIdx = isCancelled ? -1 : steps.indexOf(status);
 
   return (
     <div className="glass rounded-2xl p-5">
@@ -79,51 +86,51 @@ function FulfillmentTimeline({ status }: { status: FulfillmentStatus }) {
         </div>
       ) : (
         <div className="overflow-x-auto pb-1">
-        <ol className="flex min-w-[320px] items-start">
-          {steps.map((step, i) => {
-            const done = i <= activeIdx;
-            const active = i === activeIdx;
-            const Icon = STEP_ICONS[step];
-            const isLast = i === steps.length - 1;
+          <ol className="flex min-w-[320px] items-start">
+            {steps.map((step, i) => {
+              const done = i <= activeIdx;
+              const active = i === activeIdx;
+              const Icon = STEP_ICONS[step];
+              const isLast = i === steps.length - 1;
 
-            return (
-              <li key={step} className="flex flex-1 items-start">
-                <div className="flex flex-col items-center">
-                  {/* Circle */}
-                  <div
-                    className={cn(
-                      "grid h-8 w-8 place-items-center rounded-full border-2 transition-colors",
-                      done
-                        ? "border-secondary bg-secondary text-primary"
-                        : "border-white/15 bg-background text-muted-foreground",
-                      active && "ring-2 ring-secondary/30 ring-offset-2 ring-offset-background",
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
+              return (
+                <li key={step} className="flex flex-1 items-start">
+                  <div className="flex flex-col items-center">
+                    {/* Circle */}
+                    <div
+                      className={cn(
+                        "grid h-8 w-8 place-items-center rounded-full border-2 transition-colors",
+                        done
+                          ? "border-secondary bg-secondary text-primary"
+                          : "border-white/15 bg-background text-muted-foreground",
+                        active && "ring-2 ring-secondary/30 ring-offset-2 ring-offset-background",
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                    {/* Label */}
+                    <span
+                      className={cn(
+                        "mt-2 text-center text-[11px] leading-tight",
+                        done ? "font-medium text-foreground" : "text-muted-foreground",
+                      )}
+                    >
+                      {FULFILLMENT_STATUS_LABEL[step]}
+                    </span>
                   </div>
-                  {/* Label */}
-                  <span
-                    className={cn(
-                      "mt-2 text-center text-[11px] leading-tight",
-                      done ? "font-medium text-foreground" : "text-muted-foreground",
-                    )}
-                  >
-                    {FULFILLMENT_STATUS_LABEL[step]}
-                  </span>
-                </div>
-                {/* Connector line */}
-                {!isLast && (
-                  <div
-                    className={cn(
-                      "mt-4 h-0.5 flex-1 transition-colors",
-                      i < activeIdx ? "bg-secondary" : "bg-white/10",
-                    )}
-                  />
-                )}
-              </li>
-            );
-          })}
-        </ol>
+                  {/* Connector line */}
+                  {!isLast && (
+                    <div
+                      className={cn(
+                        "mt-4 h-0.5 flex-1 transition-colors",
+                        i < activeIdx ? "bg-secondary" : "bg-white/10",
+                      )}
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ol>
         </div>
       )}
     </div>
@@ -179,9 +186,7 @@ function ReviewForm({
         <Sparkles className="h-4 w-4 text-secondary" />
         <h3 className="font-medium text-foreground">Rate your experience</h3>
       </div>
-      <p className="mb-3 text-sm text-muted-foreground">
-        Your order was delivered. How did it go?
-      </p>
+      <p className="mb-3 text-sm text-muted-foreground">Your order was delivered. How did it go?</p>
 
       {/* Stars */}
       <div className="mb-3 flex items-center gap-1">
@@ -198,9 +203,7 @@ function ReviewForm({
             <Star
               className={cn(
                 "h-7 w-7 transition",
-                (hover || rating) >= n
-                  ? "fill-secondary text-secondary"
-                  : "text-muted-foreground",
+                (hover || rating) >= n ? "fill-secondary text-secondary" : "text-muted-foreground",
               )}
             />
           </button>
@@ -246,7 +249,11 @@ function OrderDetailPage() {
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [notes, setNotes] = useState("");
 
-  const { data: order, isLoading, error: orderError } = useQuery({
+  const {
+    data: order,
+    isLoading,
+    error: orderError,
+  } = useQuery({
     queryKey: ["order-detail", orderId],
     enabled: !!user,
     queryFn: async () => {
@@ -303,7 +310,10 @@ function OrderDetailPage() {
     }) => {
       const { error } = await supabase
         .from("orders")
-        .update({ fulfillment_status: status as never, fulfillment_notes: fulfillment_notes ?? null } as never)
+        .update({
+          fulfillment_status: status as never,
+          fulfillment_notes: fulfillment_notes ?? null,
+        } as never)
         .eq("id", orderId);
       if (error) throw error;
 
@@ -365,12 +375,12 @@ function OrderDetailPage() {
   }
 
   const fs = (order.fulfillment_status ?? "pending") as FulfillmentStatus;
+  const split = orderMoneySplit(order);
   const nextStatus = NEXT_STATUS[fs];
   const nextLabel = NEXT_LABEL[fs];
   const canAdvance = isFarmer && !!nextStatus && fs !== "cancelled";
   const canCancel = isFarmer && (fs === "pending" || fs === "confirmed");
-  const showReview =
-    isBuyer && fs === "delivered" && !reviewDone && !existingReview;
+  const showReview = isBuyer && fs === "delivered" && !reviewDone && !existingReview;
 
   return (
     <section className="mx-auto max-w-2xl space-y-5 py-2">
@@ -384,8 +394,7 @@ function OrderDetailPage() {
         </button>
         <div>
           <h1 className="font-display text-xl text-foreground">
-            Order{" "}
-            <span className="font-mono text-secondary">{order.order_code}</span>
+            Order <span className="font-mono text-secondary">{order.order_code}</span>
           </h1>
           <p className="text-xs text-muted-foreground">
             Placed{" "}
@@ -507,24 +516,34 @@ function OrderDetailPage() {
             <p className="font-medium text-foreground">{order.listing_title}</p>
             <p className="text-xs text-muted-foreground">
               {order.quantity} {order.unit} ·{" "}
-              <span className="font-mono">${Number(order.unit_price).toFixed(2)}/{order.unit}</span>
+              <span className="font-mono">
+                ${Number(order.unit_price).toFixed(2)}/{order.unit}
+              </span>
             </p>
           </div>
-          <p className="font-mono font-semibold text-secondary">
-            ${Number(order.total_amount).toFixed(2)}
-          </p>
+          <p className="font-mono font-semibold text-secondary">${split.subtotal.toFixed(2)}</p>
+        </div>
+
+        <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Produce subtotal</span>
+            <span className="font-mono">${split.subtotal.toFixed(2)}</span>
+          </div>
+          <div className="mt-1 flex justify-between">
+            <span className="text-muted-foreground">Harvest Hub fee (2%)</span>
+            <span className="font-mono text-amber-400">${split.fee.toFixed(2)}</span>
+          </div>
+          <div className="mt-2 flex justify-between border-t border-white/5 pt-2 font-medium">
+            <span>Buyer paid</span>
+            <span className="font-mono text-secondary">${split.total.toFixed(2)}</span>
+          </div>
         </div>
 
         {/* Info grid */}
         <dl className="grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
           <InfoRow label="Payment method" value={PAYMENT_METHOD_LABEL[order.payment_method]} />
-          <InfoRow
-            label="Payment status"
-            value={PAYMENT_STATUS_LABEL[order.payment_status]}
-          />
-          {order.payment_reference && (
-            <InfoRow label="Reference" value={order.payment_reference} />
-          )}
+          <InfoRow label="Payment status" value={PAYMENT_STATUS_LABEL[order.payment_status]} />
+          {order.payment_reference && <InfoRow label="Reference" value={order.payment_reference} />}
           {order.notes && (
             <div className="col-span-2">
               <InfoRow label="Order notes" value={order.notes} />

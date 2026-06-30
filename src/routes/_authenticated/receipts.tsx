@@ -46,17 +46,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,6 +71,16 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 type ProfileLite = { id: string; full_name: string | null };
+type OrderWithSubtotal = OrderRow & { subtotal?: number | string | null };
+
+function moneySplit(o: OrderRow) {
+  const order = o as OrderWithSubtotal;
+  const total = Number(o.total_amount);
+  const subtotal =
+    order.subtotal == null ? Math.round((total / 1.02) * 100) / 100 : Number(order.subtotal);
+  const fee = Math.max(0, Math.round((total - subtotal) * 100) / 100);
+  return { subtotal, fee, total };
+}
 
 function ReceiptsPage() {
   const { user, profile } = useAuth();
@@ -94,7 +95,11 @@ function ReceiptsPage() {
   const [page, setPage] = useState(1);
   const [viewing, setViewing] = useState<OrderRow | null>(null);
 
-  const { data: orders = [], isLoading, error: ordersError } = useQuery({
+  const {
+    data: orders = [],
+    isLoading,
+    error: ordersError,
+  } = useQuery({
     queryKey: ["receipts", me],
     enabled: !!me,
     queryFn: async (): Promise<OrderRow[]> => {
@@ -187,9 +192,9 @@ function ReceiptsPage() {
       return;
     }
     const counterparty =
-      (o.buyer_id === me ? nameById.get(o.farmer_id) : nameById.get(o.buyer_id)) ||
-      "Member";
+      (o.buyer_id === me ? nameById.get(o.farmer_id) : nameById.get(o.buyer_id)) || "Member";
     const role = o.buyer_id === me ? "Seller" : "Buyer";
+    const split = moneySplit(o);
     w.document.write(`<!doctype html><html><head><meta charset="utf-8" />
 <title>Receipt ${o.order_code}</title>
 <style>
@@ -226,13 +231,14 @@ function ReceiptsPage() {
       <td>${o.listing_title}</td>
       <td>${o.quantity} ${o.unit}</td>
       <td>$${Number(o.unit_price).toFixed(2)}</td>
-      <td style="text-align:right">$${Number(o.total_amount).toFixed(2)}</td>
+      <td style="text-align:right">$${split.subtotal.toFixed(2)}</td>
     </tr>
   </tbody>
 </table>
-<div class="card" style="display:flex;justify-content:space-between;align-items:center">
-  <span class="muted" style="text-transform:uppercase;letter-spacing:.1em;font-size:11px">Grand Total</span>
-  <span class="total">$${Number(o.total_amount).toFixed(2)}</span>
+<div class="card">
+  <div class="row"><span class="muted">Produce subtotal</span><span>$${split.subtotal.toFixed(2)}</span></div>
+  <div class="row"><span class="muted">Harvest Hub fee (2%)</span><span>$${split.fee.toFixed(2)}</span></div>
+  <div class="row total"><span>Grand Total</span><span>$${split.total.toFixed(2)}</span></div>
 </div>
 <p class="muted" style="margin-top:24px;text-align:center">Thank you for trading on Harvest Hub.</p>
 <script>window.onload=()=>{window.print();}</script>
@@ -241,9 +247,12 @@ function ReceiptsPage() {
   }
 
   function shareText(o: OrderRow) {
+    const split = moneySplit(o);
     return `Harvest Hub Receipt\nOrder: ${o.order_code}\nItem: ${o.listing_title}\nAmount: $${Number(
       o.total_amount,
-    ).toFixed(2)}\nStatus: ${PAYMENT_STATUS_LABEL[o.payment_status]}\nDate: ${new Date(o.created_at).toLocaleDateString()}`;
+    ).toFixed(
+      2,
+    )}\nHarvest Hub fee: $${split.fee.toFixed(2)}\nStatus: ${PAYMENT_STATUS_LABEL[o.payment_status]}\nDate: ${new Date(o.created_at).toLocaleDateString()}`;
   }
 
   function shareWhatsApp(o: OrderRow) {
@@ -321,9 +330,7 @@ function ReceiptsPage() {
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="awaiting_confirmation">
-                  Awaiting Confirmation
-                </SelectItem>
+                <SelectItem value="awaiting_confirmation">Awaiting Confirmation</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
@@ -438,8 +445,8 @@ function ReceiptsPage() {
             </div>
             <div className="font-display text-xl">No receipts yet</div>
             <p className="max-w-sm text-sm text-muted-foreground">
-              When you complete an order — buying or selling — its receipt will
-              appear here for safe keeping.
+              When you complete an order — buying or selling — its receipt will appear here for safe
+              keeping.
             </p>
           </div>
         ) : (
@@ -463,9 +470,7 @@ function ReceiptsPage() {
                     const otherName = nameById.get(otherId) || "Member";
                     return (
                       <TableRow key={o.id}>
-                        <TableCell className="font-mono text-xs">
-                          {o.order_code}
-                        </TableCell>
+                        <TableCell className="font-mono text-xs">{o.order_code}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {format(new Date(o.created_at), "MMM d, yyyy")}
                         </TableCell>
@@ -481,10 +486,7 @@ function ReceiptsPage() {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={cn(
-                              "text-[10px]",
-                              STATUS_COLOR[o.payment_status],
-                            )}
+                            className={cn("text-[10px]", STATUS_COLOR[o.payment_status])}
                           >
                             {PAYMENT_STATUS_LABEL[o.payment_status]}
                           </Badge>
@@ -513,18 +515,11 @@ function ReceiptsPage() {
                 const otherId = isBuyer ? o.farmer_id : o.buyer_id;
                 const otherName = nameById.get(otherId) || "Member";
                 return (
-                  <div
-                    key={o.id}
-                    className="rounded-xl border border-white/5 bg-white/[0.02] p-3"
-                  >
+                  <div key={o.id} className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="font-mono text-xs text-secondary">
-                          {o.order_code}
-                        </div>
-                        <div className="mt-1 truncate text-sm">
-                          {o.listing_title}
-                        </div>
+                        <div className="font-mono text-xs text-secondary">{o.order_code}</div>
+                        <div className="mt-1 truncate text-sm">{o.listing_title}</div>
                         <div className="text-[11px] text-muted-foreground">
                           {isBuyer ? "From" : "To"} {otherName} ·{" "}
                           {format(new Date(o.created_at), "MMM d, yyyy")}
@@ -536,10 +531,7 @@ function ReceiptsPage() {
                         </div>
                         <Badge
                           variant="outline"
-                          className={cn(
-                            "mt-1 text-[10px]",
-                            STATUS_COLOR[o.payment_status],
-                          )}
+                          className={cn("mt-1 text-[10px]", STATUS_COLOR[o.payment_status])}
                         >
                           {PAYMENT_STATUS_LABEL[o.payment_status]}
                         </Badge>
@@ -668,6 +660,7 @@ function ReceiptPreview(props: {
   onShareEmail: () => void;
 }) {
   const o = props.order;
+  const split = moneySplit(o);
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
@@ -678,10 +671,7 @@ function ReceiptPreview(props: {
               Zimbabwe · Receipt
             </div>
           </div>
-          <Badge
-            variant="outline"
-            className={cn("text-[10px]", STATUS_COLOR[o.payment_status])}
-          >
+          <Badge variant="outline" className={cn("text-[10px]", STATUS_COLOR[o.payment_status])}>
             {PAYMENT_STATUS_LABEL[o.payment_status]}
           </Badge>
         </div>
@@ -689,12 +679,8 @@ function ReceiptPreview(props: {
           <dt className="text-muted-foreground">Order ID</dt>
           <dd className="text-right font-mono">{o.order_code}</dd>
           <dt className="text-muted-foreground">Date</dt>
-          <dd className="text-right">
-            {format(new Date(o.created_at), "PPpp")}
-          </dd>
-          <dt className="text-muted-foreground">
-            {props.isBuyer ? "Seller" : "Buyer"}
-          </dt>
+          <dd className="text-right">{format(new Date(o.created_at), "PPpp")}</dd>
+          <dt className="text-muted-foreground">{props.isBuyer ? "Seller" : "Buyer"}</dt>
           <dd className="text-right">{props.counterparty}</dd>
           <dt className="text-muted-foreground">Payment</dt>
           <dd className="text-right">{PAYMENT_METHOD_LABEL[o.payment_method]}</dd>
@@ -707,13 +693,21 @@ function ReceiptPreview(props: {
             </span>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
-          <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-            Grand Total
-          </span>
-          <span className="font-display text-2xl text-secondary">
-            ${Number(o.total_amount).toFixed(2)}
-          </span>
+        <div className="mt-3 space-y-2 border-t border-white/5 pt-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Produce subtotal</span>
+            <span className="font-mono">${split.subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Harvest Hub fee (2%)</span>
+            <span className="font-mono text-amber-400">${split.fee.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              Grand Total
+            </span>
+            <span className="font-display text-2xl text-secondary">${split.total.toFixed(2)}</span>
+          </div>
         </div>
       </div>
       <div className="flex flex-wrap gap-2">

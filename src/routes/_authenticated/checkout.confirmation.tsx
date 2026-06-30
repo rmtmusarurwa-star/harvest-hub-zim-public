@@ -72,16 +72,17 @@ function ConfirmationPage() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primaryCode]);
 
-  const { data: orders, isLoading, error: ordersError } = useQuery({
+  const {
+    data: orders,
+    isLoading,
+    error: ordersError,
+  } = useQuery({
     queryKey: ["orders", codes],
     queryFn: async (): Promise<OrderRow[]> => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .in("order_code", codeList);
+      const { data, error } = await supabase.from("orders").select("*").in("order_code", codeList);
       if (error) throw error;
       return (data ?? []) as OrderRow[];
     },
@@ -103,8 +104,14 @@ function ConfirmationPage() {
         <p className="text-sm font-medium text-foreground">Could not load order details</p>
         <p className="text-xs text-muted-foreground max-w-sm">
           Your payment was submitted — the order may still be processing. Check{" "}
-          <Link to="/orders" className="text-secondary underline">your orders</Link> in a few moments,
-          or <button onClick={() => window.location.reload()} className="text-secondary underline">refresh this page</button>.
+          <Link to="/orders" className="text-secondary underline">
+            your orders
+          </Link>{" "}
+          in a few moments, or{" "}
+          <button onClick={() => window.location.reload()} className="text-secondary underline">
+            refresh this page
+          </button>
+          .
         </p>
       </div>
     );
@@ -123,6 +130,11 @@ function ConfirmationPage() {
   }
 
   const total = orders.reduce((s, o) => s + Number(o.total_amount), 0);
+  const subtotal = orders.reduce((s, o) => {
+    const row = o as OrderRow & { subtotal?: number | string | null };
+    return s + Number(row.subtotal ?? Number(o.total_amount) / 1.02);
+  }, 0);
+  const platformFee = Math.max(0, total - subtotal);
   const buyerName = profile?.full_name || user?.email || "Buyer";
   const allPaid = orders.every((o) => o.payment_status === "paid");
 
@@ -190,19 +202,20 @@ function ConfirmationPage() {
       <div className="glass rounded-2xl border border-white/5 p-6">
         <div className="flex items-center justify-between">
           <h3 className="font-display text-lg">Order Details</h3>
-          <span className={`rounded-full px-3 py-1 text-[11px] ${
-            allPaid
-              ? "bg-emerald-500/15 text-emerald-300"
-              : verifying
-              ? "bg-amber-500/15 text-amber-300"
-              : "bg-white/5 text-foreground"
-          }`}>
+          <span
+            className={`rounded-full px-3 py-1 text-[11px] ${
+              allPaid
+                ? "bg-emerald-500/15 text-emerald-300"
+                : verifying
+                  ? "bg-amber-500/15 text-amber-300"
+                  : "bg-white/5 text-foreground"
+            }`}
+          >
             {verifying ? "Confirming…" : PAYMENT_STATUS_LABEL[orders[0].payment_status]}
           </span>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Via{" "}
-          {PAYMENT_METHOD_LABEL[orders[0].payment_method] ?? orders[0].payment_method}
+          Via {PAYMENT_METHOD_LABEL[orders[0].payment_method] ?? orders[0].payment_method}
         </p>
         <ul className="mt-4 divide-y divide-white/5">
           {orders.map((o) => (
@@ -216,15 +229,31 @@ function ConfirmationPage() {
                   {o.quantity} {o.unit} · ref {o.order_code}
                 </div>
               </div>
-              <div className="font-mono text-sm">${Number(o.total_amount).toFixed(2)}</div>
+              <div className="font-mono text-sm">
+                $
+                {Number(
+                  (o as OrderRow & { subtotal?: number | string | null }).subtotal ??
+                    o.total_amount,
+                ).toFixed(2)}
+              </div>
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">
-            Grand Total
-          </span>
-          <span className="font-display text-2xl text-secondary">${total.toFixed(2)}</span>
+        <div className="mt-4 space-y-2 border-t border-white/5 pt-4">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Produce subtotal</span>
+            <span className="font-mono">${subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Harvest Hub fee (2%)</span>
+            <span className="font-mono text-amber-400">${platformFee.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">
+              Grand Total
+            </span>
+            <span className="font-display text-2xl text-secondary">${total.toFixed(2)}</span>
+          </div>
         </div>
       </div>
 
@@ -233,7 +262,9 @@ function ConfirmationPage() {
         {allPaid && (
           <Button
             variant="secondary"
-            onClick={() => { void downloadReceiptPDF(orders, buyerName); }}
+            onClick={() => {
+              void downloadReceiptPDF(orders, buyerName);
+            }}
           >
             <Download className="h-4 w-4" /> Download Receipt (PDF)
           </Button>

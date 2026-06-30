@@ -1379,6 +1379,8 @@ type Obligation = {
   // joined
   sellerId: string; // farmer_id from the related order
   sellerName: string;
+  buyerId: string;
+  buyerName: string;
   orderCode: string;
   ecocash_number: string;
   onemoney_number: string;
@@ -1407,6 +1409,17 @@ type PayoutSettingRow = {
   bank_account_name: string | null;
 };
 
+type AdminOrderRow = {
+  id: string;
+  order_code: string;
+  total_amount: number | string | null;
+  subtotal?: number | string | null;
+  payment_method: string | null;
+  payment_status: string | null;
+  listing_title: string | null;
+  created_at: string;
+};
+
 function payoutLabel(
   obl: Pick<
     Obligation,
@@ -1420,21 +1433,29 @@ function payoutLabel(
   return "No payout method registered";
 }
 
+function hasPayoutDestination(
+  obl: Pick<Obligation, "ecocash_number" | "onemoney_number" | "bank_account_number">,
+) {
+  return !!(obl.ecocash_number || obl.onemoney_number || obl.bank_account_number);
+}
+
 async function enrichPayoutObligations(rawObl: RawPayoutObligation[]): Promise<Obligation[]> {
   if (rawObl.length === 0) return [];
 
   const orderIds = rawObl.map((o) => o.order_id);
   const { data: orderRows } = await supabase
     .from("orders")
-    .select("id, order_code, farmer_id")
+    .select("id, order_code, farmer_id, buyer_id")
     .in("id", orderIds);
   const orderMap = Object.fromEntries((orderRows ?? []).map((r) => [r.id, r]));
 
   const sellerIds = [...new Set((orderRows ?? []).map((r) => r.farmer_id).filter(Boolean))];
+  const buyerIds = [...new Set((orderRows ?? []).map((r) => r.buyer_id).filter(Boolean))];
+  const profileIds = [...new Set([...sellerIds, ...buyerIds])];
 
   const [profilesRes, payoutRes] = await Promise.all([
-    sellerIds.length
-      ? supabase.from("profiles").select("id, full_name").in("id", sellerIds)
+    profileIds.length
+      ? supabase.from("profiles").select("id, full_name").in("id", profileIds)
       : Promise.resolve({ data: [] }),
     sellerIds.length
       ? // payout_settings exists in migrations but is not in generated Supabase types yet.
@@ -1448,8 +1469,8 @@ async function enrichPayoutObligations(rawObl: RawPayoutObligation[]): Promise<O
       : Promise.resolve({ data: [] }),
   ]);
 
-  const nameMap: Record<string, string> = Object.fromEntries(
-    (profilesRes.data ?? []).map((p) => [p.id, p.full_name ?? "Unknown"]),
+  const profileMap: Record<string, { full_name?: string | null }> = Object.fromEntries(
+    (profilesRes.data ?? []).map((p) => [p.id, { full_name: p.full_name }]),
   );
   const payoutMap: Record<string, PayoutSettingRow> = Object.fromEntries(
     ((payoutRes.data ?? []) as PayoutSettingRow[]).map((p) => [p.user_id, p]),
@@ -1458,14 +1479,19 @@ async function enrichPayoutObligations(rawObl: RawPayoutObligation[]): Promise<O
   return rawObl.map((o) => {
     const order = orderMap[o.order_id] ?? {};
     const sellerId = order.farmer_id ?? "";
+    const buyerId = order.buyer_id ?? "";
     const payout = payoutMap[sellerId] ?? {};
+    const sellerProfile = profileMap[sellerId] ?? {};
+    const buyerProfile = profileMap[buyerId] ?? {};
     return {
       ...o,
       gross_amount: Number(o.gross_amount),
       platform_fee: Number(o.platform_fee),
       net_amount: Number(o.net_amount),
       sellerId,
-      sellerName: nameMap[sellerId] ?? "Unknown",
+      sellerName: sellerProfile.full_name ?? "Unknown",
+      buyerId,
+      buyerName: buyerProfile.full_name ?? "Unknown buyer",
       orderCode: order.order_code ?? o.payment_reference,
       ecocash_number: payout.ecocash_number ?? "",
       onemoney_number: payout.onemoney_number ?? "",
@@ -1477,6 +1503,10 @@ async function enrichPayoutObligations(rawObl: RawPayoutObligation[]): Promise<O
 }
 
 async function markPayoutDisbursed(obl: Obligation, notes: string) {
+  if (!hasPayoutDestination(obl)) {
+    throw new Error("Seller has no payout account. Ask them to add payout details first.");
+  }
+
   // payout_obligations exists in migrations but is not in generated Supabase types yet.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
@@ -1557,6 +1587,51 @@ function PendingPaymentsTab() {
   const totalPending = filtered.reduce((s, r) => s + r.net_amount, 0);
   const selected = rows.find((r) => r.id === disbursing) ?? null;
 
+  function exportPendingCsv() {
+    const headers = [
+      "paid_date",
+      "seller_name",
+      "seller_id",
+      "buyer_name",
+      "buyer_id",
+      "order_code",
+      "payment_reference",
+      "buyer_paid",
+      "harvest_hub_fee",
+      "seller_payout",
+      "payout_account",
+      "payout_ready",
+    ];
+    const escape = (value: string | number | boolean) => `"${String(value).replace(/"/g, '""')}"`;
+    const lines = filtered.map((r) =>
+      [
+        new Date(r.created_at).toLocaleDateString("en-GB"),
+        r.sellerName,
+        r.sellerId,
+        r.buyerName,
+        r.buyerId,
+        r.orderCode,
+        r.payment_reference,
+        r.gross_amount.toFixed(2),
+        r.platform_fee.toFixed(2),
+        r.net_amount.toFixed(2),
+        payoutLabel(r),
+        hasPayoutDestination(r),
+      ]
+        .map(escape)
+        .join(","),
+    );
+    const blob = new Blob([[headers.join(","), ...lines].join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `harvest-hub-pending-settlements-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-3">
@@ -1595,6 +1670,10 @@ function PendingPaymentsTab() {
           <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
+        <Button size="sm" variant="outline" onClick={exportPendingCsv} disabled={loading}>
+          <Download className="h-3.5 w-3.5 mr-1" />
+          Export CSV
+        </Button>
       </div>
 
       <div className="glass overflow-hidden rounded-2xl">
@@ -1603,6 +1682,7 @@ function PendingPaymentsTab() {
             <tr>
               <th className="p-3 text-left">Paid</th>
               <th className="p-3 text-left">Seller</th>
+              <th className="p-3 text-left">Buyer</th>
               <th className="p-3 text-left">Order</th>
               <th className="p-3 text-left">Buyer Paid</th>
               <th className="p-3 text-left">Fee</th>
@@ -1614,13 +1694,13 @@ function PendingPaymentsTab() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                <td colSpan={9} className="p-8 text-center text-muted-foreground">
                   Loading pending payments...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                <td colSpan={9} className="p-8 text-center text-muted-foreground">
                   No pending seller payments to settle.
                 </td>
               </tr>
@@ -1635,6 +1715,10 @@ function PendingPaymentsTab() {
                     <div className="font-mono text-[11px] text-muted-foreground">
                       {r.sellerId.slice(0, 8)}
                     </div>
+                  </td>
+                  <td className="p-3">
+                    <div className="font-medium">{r.buyerName}</div>
+                    <div className="text-[11px] text-muted-foreground">{r.buyerId.slice(0, 8)}</div>
                   </td>
                   <td className="p-3">
                     <div className="font-mono text-xs">{r.orderCode}</div>
@@ -1655,10 +1739,16 @@ function PendingPaymentsTab() {
                     <Button
                       size="sm"
                       variant="outline"
+                      disabled={!hasPayoutDestination(r)}
                       onClick={() => {
                         setDisbursing(r.id);
                         setNotes("");
                       }}
+                      title={
+                        hasPayoutDestination(r)
+                          ? "Mark this seller payout as sent"
+                          : "Seller must add payout details first"
+                      }
                     >
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                       Mark Sent
@@ -1723,7 +1813,7 @@ function PendingPaymentsTab() {
 }
 
 function FinancialTab() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [loading, setLoading] = useState(true);
   const [disbursing, setDisbursing] = useState<string | null>(null);
@@ -1735,7 +1825,7 @@ function FinancialTab() {
       supabase
         .from("orders")
         .select(
-          "id, order_code, total_amount, payment_method, payment_status, listing_title, created_at",
+          "id, order_code, total_amount, subtotal, payment_method, payment_status, listing_title, created_at",
         )
         .order("created_at", { ascending: false })
         .limit(500),
@@ -1784,7 +1874,16 @@ function FinancialTab() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthOrders = orders.filter((o) => new Date(o.created_at) >= startOfMonth);
   const monthRevenue = monthOrders.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
-  const commission = monthRevenue * 0.02;
+  const monthOrderIds = new Set(monthOrders.map((o) => o.id));
+  const monthObligations = obligations.filter((o) => monthOrderIds.has(o.order_id));
+  const commissionFromObligations = monthObligations.reduce((s, o) => s + o.platform_fee, 0);
+  const commissionFromOrders = monthOrders.reduce((s, o) => {
+    const total = Number(o.total_amount ?? 0);
+    const subtotal =
+      o.subtotal == null ? Math.round((total / 1.02) * 100) / 100 : Number(o.subtotal);
+    return s + Math.max(0, Math.round((total - subtotal) * 100) / 100);
+  }, 0);
+  const commission = commissionFromObligations || commissionFromOrders;
   // Pending payouts: sum of net amounts for obligations not yet disbursed
   const pendingPayouts = obligations
     .filter((o) => o.status === "pending")
@@ -1984,9 +2083,9 @@ function FinancialTab() {
               </thead>
               <tbody>
                 {pendingObligations.map((obl) => {
-                  const hasMobile = obl.ecocash_number || obl.onemoney_number;
                   const hasBank = obl.bank_account_number;
                   const payoutMethod = payoutLabel(obl);
+                  const payoutReady = hasPayoutDestination(obl);
 
                   return (
                     <tr key={obl.id} className="border-b border-white/5 hover:bg-white/[0.02]">
@@ -2019,10 +2118,16 @@ function FinancialTab() {
                           size="sm"
                           variant="outline"
                           className="border-secondary/30 text-secondary hover:bg-secondary/10"
+                          disabled={!payoutReady}
                           onClick={() => {
                             setDisbursing(obl.id);
                             setDisburseNotes("");
                           }}
+                          title={
+                            payoutReady
+                              ? "Mark this seller payout as disbursed"
+                              : "Seller must add payout details first"
+                          }
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                           Mark Disbursed
@@ -2066,9 +2171,14 @@ function FinancialTab() {
                           ? `Mobile: ${obl.ecocash_number || obl.onemoney_number}`
                           : obl?.bank_account_number
                             ? `${obl.bank_name} · ${obl.bank_account_number}`
-                            : "No payout method"}
+                            : "No payout method registered"}
                       </span>
                     </div>
+                    {!hasPayoutDestination(obl) && (
+                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                        This seller must add payout details before this can be marked sent.
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
@@ -2090,6 +2200,9 @@ function FinancialTab() {
             </Button>
             <Button
               className="bg-secondary text-primary hover:bg-secondary/90"
+              disabled={
+                !disbursing || !hasPayoutDestination(obligations.find((o) => o.id === disbursing)!)
+              }
               onClick={() => {
                 const obl = obligations.find((o) => o.id === disbursing);
                 if (obl) markDisbursed(obl);
@@ -2122,21 +2235,29 @@ function FinancialTab() {
             </tr>
           </thead>
           <tbody>
-            {orders.slice(0, 50).map((o) => (
-              <tr key={o.id} className="border-b border-white/5">
-                <td className="p-3 text-xs text-muted-foreground">
-                  {new Date(o.created_at).toLocaleDateString()}
-                </td>
-                <td className="p-3 font-mono text-xs">{o.order_code}</td>
-                <td className="p-3">${Number(o.total_amount).toFixed(2)}</td>
-                <td className="p-3 text-xs capitalize">{o.payment_method}</td>
-                <td className="p-3 text-xs">${(Number(o.total_amount) * 0.02).toFixed(2)}</td>
-                <td className="p-3 text-xs">${(Number(o.total_amount) * 0.98).toFixed(2)}</td>
-                <td className="p-3">
-                  <Badge variant="outline">{o.payment_status}</Badge>
-                </td>
-              </tr>
-            ))}
+            {orders.slice(0, 50).map((o) => {
+              const obligation = obligations.find((obl) => obl.order_id === o.id);
+              const total = Number(o.total_amount ?? 0);
+              const subtotal =
+                o.subtotal == null ? Math.round((total / 1.02) * 100) / 100 : Number(o.subtotal);
+              const fee = obligation?.platform_fee ?? Math.max(0, total - subtotal);
+              const payout = obligation?.net_amount ?? subtotal;
+              return (
+                <tr key={o.id} className="border-b border-white/5">
+                  <td className="p-3 text-xs text-muted-foreground">
+                    {new Date(o.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="p-3 font-mono text-xs">{o.order_code}</td>
+                  <td className="p-3">${total.toFixed(2)}</td>
+                  <td className="p-3 text-xs capitalize">{o.payment_method}</td>
+                  <td className="p-3 text-xs">${fee.toFixed(2)}</td>
+                  <td className="p-3 text-xs">${payout.toFixed(2)}</td>
+                  <td className="p-3">
+                    <Badge variant="outline">{o.payment_status}</Badge>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

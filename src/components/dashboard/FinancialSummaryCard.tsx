@@ -3,7 +3,7 @@
  *   • Buyer balances still awaiting payment/confirmation
  *   • Seller payouts that are incoming, sent, or failed
  *
- * Only renders when there is at least one balance or recent settlement.
+ * Always renders so users can see zero balances clearly.
  */
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -162,6 +162,7 @@ export function FinancialSummaryCard() {
   const totalOwed = pendingOrders.reduce((s, o) => s + o.total_amount, 0);
   const incomingTotal = pendingPayouts.reduce((s, p) => s + p.net_amount, 0);
   const sentTotal = sentPayouts.reduce((s, p) => s + p.net_amount, 0);
+  const failedTotal = failedPayouts.reduce((s, p) => s + p.net_amount, 0);
   const hasAnything = pendingOrders.length > 0 || payouts.length > 0;
 
   if (loading) {
@@ -172,9 +173,6 @@ export function FinancialSummaryCard() {
       </div>
     );
   }
-
-  // Only show when there's something outstanding
-  if (!hasAnything) return null;
 
   return (
     <motion.div
@@ -198,82 +196,85 @@ export function FinancialSummaryCard() {
       </div>
 
       {/* Balance summary cards */}
-      <div
-        className={`grid divide-white/5 ${pendingOrders.length > 0 && payouts.length > 0 ? "grid-cols-2 divide-x" : "grid-cols-1"}`}
-      >
+      <div className="grid divide-y divide-white/5 md:grid-cols-2 md:divide-x md:divide-y-0">
         {/* You OWE (as buyer) */}
-        {pendingOrders.length > 0 && (
-          <div className="p-5">
-            <div className="flex items-center gap-1.5 mb-2">
-              <TrendingDown className="h-3.5 w-3.5 text-amber-400" />
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                You owe
-              </span>
-            </div>
-            <div className="font-display text-3xl text-amber-400">${totalOwed.toFixed(2)}</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {pendingOrders.length} unpaid order{pendingOrders.length > 1 ? "s" : ""}
-            </p>
+        <div className="p-5">
+          <div className="flex items-center gap-1.5 mb-2">
+            <TrendingDown className="h-3.5 w-3.5 text-amber-400" />
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              You owe
+            </span>
           </div>
-        )}
+          <div className="font-display text-3xl text-amber-400">${totalOwed.toFixed(2)}</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {pendingOrders.length > 0
+              ? `${pendingOrders.length} unpaid order${pendingOrders.length > 1 ? "s" : ""}`
+              : "No pending buyer payments"}
+          </p>
+        </div>
 
         {/* Seller settlement */}
-        {payouts.length > 0 && (
-          <div className="p-5">
-            <div className="flex items-center gap-1.5 mb-2">
-              <TrendingUp className="h-3.5 w-3.5 text-secondary" />
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Seller settlement
-              </span>
-            </div>
-            <div className="font-display text-3xl text-secondary">${incomingTotal.toFixed(2)}</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {incomingTotal > 0
-                ? `${pendingPayouts.length} incoming payout${pendingPayouts.length > 1 ? "s" : ""}`
-                : sentPayouts.length > 0
-                  ? `$${sentTotal.toFixed(2)} sent so far`
-                  : "No incoming payouts"}
-            </p>
+        <div className="p-5">
+          <div className="flex items-center gap-1.5 mb-2">
+            <TrendingUp className="h-3.5 w-3.5 text-secondary" />
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Seller settlement
+            </span>
           </div>
-        )}
+          <div className="font-display text-3xl text-secondary">${incomingTotal.toFixed(2)}</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {incomingTotal > 0
+              ? `${pendingPayouts.length} incoming payout${pendingPayouts.length > 1 ? "s" : ""}`
+              : sentPayouts.length > 0
+                ? `$${sentTotal.toFixed(2)} sent so far`
+                : "No incoming payouts"}
+          </p>
+        </div>
       </div>
 
-      {payouts.length > 0 && (
-        <div className="grid grid-cols-3 border-t border-white/5 divide-x divide-white/5 bg-white/[0.01]">
-          {[
-            {
-              label: "Incoming",
-              value: incomingTotal,
-              count: pendingPayouts.length,
-              icon: Clock,
-              color: "text-amber-400",
-            },
-            {
-              label: "Sent",
-              value: sentTotal,
-              count: sentPayouts.length,
-              icon: BadgeCheck,
-              color: "text-secondary",
-            },
-            {
-              label: "Failed",
-              value: failedPayouts.reduce((s, p) => s + p.net_amount, 0),
-              count: failedPayouts.length,
-              icon: XCircle,
-              color: "text-rose-400",
-            },
-          ].map((item) => (
-            <div key={item.label} className="p-3">
-              <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                <item.icon className={`h-3 w-3 ${item.color}`} />
-                {item.label}
-              </div>
-              <div className={`font-display text-lg ${item.color}`}>${item.value.toFixed(2)}</div>
-              <div className="text-[10px] text-muted-foreground">
-                {item.count} payout{item.count === 1 ? "" : "s"}
-              </div>
+      <div className="grid grid-cols-3 border-t border-white/5 divide-x divide-white/5 bg-white/[0.01]">
+        {[
+          {
+            label: "Incoming",
+            value: incomingTotal,
+            count: pendingPayouts.length,
+            icon: Clock,
+            color: "text-amber-400",
+          },
+          {
+            label: "Sent",
+            value: sentTotal,
+            count: sentPayouts.length,
+            icon: BadgeCheck,
+            color: "text-secondary",
+          },
+          {
+            label: "Failed",
+            value: failedTotal,
+            count: failedPayouts.length,
+            icon: XCircle,
+            color: "text-rose-400",
+          },
+        ].map((item) => (
+          <div key={item.label} className="p-3">
+            <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <item.icon className={`h-3 w-3 ${item.color}`} />
+              {item.label}
             </div>
-          ))}
+            <div className={`font-display text-lg ${item.color}`}>${item.value.toFixed(2)}</div>
+            <div className="text-[10px] text-muted-foreground">
+              {item.count} payout{item.count === 1 ? "" : "s"}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {!hasAnything && (
+        <div className="border-t border-white/5 px-5 py-4">
+          <div className="flex items-center gap-2 rounded-xl bg-white/[0.02] px-4 py-3 text-sm text-muted-foreground">
+            <Landmark className="h-4 w-4 text-secondary" />
+            No settlement activity yet. New buyer balances and seller payouts will appear here.
+          </div>
         </div>
       )}
 
