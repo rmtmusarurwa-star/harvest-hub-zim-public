@@ -14,6 +14,7 @@ DROP POLICY IF EXISTS "Profiles are viewable by owner" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
 
 -- Allow all authenticated users to SELECT any profile row
+DROP POLICY IF EXISTS "Authenticated users can read all profiles" ON public.profiles;
 CREATE POLICY "Authenticated users can read all profiles"
   ON public.profiles
   FOR SELECT
@@ -22,6 +23,7 @@ CREATE POLICY "Authenticated users can read all profiles"
 
 -- Anon users can also read profiles (needed for public marketplace listings
 -- that show the farmer name without requiring login).
+DROP POLICY IF EXISTS "Anon users can read all profiles" ON public.profiles;
 CREATE POLICY "Anon users can read all profiles"
   ON public.profiles
   FOR SELECT
