@@ -34,6 +34,7 @@ import {
   RevealOnScroll,
   Parallax,
 } from "@/components/landing/Cinematic3D";
+import { CinematicBackground } from "@/components/landing/CinematicBackground";
 import { ZimbabweHeatmap } from "@/components/landing/ZimbabweHeatmap";
 import { TestimonialCarousel } from "@/components/landing/TestimonialCarousel";
 
@@ -155,6 +156,7 @@ function LandingPage() {
 
   return (
     <div className="relative min-h-screen">
+      <CinematicBackground />
       <ScrollProgressBar />
       <div className="relative" style={{ zIndex: 1 }}>
 

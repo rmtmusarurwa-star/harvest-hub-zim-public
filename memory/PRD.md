@@ -3,8 +3,9 @@
 ## Original problem statement
 Build a landing page for Harvest Hub Zimbabwe, then layer in cinematic 3D
 animated background, a Zimbabwe province-activity heatmap, and an
-auto-rotating testimonials carousel — and apply the cinematic background
-globally (login / signup / marketplace / dashboard / every page).
+auto-rotating testimonials carousel. Keep the cinematic background scoped to
+the public landing experience so authenticated operational screens stay calm
+and performant.
 
 User supplied marketing collateral (`HH guide.pdf`) and confirmed an
 existing TanStack Start + Supabase codebase.
@@ -14,12 +15,11 @@ existing TanStack Start + Supabase codebase.
 - **Backend / DB**: Supabase (auth, postgres, RLS)
 - **Styling**: Tailwind v4 + custom Harvest Hub dark theme (deep green / gold / parchment)
 - **Animations**: framer-motion 12.x + pure CSS 3D + 2D canvas (no Three.js)
-- **Dev port**: `yarn dev` on `:3000` (manually launched; preview-host allow-list set
-  via `server.allowedHosts: true` in `vite.config.ts`)
+- **Dev port**: local dev runs from the Vite server configured in `vite.config.ts`
 
 ## What's been implemented (Jan 2026)
-### Global cinematic 3D background (mounted in `__root.tsx`)
-- ✅ `CinematicBackground` renders behind every route
+### Landing cinematic 3D background (mounted in `_authenticated/index.tsx`)
+- ✅ `CinematicBackground` renders behind the public landing page
 - ✅ 5 saturated aurora gradient blobs drifting in 3D parallax
 - ✅ Synthwave-style perspective grid receding to a glowing horizon
 - ✅ Conic god-rays from top corners (screen blend)
@@ -27,9 +27,7 @@ existing TanStack Start + Supabase codebase.
 - ✅ Whole-scene mouse parallax (subtle horizontal/vertical shift)
 - ✅ Top + bottom vignettes keep nav/footer legible
 - ✅ Respects `prefers-reduced-motion`
-- ✅ Pages previously using `ambient-glow mesh-bg` / `FieldMapBackground` /
-     custom radial blobs have been cleaned up (AppLayout, AuthShell,
-     `_authenticated.tsx` loading/guest, `login.tsx`)
+- ✅ Authenticated app pages keep their existing calmer dashboard background
 
 ### Landing page (`_authenticated/index.tsx`)
 - ✅ Cinematic 3D hero mockup — mouse-tracked phone w/ cycling AI demo
@@ -48,17 +46,15 @@ existing TanStack Start + Supabase codebase.
      on hover, side panel with national total + top province + activity legend
 
 ### Authentication pages (`login.tsx`, `signup.tsx`, `forgot/reset` via `AuthShell`)
-- ✅ Cinematic background shows through (removed competing radial blobs)
 - ✅ Existing animated entrance + glass form panel still works
+- ✅ Existing lightweight auth backgrounds remain in place
 
 ### App layout / authenticated routes (`AppLayout`)
-- ✅ `FieldMapBackground` removed; cinematic background flows behind sidebar
-     + topbar + main content (sidebar is glass so background shines through)
-- ✅ Loading + redirect spinners use the same global background
+- ✅ Existing `FieldMapBackground` remains behind sidebar + topbar + main content
+- ✅ Loading + redirect spinners keep the original lightweight app background
 
 ### Guest layout (marketplace / market-intelligence for non-logged-in users)
-- ✅ Cinematic background flows through; header backdrop-blur reduced opacity
-     so the bg is visible
+- ✅ Marketplace / market-intelligence keep the existing public app background
 
 ## Key new files
 - `/app/src/components/landing/CinematicBackground.tsx` — global animated bg
@@ -68,11 +64,9 @@ existing TanStack Start + Supabase codebase.
 - `/app/src/components/landing/TestimonialCarousel.tsx`
 
 ## Config touches
-- `vite.config.ts` — `server.allowedHosts: true` (Emergent preview URL)
-- `__root.tsx` — mounts `<CinematicBackground />` once at root
-- `AppLayout.tsx`, `AuthShell.tsx`, `_authenticated.tsx`, `login.tsx` — stripped
-  redundant `ambient-glow`, `mesh-bg`, `FieldMapBackground` and custom radial
-  blobs; content wrapped in `relative zIndex:1` so it sits above the global bg
+- `_authenticated/index.tsx` — mounts `<CinematicBackground />` for the landing page
+- `AppLayout.tsx`, `AuthShell.tsx`, `_authenticated.tsx`, `login.tsx` — keep their
+  existing app/auth background treatments
 
 ## Backlog
 - P1: Province heatmap could use slightly more accurate province silhouettes

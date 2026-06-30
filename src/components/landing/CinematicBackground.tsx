@@ -2,8 +2,8 @@
  * Cinematic 3D Animated Background — vivid version.
  *
  * Multi-layer composition:
- *   1. AuroraGlow         — big saturated gradient blobs in deep background
- *   2. PerspectiveGrid    — synthwave-style 3D grid floor receding to horizon
+ *   1. CinematicFarmPlate — animated real farm image with parallax/slow push
+ *   2. AuroraGlow         — restrained color wash for depth
  *   3. LightRays          — animated god-rays from top
  *   4. CinematicParticles — canvas particles with depth-of-field
  *   5. MouseParallax      — entire scene shifts subtly with mouse
@@ -15,7 +15,36 @@ import { useEffect, useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/*  1. Aurora glow                                                            */
+/*  1. Real farm scene plate                                                   */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+function CinematicFarmPlate() {
+  return (
+    <>
+      <motion.div
+        aria-hidden
+        className="absolute -inset-[3%] bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/landing-farm-cinematic.png')",
+          filter: "saturate(1.08) contrast(1.05)",
+          transformOrigin: "55% 42%",
+        }}
+        animate={{
+          scale: [1.03, 1.08, 1.04],
+          x: ["-0.8%", "0.8%", "-0.4%"],
+          y: ["0%", "-1.2%", "0%"],
+        }}
+        transition={{ duration: 34, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,16,11,0.82)_0%,rgba(6,16,11,0.48)_34%,rgba(6,16,11,0.20)_68%,rgba(6,16,11,0.05)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_70%_18%,rgba(255,186,83,0.28),transparent_55%),radial-gradient(ellipse_70%_80%_at_18%_70%,rgba(13,59,46,0.55),transparent_62%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#06100B] via-[#06100B]/70 to-transparent" />
+    </>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  2. Aurora glow                                                            */
 /* ────────────────────────────────────────────────────────────────────────── */
 
 function AuroraGlow() {
@@ -28,7 +57,7 @@ function AuroraGlow() {
           rotate: [0, 14, -10, 0],
         }}
         transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -left-[15%] -top-[10%] h-[760px] w-[760px] rounded-full opacity-80 blur-3xl"
+        className="absolute -left-[15%] -top-[10%] h-[760px] w-[760px] rounded-full opacity-35 blur-3xl"
         style={{
           background:
             "radial-gradient(circle at 35% 35%, rgba(13,80,60,1), rgba(13,59,46,0.6) 35%, rgba(13,59,46,0) 75%)",
@@ -41,7 +70,7 @@ function AuroraGlow() {
           scale: [1, 1.15, 0.9, 1],
         }}
         transition={{ duration: 30, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-        className="absolute -right-[10%] top-[12%] h-[640px] w-[640px] rounded-full opacity-75 blur-3xl"
+        className="absolute -right-[10%] top-[12%] h-[640px] w-[640px] rounded-full opacity-45 blur-3xl"
         style={{
           background:
             "radial-gradient(circle at 50% 50%, rgba(232,160,32,0.7), rgba(201,168,76,0.4) 40%, rgba(201,168,76,0) 75%)",
@@ -54,7 +83,7 @@ function AuroraGlow() {
           rotate: [0, -10, 12, 0],
         }}
         transition={{ duration: 34, repeat: Infinity, ease: "easeInOut", delay: 8 }}
-        className="absolute left-[20%] top-[40%] h-[700px] w-[700px] rounded-full opacity-55 blur-3xl"
+        className="absolute left-[20%] top-[40%] h-[700px] w-[700px] rounded-full opacity-25 blur-3xl"
         style={{
           background:
             "radial-gradient(circle at 50% 50%, rgba(232,160,32,0.5), rgba(232,160,32,0) 75%)",
@@ -67,7 +96,7 @@ function AuroraGlow() {
           scale: [1, 0.9, 1.1, 1],
         }}
         transition={{ duration: 28, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute right-[8%] bottom-[5%] h-[560px] w-[560px] rounded-full opacity-50 blur-3xl"
+        className="absolute right-[8%] bottom-[5%] h-[560px] w-[560px] rounded-full opacity-20 blur-3xl"
         style={{
           background:
             "radial-gradient(circle at 50% 50%, rgba(52,211,153,0.45), rgba(52,211,153,0) 75%)",
@@ -80,7 +109,7 @@ function AuroraGlow() {
           y: [0, -30, 20, 0],
         }}
         transition={{ duration: 38, repeat: Infinity, ease: "easeInOut", delay: 6 }}
-        className="absolute left-[5%] bottom-[20%] h-[520px] w-[520px] rounded-full opacity-40 blur-3xl"
+        className="absolute left-[5%] bottom-[20%] h-[520px] w-[520px] rounded-full opacity-15 blur-3xl"
         style={{
           background:
             "radial-gradient(circle at 50% 50%, rgba(94,42,128,0.35), rgba(94,42,128,0) 75%)",
@@ -89,99 +118,6 @@ function AuroraGlow() {
     </div>
   );
 }
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/*  2. Perspective grid floor                                                  */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-function PerspectiveGrid() {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-[60vh] overflow-hidden"
-      style={{ perspective: "650px", perspectiveOrigin: "50% 0%" }}
-    >
-      {/* Horizon glow line */}
-      <div
-        className="absolute inset-x-0 top-0 h-[2px]"
-        style={{
-          background:
-            "linear-gradient(to right, transparent 0%, rgba(232,160,32,0.5) 20%, rgba(232,160,32,1) 50%, rgba(232,160,32,0.5) 80%, transparent 100%)",
-          boxShadow:
-            "0 0 24px rgba(232,160,32,0.8), 0 0 80px rgba(232,160,32,0.4)",
-        }}
-      />
-      {/* Soft horizon halo */}
-      <div
-        className="absolute inset-x-0 top-0 h-[140px]"
-        style={{
-          background:
-            "radial-gradient(ellipse 50% 100% at 50% 0%, rgba(232,160,32,0.30), transparent 70%)",
-        }}
-      />
-
-      {/* The 3D floor */}
-      <div
-        className="absolute inset-x-0 top-0 h-[180%]"
-        style={{
-          transform: "rotateX(70deg)",
-          transformOrigin: "top center",
-        }}
-      >
-        {/* gold grid lines */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, rgba(232,160,32,0.45) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(232,160,32,0.45) 1px, transparent 1px)
-            `,
-            backgroundSize: "70px 70px",
-            animation: "cbg-grid-scroll 8s linear infinite",
-            maskImage:
-              "linear-gradient(to bottom, black 0%, black 50%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, black 0%, black 50%, transparent 100%)",
-          }}
-        />
-        {/* secondary fainter green grid */}
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, rgba(52,211,153,0.20) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(52,211,153,0.20) 1px, transparent 1px)
-            `,
-            backgroundSize: "210px 210px",
-            animation: "cbg-grid-scroll-slow 18s linear infinite",
-            maskImage:
-              "linear-gradient(to bottom, black 0%, black 50%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, black 0%, black 50%, transparent 100%)",
-          }}
-        />
-      </div>
-
-      <style>{`
-        @keyframes cbg-grid-scroll {
-          0%   { background-position: 0 0; }
-          100% { background-position: 0 70px; }
-        }
-        @keyframes cbg-grid-scroll-slow {
-          0%   { background-position: 0 0; }
-          100% { background-position: 0 210px; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [style*="cbg-grid-scroll"] { animation: none !important; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/*  3. Light rays                                                              */
-/* ────────────────────────────────────────────────────────────────────────── */
 
 function LightRays() {
   return (
@@ -359,18 +295,10 @@ export function CinematicBackground() {
       className="pointer-events-none fixed inset-0 overflow-hidden"
       style={{ zIndex: 0, backgroundColor: "#06100B" }}
     >
-      {/* Deep base wash */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 90% 70% at 50% 0%, rgba(13,59,46,0.55) 0%, transparent 75%), radial-gradient(ellipse 90% 80% at 50% 100%, rgba(6,16,11,0.95) 0%, transparent 70%)",
-        }}
-      />
+      <CinematicFarmPlate />
 
       <motion.div style={{ x, y }} className="absolute inset-0">
         <AuroraGlow />
-        <PerspectiveGrid />
         <LightRays />
         <CinematicParticles />
       </motion.div>

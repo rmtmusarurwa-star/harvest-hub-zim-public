@@ -5,6 +5,7 @@ import { Eye, EyeOff, Loader2, Mail } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { CinematicBackground } from "@/components/landing/CinematicBackground";
 
 const schema = z.object({
   email: z.string().trim().email("Enter a valid email"),
@@ -47,8 +48,10 @@ function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen" style={{ zIndex: 1 }}>
-      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-12">
+    <div className="relative min-h-screen overflow-hidden bg-[#06100B]">
+      <CinematicBackground />
+
+      <div className="relative z-[1] mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-12">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}

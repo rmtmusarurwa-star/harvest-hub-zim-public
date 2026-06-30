@@ -14,10 +14,6 @@ import { CartProvider } from "@/lib/cart-context";
 import { ThemeProvider } from "@/lib/theme-context";
 import { CartDrawer } from "@/components/marketplace/CartDrawer";
 import { Toaster } from "@/components/ui/sonner";
-import { CinematicBackground } from "@/components/landing/CinematicBackground";
-
-
-
 
 function NotFoundComponent() {
   return (
@@ -145,7 +141,6 @@ function RootComponent() {
       <ThemeProvider>
         <AuthProvider>
           <CartProvider>
-            <CinematicBackground />
             <Outlet />
             <CartDrawer />
             <Toaster />
@@ -155,4 +150,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

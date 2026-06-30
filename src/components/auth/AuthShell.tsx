@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { Wordmark } from "@/components/brand/Wordmark";
+import { CinematicBackground } from "@/components/landing/CinematicBackground";
 
 type Props = {
   eyebrow: string;
@@ -12,9 +13,10 @@ type Props = {
 
 export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props) {
   return (
-    <div className="relative min-h-screen" style={{ zIndex: 1 }}>
+    <div className="relative min-h-screen overflow-hidden bg-[#06100B]">
+      <CinematicBackground />
 
-      <div className="mx-auto grid min-h-screen max-w-6xl grid-cols-1 px-5 py-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:px-8 lg:py-16">
+      <div className="relative z-[1] mx-auto grid min-h-screen max-w-6xl grid-cols-1 px-5 py-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:px-8 lg:py-16">
         {/* Brand panel */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
