@@ -44,6 +44,7 @@ type PayoutRow = {
   status: "pending" | "disbursed" | "failed";
   created_at: string;
   disbursed_at: string | null;
+  notes: string | null;
 };
 
 type PendingOrderResult = PendingOrder & {
@@ -130,7 +131,7 @@ export function FinancialSummaryCard() {
         (supabase as any)
           .from("payout_obligations")
           .select(
-            "id, net_amount, gross_amount, payment_reference, status, created_at, disbursed_at",
+            "id, net_amount, gross_amount, payment_reference, status, created_at, disbursed_at, notes",
           )
           .eq("seller_id", user!.id)
           .order("created_at", { ascending: false })
@@ -329,7 +330,7 @@ export function FinancialSummaryCard() {
           <p className="text-[11px] uppercase tracking-wider text-secondary/70 mb-3 flex items-center gap-1.5">
             <Landmark className="h-3 w-3" /> Seller payout status
           </p>
-          {payouts.slice(0, 6).map((p) => {
+          {payouts.slice(0, 8).map((p) => {
             const meta = payoutStatus(p.status);
             const Icon = meta.icon;
             return (
@@ -359,6 +360,9 @@ export function FinancialSummaryCard() {
                             month: "short",
                           })}
                     </span>
+                    {p.status === "disbursed" && p.notes && (
+                      <span className="text-[11px] text-muted-foreground/60">Ref: {p.notes}</span>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
@@ -372,9 +376,9 @@ export function FinancialSummaryCard() {
               </div>
             );
           })}
-          {payouts.length > 6 && (
+          {payouts.length > 8 && (
             <p className="text-xs text-muted-foreground text-center pt-1">
-              +{payouts.length - 6} more ·{" "}
+              +{payouts.length - 8} more ·{" "}
               <Link to="/orders" className="text-secondary underline">
                 view all
               </Link>

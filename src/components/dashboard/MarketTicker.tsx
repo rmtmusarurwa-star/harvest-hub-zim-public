@@ -46,11 +46,16 @@ export function MarketTicker() {
 
   // Triplicate so the loop is seamless regardless of item count
   const scrollItems = [...items, ...items, ...items];
+  const summary = items
+    .slice(0, 8)
+    .map((c) => `${c.name}: $${c.price.toFixed(c.price < 10 ? 2 : 0)} per ${c.unit}`)
+    .join("; ");
 
   return (
-    <div className="glass relative overflow-hidden rounded-2xl">
-      <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-[#0F1F18] to-transparent" />
-      <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-[#0F1F18] to-transparent" />
+    <div className="glass relative overflow-hidden rounded-2xl" aria-label="Live market prices">
+      <span className="sr-only">{summary}</span>
+      <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-8 bg-gradient-to-r from-[#0F1F18] to-transparent sm:w-10" />
+      <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-8 bg-gradient-to-l from-[#0F1F18] to-transparent sm:w-10" />
       <div className="flex items-center gap-3 border-b border-white/5 px-4 py-2">
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
@@ -64,9 +69,10 @@ export function MarketTicker() {
         </span>
       </div>
       <motion.div
-        className="flex gap-10 whitespace-nowrap py-3"
+        aria-hidden="true"
+        className="flex gap-8 whitespace-nowrap py-3 pl-8 sm:gap-10 sm:pl-10"
         animate={{ x: ["0%", `-${(100 / 3).toFixed(4)}%`] }}
-        transition={{ ease: "linear", duration: 50, repeat: Infinity }}
+        transition={{ ease: "linear", duration: 70, repeat: Infinity }}
       >
         {scrollItems.map((c, i) => (
           <div key={i} className="flex items-center gap-3 px-2">

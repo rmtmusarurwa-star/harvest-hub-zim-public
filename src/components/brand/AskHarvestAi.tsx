@@ -91,7 +91,7 @@ export function AskHarvestAi() {
     }
     window.addEventListener("harvest-agent-launch", handleLaunch);
     return () => window.removeEventListener("harvest-agent-launch", handleLaunch);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!user) return null;
@@ -114,7 +114,9 @@ export function AskHarvestAi() {
         try {
           const body = await context.clone().json();
           if (body?.error) detail = body.error;
-        } catch { /* not JSON */ }
+        } catch {
+          /* not JSON */
+        }
       }
       setMessages((m) => [...m, { role: "error", content: `Harvest AI error: ${detail}` }]);
     } finally {
@@ -163,9 +165,11 @@ export function AskHarvestAi() {
         onClick={() => setOpen((v) => !v)}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-gradient-to-br from-secondary to-accent px-5 py-3.5 text-sm font-semibold text-background shadow-[0_18px_40px_-12px_rgba(232,160,32,0.5)]"
+        title={open ? "Close Harvest AI" : "Ask Harvest AI"}
+        className="fixed bottom-4 right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-secondary to-accent text-background shadow-[0_18px_40px_-12px_rgba(232,160,32,0.5)] md:bottom-5 md:right-5"
       >
-        <Sparkles className="h-4 w-4" /> {open ? "Close" : "Ask Harvest AI"}
+        <Sparkles className="h-4 w-4" />
+        <span className="sr-only">{open ? "Close Harvest AI" : "Ask Harvest AI"}</span>
       </motion.button>
 
       <AnimatePresence>
@@ -175,7 +179,7 @@ export function AskHarvestAi() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}
             transition={{ duration: 0.2 }}
-            className="glass-strong fixed bottom-24 right-6 z-40 flex h-[30rem] w-[24rem] flex-col overflow-hidden rounded-2xl"
+            className="glass-strong fixed bottom-20 right-4 z-40 flex h-[30rem] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl md:right-5"
           >
             <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
               <div className="flex items-center gap-2 text-sm">

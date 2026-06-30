@@ -1506,6 +1506,9 @@ async function markPayoutDisbursed(obl: Obligation, notes: string) {
   if (!hasPayoutDestination(obl)) {
     throw new Error("Seller has no payout account. Ask them to add payout details first.");
   }
+  if (!notes.trim()) {
+    throw new Error("Enter the payout transfer reference before marking this as sent.");
+  }
 
   // payout_obligations exists in migrations but is not in generated Supabase types yet.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1514,7 +1517,7 @@ async function markPayoutDisbursed(obl: Obligation, notes: string) {
     .update({
       status: "disbursed",
       disbursed_at: new Date().toISOString(),
-      notes: notes || null,
+      notes: notes.trim(),
     })
     .eq("id", obl.id);
   if (error) throw error;
@@ -1523,7 +1526,7 @@ async function markPayoutDisbursed(obl: Obligation, notes: string) {
     await supabase.from("notifications").insert({
       user_id: obl.sellerId,
       type: "announcement",
-      message: `Payout sent: $${obl.net_amount.toFixed(2)} for order ${obl.orderCode}. Destination: ${payoutLabel(obl)}${notes ? ` · Ref: ${notes}` : ""}.`,
+      message: `Payout sent: $${obl.net_amount.toFixed(2)} for order ${obl.orderCode}. Destination: ${payoutLabel(obl)} · Ref: ${notes.trim()}.`,
       link: "/dashboard",
     });
   }
@@ -1558,6 +1561,10 @@ function PendingPaymentsTab() {
 
   async function confirmDisbursement(obl: Obligation) {
     try {
+      if (!notes.trim()) {
+        toast.error("Enter the payout transfer reference before marking this as sent");
+        return;
+      }
       await markPayoutDisbursed(obl, notes.trim());
       await logAction(
         "disburse_payout",
@@ -1786,12 +1793,12 @@ function PendingPaymentsTab() {
               </div>
               <div>
                 <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
-                  Transfer reference / notes
+                  Transfer reference
                 </label>
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. EcoCash ref #ECO123456"
+                  placeholder="Required, e.g. EcoCash ref #ECO123456"
                   rows={2}
                 />
               </div>
@@ -1801,7 +1808,10 @@ function PendingPaymentsTab() {
             <Button variant="outline" onClick={() => setDisbursing(null)}>
               Cancel
             </Button>
-            <Button onClick={() => selected && confirmDisbursement(selected)}>
+            <Button
+              disabled={!notes.trim()}
+              onClick={() => selected && confirmDisbursement(selected)}
+            >
               <CheckCircle2 className="h-4 w-4 mr-1" />
               Confirm Sent
             </Button>
@@ -1853,6 +1863,9 @@ function FinancialTab() {
 
   async function markDisbursed(obl: Obligation) {
     try {
+      if (!disburseNotes.trim()) {
+        return toast.error("Enter the payout transfer reference before marking this as disbursed");
+      }
       await markPayoutDisbursed(obl, disburseNotes.trim());
     } catch (e) {
       return toast.error(e instanceof Error ? e.message : "Could not mark payout as disbursed");
@@ -2182,12 +2195,12 @@ function FinancialTab() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
-                      Transaction ref / notes (optional)
+                      Transaction reference
                     </label>
                     <Textarea
                       value={disburseNotes}
                       onChange={(e) => setDisburseNotes(e.target.value)}
-                      placeholder="e.g. EcoCash ref #ECO123456…"
+                      placeholder="Required, e.g. EcoCash ref #ECO123456…"
                       rows={2}
                     />
                   </div>
@@ -2201,7 +2214,10 @@ function FinancialTab() {
             <Button
               className="bg-secondary text-primary hover:bg-secondary/90"
               disabled={
-                !disbursing || !hasPayoutDestination(obligations.find((o) => o.id === disbursing)!)
+                !disbursing ||
+                !disburseNotes.trim() ||
+                !obligations.find((o) => o.id === disbursing) ||
+                !hasPayoutDestination(obligations.find((o) => o.id === disbursing)!)
               }
               onClick={() => {
                 const obl = obligations.find((o) => o.id === disbursing);
