@@ -27,6 +27,15 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { FieldMapBackground } from "@/components/brand/FieldMapBackground";
+import {
+  ScrollProgressBar,
+  FloatingOrbs,
+  CinematicHeroMockup,
+  Tilt3DCard,
+  AnimatedCounter,
+  RevealOnScroll,
+  Parallax,
+} from "@/components/landing/Cinematic3D";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: IndexPage,
@@ -146,6 +155,8 @@ function LandingPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden ambient-glow">
+      <ScrollProgressBar />
+      <FloatingOrbs />
       <FieldMapBackground />
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
@@ -167,42 +178,117 @@ function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-4 pb-20 pt-20 lg:px-6 lg:pt-32">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="max-w-3xl">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-secondary/30 bg-secondary/10 px-3.5 py-1.5 text-xs text-secondary">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-secondary" />
-            </span>
-            Zimbabwe's Agricultural Marketplace
-          </div>
-          <h1 className="font-display text-5xl leading-[1.08] tracking-tight md:text-7xl">
-            Grow more.
-            <br />
-            <span className="text-secondary">Sell smarter.</span>
-          </h1>
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-foreground/70 md:text-lg">
-            Zimbabwe's farm marketplace. List produce, find buyers, check prices, book transport — and ask an AI agent anything, in Shona, Ndebele or English.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/signup" className="inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-3 text-sm font-semibold text-primary shadow-md transition hover:bg-secondary/90">
-              Create Free Account <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link to="/marketplace" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-foreground transition hover:bg-white/[0.07]">
-              <Store className="h-4 w-4" /> Browse Marketplace
-            </Link>
-          </div>
-        </motion.div>
+      <section className="relative mx-auto max-w-7xl px-4 pb-20 pt-20 lg:px-6 lg:pt-28">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-xl"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-secondary/30 bg-secondary/10 px-3.5 py-1.5 text-xs text-secondary backdrop-blur"
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-secondary" />
+              </span>
+              Zimbabwe's Agricultural Marketplace
+            </motion.div>
 
-        {/* Live stats */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="mt-14 grid grid-cols-3 gap-4 sm:max-w-xl">
-          {STATS.map(({ label, value: v }) => (
-            <div key={label} className="glass rounded-2xl p-4 text-center">
-              <div className="font-display text-2xl text-secondary sm:text-3xl">{v}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{label}</div>
-            </div>
-          ))}
-        </motion.div>
+            <h1 className="font-display text-5xl leading-[1.05] tracking-tight md:text-7xl">
+              {"Grow more.".split(" ").map((word, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, y: 30, rotateX: -40 }}
+                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ display: "inline-block", transformPerspective: 800 }}
+                  className="mr-3"
+                >
+                  {word}
+                </motion.span>
+              ))}
+              <br />
+              {"Sell smarter.".split(" ").map((word, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, y: 30, rotateX: -40 }}
+                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                  transition={{ delay: 0.45 + i * 0.1, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ display: "inline-block", transformPerspective: 800 }}
+                  className="mr-3 text-secondary"
+                >
+                  {word}
+                </motion.span>
+              ))}
+            </h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.75, duration: 0.6 }}
+              className="mt-6 max-w-xl text-base leading-relaxed text-foreground/70 md:text-lg"
+            >
+              Zimbabwe's farm marketplace. List produce, find buyers, check prices, book transport — and ask an AI agent anything, in Shona, Ndebele or English.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9, duration: 0.6 }}
+              className="mt-8 flex flex-wrap gap-3"
+            >
+              <Link
+                to="/signup"
+                data-testid="hero-cta-signup"
+                className="btn-glow inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-3 text-sm font-semibold text-primary shadow-md transition hover:bg-secondary/90"
+              >
+                Create Free Account <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/marketplace"
+                data-testid="hero-cta-marketplace"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-foreground backdrop-blur transition hover:bg-white/[0.07]"
+              >
+                <Store className="h-4 w-4" /> Browse Marketplace
+              </Link>
+            </motion.div>
+
+            {/* Live stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 1.05 }}
+              className="mt-14 grid grid-cols-3 gap-3 sm:max-w-md"
+            >
+              {STATS.map(({ label, value: v }, i) => (
+                <Tilt3DCard
+                  key={label}
+                  intensity={6}
+                  className="glass rounded-2xl p-4 text-center"
+                >
+                  <div className="font-display text-2xl text-secondary sm:text-3xl">
+                    {typeof v === "string" && /^\d/.test(v) && !v.includes("$") ? (
+                      <AnimatedCounter to={Number(v.replace(/,/g, ""))} duration={1.4 + i * 0.2} />
+                    ) : (
+                      v
+                    )}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+                </Tilt3DCard>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Right — cinematic 3D mockup */}
+          <div className="relative hidden lg:block">
+            <CinematicHeroMockup />
+          </div>
+        </div>
       </section>
 
       {/* ── For Farmers / For Buyers ─────────────────────────────────────── */}
@@ -281,7 +367,7 @@ function LandingPage() {
 
       {/* ── Harvest AI spotlight ──────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
-        <div className="glass overflow-hidden rounded-3xl">
+        <RevealOnScroll className="glass overflow-hidden rounded-3xl">
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Left — description */}
             <div className="p-8 lg:p-12">
@@ -354,7 +440,7 @@ function LandingPage() {
               </div>
             </div>
           </div>
-        </div>
+        </RevealOnScroll>
       </section>
 
       {/* ── Features grid ────────────────────────────────────────────────── */}
@@ -368,12 +454,21 @@ function LandingPage() {
         </motion.div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(({ icon: Icon, title, desc }, i) => (
-            <motion.div key={title} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.07 }} className="glass rounded-2xl p-5">
-              <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-secondary/10">
-                <Icon className="h-5 w-5 text-secondary" />
-              </div>
-              <h3 className="font-display text-lg">{title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 24, rotateX: -10 }}
+              whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformPerspective: 1000 }}
+            >
+              <Tilt3DCard intensity={10} className="glass h-full rounded-2xl p-5">
+                <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-secondary/10">
+                  <Icon className="h-5 w-5 text-secondary" />
+                </div>
+                <h3 className="font-display text-lg">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+              </Tilt3DCard>
             </motion.div>
           ))}
         </div>
@@ -383,15 +478,26 @@ function LandingPage() {
       <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { icon: MapPin, value: "10", label: "Provinces covered" },
-            { icon: ShieldCheck, value: "100%", label: "Verified sellers" },
-            { icon: Package, value: "Free", label: "To join & list" },
-            { icon: Bot, value: "24/7", label: "AI agent on WhatsApp" },
-          ].map(({ icon: Icon, value, label }, i) => (
-            <motion.div key={label} initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.08 }} className="glass rounded-2xl p-5 text-center">
-              <Icon className="mx-auto mb-2 h-5 w-5 text-secondary" />
-              <div className="font-display text-2xl text-foreground">{value}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+            { icon: MapPin, value: "10", label: "Provinces covered", count: 10, suffix: "" },
+            { icon: ShieldCheck, value: "100%", label: "Verified sellers", count: 100, suffix: "%" },
+            { icon: Package, value: "Free", label: "To join & list", count: 0, suffix: "" },
+            { icon: Bot, value: "24/7", label: "AI agent on WhatsApp", count: 0, suffix: "" },
+          ].map(({ icon: Icon, value, label, count, suffix }, i) => (
+            <motion.div
+              key={label}
+              initial={{ opacity: 0, y: 18, rotateX: -12 }}
+              whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformPerspective: 1000 }}
+            >
+              <Tilt3DCard intensity={8} className="glass rounded-2xl p-5 text-center">
+                <Icon className="mx-auto mb-2 h-5 w-5 text-secondary" />
+                <div className="font-display text-2xl text-foreground">
+                  {count > 0 ? <AnimatedCounter to={count} suffix={suffix} duration={1.4 + i * 0.15} /> : value}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+              </Tilt3DCard>
             </motion.div>
           ))}
         </div>
@@ -399,7 +505,7 @@ function LandingPage() {
 
       {/* ── Middleman math ───────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
-        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="glass overflow-hidden rounded-3xl border border-secondary/10">
+        <RevealOnScroll className="glass overflow-hidden rounded-3xl border border-secondary/10">
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Left — the problem */}
             <div className="p-8 lg:p-10 border-b border-white/5 lg:border-b-0 lg:border-r">
@@ -456,7 +562,7 @@ function LandingPage() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </RevealOnScroll>
       </section>
 
       {/* ── Testimonials ─────────────────────────────────────────────────── */}
@@ -472,23 +578,25 @@ function LandingPage() {
           {TESTIMONIALS.map(({ name, role, quote, initials }, i) => (
             <motion.div
               key={name}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.1 }}
-              className="glass rounded-2xl p-6 flex flex-col gap-4"
+              initial={{ opacity: 0, y: 24, rotateY: i % 2 === 0 ? -12 : 12 }}
+              whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.7, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformPerspective: 1200 }}
             >
-              <Quote className="h-5 w-5 text-secondary/40" />
-              <p className="text-sm leading-relaxed text-foreground/80 flex-1">"{quote}"</p>
-              <div className="flex items-center gap-3 pt-2 border-t border-white/5">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary/20 text-xs font-bold text-secondary">
-                  {initials}
+              <Tilt3DCard intensity={6} className="glass rounded-2xl p-6 flex flex-col gap-4 h-full">
+                <Quote className="h-5 w-5 text-secondary/40" />
+                <p className="text-sm leading-relaxed text-foreground/80 flex-1">"{quote}"</p>
+                <div className="flex items-center gap-3 pt-2 border-t border-white/5">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary/20 text-xs font-bold text-secondary">
+                    {initials}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">{name}</div>
+                    <div className="text-xs text-muted-foreground">{role}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-semibold">{name}</div>
-                  <div className="text-xs text-muted-foreground">{role}</div>
-                </div>
-              </div>
+              </Tilt3DCard>
             </motion.div>
           ))}
         </div>
@@ -523,7 +631,7 @@ function LandingPage() {
 
       {/* ── Shops showcase ───────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
-        <div className="glass overflow-hidden rounded-3xl">
+        <RevealOnScroll className="glass overflow-hidden rounded-3xl">
           <div className="grid gap-0 md:grid-cols-2">
             {/* Left — copy */}
             <div className="flex flex-col justify-center p-8 sm:p-10">
@@ -565,12 +673,29 @@ function LandingPage() {
               ))}
             </div>
           </div>
-        </div>
+        </RevealOnScroll>
       </section>
 
       {/* ── Final CTA ────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="glass overflow-hidden rounded-3xl p-8 text-center sm:p-12">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92, rotateX: -8 }}
+          whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          style={{ transformPerspective: 1400 }}
+          className="glass overflow-hidden rounded-3xl p-8 text-center sm:p-12 relative"
+        >
+          {/* cinematic glow */}
+          <motion.div
+            animate={{ rotateZ: [0, 360] }}
+            transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+            className="pointer-events-none absolute -inset-32 -z-10 opacity-30 blur-3xl"
+            style={{
+              background:
+                "conic-gradient(from 0deg, rgba(201,168,76,0.5), transparent 30%, rgba(232,160,32,0.4) 60%, transparent 90%)",
+            }}
+          />
           <div className="mb-2 flex items-center justify-center gap-2">
             <Package className="h-4 w-4 text-secondary" />
             <span className="text-xs uppercase tracking-widest text-secondary/80">Free to join</span>
@@ -580,10 +705,10 @@ function LandingPage() {
             No subscription. No listing fee. Create an account, post your first listing and see who shows up.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link to="/signup" className="inline-flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 text-sm font-semibold text-primary transition hover:bg-secondary/90">
+            <Link to="/signup" data-testid="final-cta-signup" className="btn-glow inline-flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 text-sm font-semibold text-primary transition hover:bg-secondary/90">
               Create Free Account <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link to="/marketplace" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-medium text-foreground transition hover:bg-white/[0.07]">
+            <Link to="/marketplace" data-testid="final-cta-marketplace" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-medium text-foreground transition hover:bg-white/[0.07]">
               <Store className="h-4 w-4" /> Browse First
             </Link>
           </div>
