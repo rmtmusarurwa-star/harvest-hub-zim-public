@@ -47,11 +47,7 @@ function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden ambient-glow">
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-60 [background:radial-gradient(80%_60%_at_50%_-20%,rgba(13,59,46,0.5),transparent_60%)]" />
-      <div className="pointer-events-none absolute -z-10 right-[-10%] top-1/4 h-[420px] w-[420px] rounded-full bg-secondary/10 blur-[120px]" />
-      <div className="pointer-events-none absolute -z-10 left-[-10%] bottom-0 h-[420px] w-[420px] rounded-full bg-accent/10 blur-[120px]" />
-
+    <div className="relative min-h-screen" style={{ zIndex: 1 }}>
       <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-12">
         <motion.div
           initial={{ opacity: 0, y: 14 }}

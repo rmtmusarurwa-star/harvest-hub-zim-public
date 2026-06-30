@@ -26,16 +26,16 @@ import {
 import { Wordmark } from "@/components/brand/Wordmark";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { FieldMapBackground } from "@/components/brand/FieldMapBackground";
 import {
   ScrollProgressBar,
-  FloatingOrbs,
   CinematicHeroMockup,
   Tilt3DCard,
   AnimatedCounter,
   RevealOnScroll,
   Parallax,
 } from "@/components/landing/Cinematic3D";
+import { ZimbabweHeatmap } from "@/components/landing/ZimbabweHeatmap";
+import { TestimonialCarousel } from "@/components/landing/TestimonialCarousel";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: IndexPage,
@@ -154,10 +154,9 @@ function LandingPage() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden ambient-glow">
+    <div className="relative min-h-screen">
       <ScrollProgressBar />
-      <FloatingOrbs />
-      <FieldMapBackground />
+      <div className="relative" style={{ zIndex: 1 }}>
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/80 backdrop-blur-xl">
@@ -574,32 +573,16 @@ function LandingPage() {
           </div>
           <h2 className="font-display text-3xl md:text-4xl">Real farmers. Real results.</h2>
         </motion.div>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          {TESTIMONIALS.map(({ name, role, quote, initials }, i) => (
-            <motion.div
-              key={name}
-              initial={{ opacity: 0, y: 24, rotateY: i % 2 === 0 ? -12 : 12 }}
-              whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.7, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-              style={{ transformPerspective: 1200 }}
-            >
-              <Tilt3DCard intensity={6} className="glass rounded-2xl p-6 flex flex-col gap-4 h-full">
-                <Quote className="h-5 w-5 text-secondary/40" />
-                <p className="text-sm leading-relaxed text-foreground/80 flex-1">"{quote}"</p>
-                <div className="flex items-center gap-3 pt-2 border-t border-white/5">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary/20 text-xs font-bold text-secondary">
-                    {initials}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold">{name}</div>
-                    <div className="text-xs text-muted-foreground">{role}</div>
-                  </div>
-                </div>
-              </Tilt3DCard>
-            </motion.div>
-          ))}
-        </div>
+        <RevealOnScroll>
+          <TestimonialCarousel testimonials={TESTIMONIALS} />
+        </RevealOnScroll>
+      </section>
+
+      {/* ── Zimbabwe heatmap ─────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
+        <RevealOnScroll>
+          <ZimbabweHeatmap />
+        </RevealOnScroll>
       </section>
 
       {/* ── Payment trust strip ──────────────────────────────────────────── */}
@@ -729,6 +712,7 @@ function LandingPage() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

@@ -12,11 +12,7 @@ type Props = {
 
 export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props) {
   return (
-    <div className="relative min-h-screen overflow-hidden ambient-glow mesh-bg mesh-bg-strong">
-      {/* Background grain + radial */}
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-60 [background:radial-gradient(80%_60%_at_50%_-20%,rgba(13,59,46,0.5),transparent_60%)]" />
-      <div className="pointer-events-none absolute -z-10 right-[-10%] top-1/4 h-[420px] w-[420px] rounded-full bg-secondary/10 blur-[120px]" />
-      <div className="pointer-events-none absolute -z-10 left-[-10%] bottom-0 h-[420px] w-[420px] rounded-full bg-accent/10 blur-[120px]" />
+    <div className="relative min-h-screen" style={{ zIndex: 1 }}>
 
       <div className="mx-auto grid min-h-screen max-w-6xl grid-cols-1 px-5 py-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:px-8 lg:py-16">
         {/* Brand panel */}

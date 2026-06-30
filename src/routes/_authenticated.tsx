@@ -37,7 +37,7 @@ function AuthenticatedLayout() {
 
   if (loading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background ambient-glow">
+      <div className="relative grid min-h-screen place-items-center" style={{ zIndex: 1 }}>
         <Loader2 className="h-5 w-5 animate-spin text-secondary" />
       </div>
     );
@@ -46,7 +46,7 @@ function AuthenticatedLayout() {
   // Non-public route and no session → will redirect, show spinner
   if (!session && !isPublicBrowsable) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background ambient-glow">
+      <div className="relative grid min-h-screen place-items-center" style={{ zIndex: 1 }}>
         <Loader2 className="h-5 w-5 animate-spin text-secondary" />
       </div>
     );
@@ -65,8 +65,8 @@ function AuthenticatedLayout() {
 function GuestLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
-    <div className="min-h-screen ambient-glow mesh-bg">
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-background/80 backdrop-blur-xl">
+    <div className="relative min-h-screen" style={{ zIndex: 1 }}>
+      <header className="sticky top-0 z-40 border-b border-white/5 bg-background/60 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
           <Link to="/" onClick={() => setMobileOpen(false)}>
             <Wordmark size={32} />

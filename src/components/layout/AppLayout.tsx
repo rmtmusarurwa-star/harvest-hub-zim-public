@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
-import { FieldMapBackground } from "@/components/brand/FieldMapBackground";
 import { AskHarvestAi } from "@/components/brand/AskHarvestAi";
 import { useDecorativeMotionGuard } from "@/hooks/use-decorative-motion";
 
@@ -13,8 +12,7 @@ export function AppLayout() {
   useDecorativeMotionGuard();
 
   return (
-    <div className="h-screen overflow-hidden ambient-glow mesh-bg">
-      <FieldMapBackground />
+    <div className="relative h-screen overflow-hidden" style={{ zIndex: 1 }}>
       <Sidebar mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 
       <div className="lg:pl-72 h-full flex flex-col overflow-hidden">
