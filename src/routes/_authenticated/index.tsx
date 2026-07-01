@@ -12,21 +12,21 @@ import {
   Sparkles,
   Store,
   Truck,
-  Users,
   Wheat,
   ShoppingBag,
   CloudSun,
   TrendingUp,
   MessageSquare,
-  Quote,
   Wallet,
   Phone,
   Landmark,
   Banknote,
   BadgeCheck,
+  Droplets,
+  Syringe,
+  Search,
 } from "lucide-react";
 import { Wordmark } from "@/components/brand/Wordmark";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
   ScrollProgressBar,
@@ -34,7 +34,6 @@ import {
   Tilt3DCard,
   AnimatedCounter,
   RevealOnScroll,
-  Parallax,
 } from "@/components/landing/Cinematic3D";
 import { CinematicBackground } from "@/components/landing/CinematicBackground";
 import { ZimbabweHeatmap } from "@/components/landing/ZimbabweHeatmap";
@@ -58,40 +57,7 @@ function IndexPage() {
   return <LandingPage />;
 }
 
-// ─── Live stats ──────────────────────────────────────────────────────────────
-function useLiveStats() {
-  const [stats, setStats] = useState({ farmers: 0, listings: 0, value: 0 });
-  useEffect(() => {
-    async function load() {
-      const [farmersRes, listingsRes, valueRes] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact" }).eq("role", "farmer"),
-        supabase.from("listings").select("id", { count: "exact" }).eq("status", "active"),
-        supabase.from("listings").select("price, quantity").eq("status", "active"),
-      ]);
-      const value = (valueRes.data ?? []).reduce(
-        (s, l) => s + Number(l.price) * Number(l.quantity),
-        0,
-      );
-      setStats({ farmers: farmersRes.count ?? 0, listings: listingsRes.count ?? 0, value });
-    }
-    load();
-  }, []);
-  return stats;
-}
-
 // ─── Data ────────────────────────────────────────────────────────────────────
-const FARMER_STEPS = [
-  { icon: Package, step: "1", title: "Post a listing", desc: "Add crop, livestock, or equipment details in about a minute. Set your price and location. That's it." },
-  { icon: Users, step: "2", title: "Buyers come to you", desc: "No calling around. No middleman taking a cut. Buyers find your listing and reach out directly." },
-  { icon: Truck, step: "3", title: "Move the goods", desc: "Post a transport request. Drivers quote. You pick one and coordinate delivery, all in one place." },
-];
-
-const BUYER_STEPS = [
-  { icon: Store, step: "1", title: "Search what you need", desc: "Maize, tomatoes, cattle, tractors, and more are all here. Filter by province, price, and quantity." },
-  { icon: BarChart3, step: "2", title: "See the real price", desc: "Market prices are pulled from actual live listings, not a static table someone last updated in 2022." },
-  { icon: ShoppingBag, step: "3", title: "Order and pay", desc: "EcoCash, ZipIt or cash on delivery. Place the order, track it, get your produce." },
-];
-
 const FEATURES = [
   { icon: Bot, title: "Harvest AI", desc: "Type a question in Shona, Ndebele or English. It pulls live prices, weather, and disease guidance, then answers in seconds. Also on WhatsApp." },
   { icon: BarChart3, title: "Market prices", desc: "What's soya beans going for in Gweru right now? The data comes from active listings, not guesswork." },
@@ -135,26 +101,103 @@ const AI_DEMOS = [
   { q: "I need a truck, Mutare to Harare, 800kg maize", a: "Transport request posted. Drivers in your area will see it. Expect 2-4 quotes, usually within the hour." },
 ];
 
+const ROLE_CARDS = [
+  {
+    icon: Wheat,
+    title: "For Farmers",
+    desc: "Sell crops and livestock directly to verified buyers.",
+    cta: "Sell your harvest",
+    to: "/signup",
+  },
+  {
+    icon: ShoppingBag,
+    title: "For Buyers",
+    desc: "Find reliable produce, compare suppliers, and arrange delivery.",
+    cta: "Browse produce",
+    to: "/marketplace",
+  },
+  {
+    icon: Truck,
+    title: "For Transporters",
+    desc: "Get delivery requests from farmers, traders, and buyers.",
+    cta: "View transport work",
+    to: "/transport",
+  },
+  {
+    icon: Store,
+    title: "For Input Suppliers",
+    desc: "List seed, fertiliser, equipment, feed, and farming services.",
+    cta: "Open a shop",
+    to: "/shops/setup",
+  },
+] as const;
+
+const DEMO_LISTINGS = [
+  {
+    title: "Boer Goats Available",
+    location: "Masvingo",
+    quantity: "18",
+    badge: "Verified Farmer",
+    meta: "Transport quotes available",
+    icon: Package,
+  },
+  {
+    title: "White Maize Bulk Supply",
+    location: "Gweru",
+    quantity: "12 tonnes",
+    badge: "Buyer-ready",
+    meta: "Verified supplier",
+    icon: Wheat,
+  },
+  {
+    title: "Tomatoes Fresh Harvest",
+    location: "Mutoko",
+    quantity: "Available this week",
+    badge: "Direct farmer listing",
+    meta: "Collection or delivery",
+    icon: Store,
+  },
+] as const;
+
+const TRUST_POINTS = [
+  "Verified farmer and buyer profiles",
+  "Seller ratings and trade history",
+  "Location-based listings",
+  "Transporter verification",
+  "Proof uploads for livestock, crops, receipts, and delivery",
+  "WhatsApp support",
+  "Dispute support",
+] as const;
+
+const HOW_IT_WORKS = [
+  {
+    icon: Search,
+    step: "1",
+    title: "Post or search",
+    desc: "List your produce, livestock, transport service, or supply need.",
+  },
+  {
+    icon: ShieldCheck,
+    step: "2",
+    title: "Connect safely",
+    desc: "View verified profiles, prices, locations, and availability.",
+  },
+  {
+    icon: Truck,
+    step: "3",
+    title: "Trade and move goods",
+    desc: "Agree terms, arrange transport, and complete the deal.",
+  },
+] as const;
+
 // ─── Landing page ─────────────────────────────────────────────────────────────
 function LandingPage() {
-  const { farmers, listings, value } = useLiveStats();
   const [aiDemo, setAiDemo] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => setAiDemo((i) => (i + 1) % AI_DEMOS.length), 4000);
     return () => clearInterval(id);
   }, []);
-
-  const STATS = [
-    { label: "Farmers", value: farmers > 0 ? farmers.toLocaleString() : "Growing" },
-    { label: "Active listings", value: listings > 0 ? listings.toLocaleString() : "Live now" },
-    {
-      label: "Listed value",
-      value: value > 0
-        ? value >= 1_000_000 ? `$${(value / 1_000_000).toFixed(1)}M` : `$${(value / 1_000).toFixed(1)}k`
-        : "In market",
-    },
-  ];
 
   return (
     <div className="relative min-h-screen">
@@ -181,13 +224,13 @@ function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative mx-auto max-w-7xl px-4 pb-20 pt-20 lg:px-6 lg:pt-28">
+      <section className="relative mx-auto max-w-7xl overflow-x-clip px-4 pb-20 pt-16 lg:px-6 lg:pt-24">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-xl"
+            className="max-w-2xl"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -212,33 +255,17 @@ function LandingPage() {
               <Wordmark size={58} animated showTagline />
             </motion.div>
 
-            <h1 className="font-display text-5xl leading-[1.05] tracking-tight md:text-7xl">
-              {"Grow more.".split(" ").map((word, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, y: 30, rotateX: -40 }}
-                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                  transition={{ delay: 0.2 + i * 0.1, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ display: "inline-block", transformPerspective: 800 }}
-                  className="mr-3"
-                >
-                  {word}
-                </motion.span>
-              ))}
+            <motion.h1
+              initial={{ opacity: 0, y: 28, rotateX: -18 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0 }}
+              transition={{ delay: 0.25, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformPerspective: 900 }}
+              className="font-display text-5xl leading-[1.05] tracking-tight md:text-7xl"
+            >
+              Find farmers, buyers,
               <br />
-              {"Sell smarter.".split(" ").map((word, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, y: 30, rotateX: -40 }}
-                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                  transition={{ delay: 0.45 + i * 0.1, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ display: "inline-block", transformPerspective: 800 }}
-                  className="mr-3 text-secondary"
-                >
-                  {word}
-                </motion.span>
-              ))}
-            </h1>
+              <span className="text-secondary">produce, livestock, and transport you can trust.</span>
+            </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 12 }}
@@ -246,7 +273,7 @@ function LandingPage() {
               transition={{ delay: 0.75, duration: 0.6 }}
               className="mt-6 max-w-xl text-base leading-relaxed text-foreground/70 md:text-lg"
             >
-              Zimbabwe's farm marketplace. List produce, find buyers, check prices, book transport, and ask an AI agent anything in Shona, Ndebele or English.
+              Harvest Hub connects verified farmers, buyers, traders, input suppliers, and transporters in one trusted agricultural marketplace. Post harvests, compare quotes, arrange delivery, and trade with confidence.
             </motion.p>
 
             <motion.div
@@ -256,126 +283,191 @@ function LandingPage() {
               className="mt-8 flex flex-wrap gap-3"
             >
               <Link
-                to="/signup"
-                data-testid="hero-cta-signup"
-                className="btn-glow inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-3 text-sm font-semibold text-primary shadow-md transition hover:bg-secondary/90"
-              >
-                Create Free Account <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
                 to="/marketplace"
                 data-testid="hero-cta-marketplace"
+                className="btn-glow inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-3 text-sm font-semibold text-primary shadow-md transition hover:bg-secondary/90"
+              >
+                Browse Marketplace <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/signup"
+                data-testid="hero-cta-sell"
                 className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-foreground backdrop-blur transition hover:bg-white/[0.07]"
               >
-                <Store className="h-4 w-4" /> Browse Marketplace
+                <Wheat className="h-4 w-4" /> Sell Your Harvest
+              </Link>
+              <Link
+                to="/transport"
+                data-testid="hero-cta-transport"
+                className="inline-flex items-center gap-2 rounded-xl border border-secondary/20 bg-secondary/10 px-5 py-3 text-sm font-medium text-secondary backdrop-blur transition hover:bg-secondary/15"
+              >
+                <Truck className="h-4 w-4" /> Get Transport Quote
               </Link>
             </motion.div>
 
-            {/* Live stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 1.05 }}
-              className="mt-14 grid grid-cols-3 gap-3 sm:max-w-md"
-            >
-              {STATS.map(({ label, value: v }, i) => (
-                <Tilt3DCard
-                  key={label}
-                  intensity={6}
-                  className="glass rounded-2xl p-4 text-center"
-                >
-                  <div className="font-display text-2xl text-secondary sm:text-3xl">
-                    {typeof v === "string" && /^\d/.test(v) && !v.includes("$") ? (
-                      <AnimatedCounter to={Number(v.replace(/,/g, ""))} duration={1.4 + i * 0.2} />
-                    ) : (
-                      v
-                    )}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">{label}</div>
-                </Tilt3DCard>
-              ))}
-            </motion.div>
           </motion.div>
 
-          {/* Right — cinematic 3D mockup */}
+          {/* Right — cinematic interactive phone mockup */}
           <div className="relative hidden lg:block">
             <CinematicHeroMockup />
           </div>
         </div>
       </section>
 
-      {/* ── For Farmers / For Buyers ─────────────────────────────────────── */}
+      {/* ── Marketplace examples ─────────────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-8">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-secondary" />
+            <span className="text-[11px] uppercase tracking-[0.22em] text-secondary/80">Live market examples</span>
+          </div>
+          <h2 className="font-display text-3xl md:text-4xl">What people can trade here.</h2>
+        </motion.div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {DEMO_LISTINGS.map(({ title, location, quantity, badge, meta, icon: Icon }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.45, delay: i * 0.08 }}
+              className="glass rounded-2xl p-5 transition hover:border-secondary/25 hover:bg-white/[0.055]"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-secondary/12 text-secondary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-medium text-emerald-300 ring-1 ring-emerald-400/20">
+                  {badge}
+                </span>
+              </div>
+              <h3 className="font-display text-xl leading-tight text-foreground">{title}</h3>
+              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-secondary" /> Location: {location}</span>
+                <span className="flex items-center gap-2"><Package className="h-4 w-4 text-secondary" /> Quantity: {quantity}</span>
+                <span className="flex items-center gap-2"><Truck className="h-4 w-4 text-secondary" /> {meta}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Role-based marketplace paths ─────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-10 text-center">
+          <div className="mb-2 flex items-center justify-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-secondary" />
+            <span className="text-[11px] uppercase tracking-[0.22em] text-secondary/80">Who it is for</span>
+          </div>
+          <h2 className="font-display text-3xl md:text-4xl">Choose your role. Start trading.</h2>
+          <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground">
+            Harvest Hub has different tools for each person in the agricultural chain, so every user knows exactly where they fit.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {ROLE_CARDS.map(({ icon: Icon, title, desc, cta, to }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 18, rotateX: -8 }}
+              whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformPerspective: 1000 }}
+            >
+              <Tilt3DCard intensity={8} className="glass h-full rounded-2xl p-5">
+                <div className="mb-5 grid h-11 w-11 place-items-center rounded-xl bg-secondary/12 text-secondary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="font-display text-xl">{title}</h3>
+                <p className="mt-2 min-h-[64px] text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                <Link to={to} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-secondary transition hover:text-secondary/80">
+                  {cta} <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Tilt3DCard>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── How it works ───────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-10 text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
             <span className="h-2 w-2 rounded-full bg-secondary" />
             <span className="text-[11px] uppercase tracking-[0.22em] text-secondary/80">How it works</span>
           </div>
-          <h2 className="font-display text-3xl md:text-4xl">Pick your side</h2>
+          <h2 className="font-display text-3xl md:text-4xl">From listing to delivery in three steps.</h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground">
-            Farmer or buyer, same platform, different flow. Both take about three steps.
+            Simple enough for first-time users, clear enough for serious traders.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Farmer card */}
-          <motion.div initial={{ opacity: 0, x: -16 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="glass rounded-3xl p-6 lg:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-secondary/15">
-                <Wheat className="h-5 w-5 text-secondary" />
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-widest text-secondary/70">For Farmers</div>
-                <h3 className="font-display text-xl">Cut out the middleman.</h3>
-              </div>
-            </div>
-            <div className="space-y-5">
-              {FARMER_STEPS.map(({ icon: Icon, step, title, desc }) => (
-                <div key={step} className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-secondary/30 bg-secondary/10 text-xs font-bold text-secondary">{step}</div>
-                  <div>
-                    <div className="flex items-center gap-2 font-semibold text-foreground">
-                      <Icon className="h-3.5 w-3.5 text-secondary" />{title}
-                    </div>
-                    <p className="mt-0.5 text-sm text-muted-foreground">{desc}</p>
-                  </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {HOW_IT_WORKS.map(({ icon: Icon, step, title, desc }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.45, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="glass relative overflow-hidden rounded-2xl p-5"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-secondary/12 text-secondary">
+                  <Icon className="h-5 w-5" />
                 </div>
-              ))}
-            </div>
-            <Link to="/signup" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-2.5 text-sm font-semibold text-primary transition hover:bg-secondary/90">
-              Start selling <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </motion.div>
-
-          {/* Buyer card */}
-          <motion.div initial={{ opacity: 0, x: 16 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="glass rounded-3xl p-6 lg:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-secondary/15">
-                <ShoppingBag className="h-5 w-5 text-secondary" />
+                <span className="font-display text-5xl leading-none text-secondary/15">{step}</span>
               </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-widest text-secondary/70">For Buyers</div>
-                <h3 className="font-display text-xl">Direct from the farm gate.</h3>
-              </div>
-            </div>
-            <div className="space-y-5">
-              {BUYER_STEPS.map(({ icon: Icon, step, title, desc }) => (
-                <div key={step} className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-secondary/30 bg-secondary/10 text-xs font-bold text-secondary">{step}</div>
-                  <div>
-                    <div className="flex items-center gap-2 font-semibold text-foreground">
-                      <Icon className="h-3.5 w-3.5 text-secondary" />{title}
-                    </div>
-                    <p className="mt-0.5 text-sm text-muted-foreground">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Link to="/marketplace" className="mt-7 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-white/[0.07]">
-              Browse listings <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </motion.div>
+              <h3 className="font-display text-xl">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+            </motion.div>
+          ))}
         </div>
+      </section>
+
+      {/* ── Trust section ───────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-4 pb-24 lg:px-6">
+        <RevealOnScroll className="glass overflow-hidden rounded-3xl border border-secondary/10">
+          <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="border-b border-white/5 p-8 lg:border-b-0 lg:border-r lg:p-10">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-secondary/10 px-3 py-1 text-xs text-secondary">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Trust and verification
+              </div>
+              <h2 className="font-display text-3xl leading-tight md:text-4xl">
+                Trade with people you can verify.
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                Fraud is the biggest risk in agricultural trading. Harvest Hub makes identity, location, proof, transport, and trade records visible before money or goods move.
+              </p>
+              <div className="mt-6 rounded-2xl border border-white/8 bg-white/[0.035] p-4">
+                <div className="flex items-start gap-3">
+                  <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
+                  <p className="text-sm leading-relaxed text-foreground/75">
+                    Buyers, farmers, transporters, and suppliers can message, review profiles, request proof, and keep trade evidence attached to the order.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-3 p-8 sm:grid-cols-2 lg:p-10">
+              {TRUST_POINTS.map((point, i) => (
+                <motion.div
+                  key={point}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.35, delay: i * 0.04 }}
+                  className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-4"
+                >
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
+                  <span className="text-sm leading-relaxed text-foreground/78">{point}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </RevealOnScroll>
       </section>
 
       {/* ── Harvest AI spotlight ──────────────────────────────────────────── */}
@@ -523,7 +615,7 @@ function LandingPage() {
             {/* Left — the problem */}
             <div className="p-8 lg:p-10 border-b border-white/5 lg:border-b-0 lg:border-r">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-red-500/10 border border-red-500/20 px-3 py-1 text-xs text-red-400">
-                ❌ The old way
+                The old way
               </div>
               <h3 className="font-display text-2xl mb-2">You sell beef worth $100.</h3>
               <div className="space-y-3 mt-5">
@@ -548,7 +640,7 @@ function LandingPage() {
             {/* Right — the solution */}
             <div className="p-8 lg:p-10">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-secondary/10 border border-secondary/20 px-3 py-1 text-xs text-secondary">
-                ✅ With Harvest Hub
+                With Harvest Hub
               </div>
               <h3 className="font-display text-2xl mb-2">Keep almost everything.</h3>
               <div className="space-y-3 mt-5">
@@ -666,14 +758,16 @@ function LandingPage() {
             {/* Right — category pills */}
             <div className="flex flex-col justify-center gap-3 border-t border-white/5 p-8 md:border-l md:border-t-0 sm:p-10">
               {[
-                { icon: "🐄", label: "Agro-Vets", sub: "Vaccines, dewormers, antibiotics" },
-                { icon: "🌾", label: "Feed Suppliers", sub: "Broiler, layer, dairy & pig feed" },
-                { icon: "🧪", label: "Fertilizers & Chemicals", sub: "NPK, herbicides, fungicides" },
-                { icon: "💧", label: "Irrigation Equipment", sub: "Drip kits, pumps, poly pipe" },
-                { icon: "🛠️", label: "Farming Tools", sub: "Hoes, sprayers, hand tools" },
-              ].map(({ icon, label, sub }) => (
+                { icon: Syringe, label: "Agro-Vets", sub: "Vaccines, dewormers, antibiotics" },
+                { icon: Wheat, label: "Feed Suppliers", sub: "Broiler, layer, dairy and pig feed" },
+                { icon: CloudSun, label: "Fertilizers & Chemicals", sub: "NPK, herbicides, fungicides" },
+                { icon: Droplets, label: "Irrigation Equipment", sub: "Drip kits, pumps, poly pipe" },
+                { icon: Package, label: "Farming Tools", sub: "Hoes, sprayers, hand tools" },
+              ].map(({ icon: Icon, label, sub }) => (
                 <motion.div key={label} initial={{ opacity: 0, x: 12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.35 }} className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-4 py-3 hover:bg-white/[0.06] transition">
-                  <span className="text-xl">{icon}</span>
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-secondary/10 text-secondary">
+                    <Icon className="h-[18px] w-[18px]" />
+                  </div>
                   <div>
                     <div className="text-sm font-medium">{label}</div>
                     <div className="text-xs text-muted-foreground">{sub}</div>
