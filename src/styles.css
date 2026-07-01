@@ -264,3 +264,13 @@
   100% { r: 16; opacity: 0; }
 }
 
+@keyframes brand-float {
+  0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  50% { transform: translateY(-4px) rotateX(4deg) rotateY(-5deg); }
+}
+
+@keyframes brand-shine {
+  0%, 64%, 100% { opacity: 0; transform: translateX(-130%) skewX(-18deg); }
+  72% { opacity: 0.82; }
+  86% { opacity: 0; transform: translateX(130%) skewX(-18deg); }
+}

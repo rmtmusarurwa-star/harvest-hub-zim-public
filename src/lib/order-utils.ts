@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import logoUrl from "@/assets/harvest-hub-logo-transparent.png";
+import logoUrl from "@/assets/harvest-hub-mark.png";
 
 export type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 
@@ -190,7 +190,7 @@ export async function downloadReceiptPDF(orders: OrderRow[], buyerName: string) 
   text(doc, BRAND_GOLD);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Connect  •  Trade  •  Grow", WORD_X, LOGO_Y + 46);
+  doc.text("Connect. Trade. Grow.", WORD_X, LOGO_Y + 46);
 
   // PAID badge — top-right, 90x44
   const isPaid = order.payment_status === "paid";

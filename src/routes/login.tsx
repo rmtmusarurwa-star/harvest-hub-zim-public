@@ -18,6 +18,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { CinematicBackground } from "@/components/landing/CinematicBackground";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 const schema = z.object({
   email: z.string().trim().email("Enter a valid email"),
@@ -66,17 +67,7 @@ function LoginPage() {
       <div className="relative z-[1] mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
         <header className="flex items-center justify-between">
           <Link to="/" className="group inline-flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full border border-secondary/30 bg-secondary/15 text-sm font-semibold text-secondary shadow-[0_0_28px_rgba(201,168,76,0.18)]">
-              HH
-            </span>
-            <span>
-              <span className="block font-display text-lg leading-none text-foreground">
-                Harvest Hub
-              </span>
-              <span className="mt-1 block text-[10px] uppercase tracking-[0.24em] text-secondary/80">
-                Connect. Trade. Grow.
-              </span>
-            </span>
+            <Wordmark size={42} animated showTagline />
           </Link>
           <Link
             to="/"
@@ -119,6 +110,19 @@ function LoginPage() {
               title="Trade operations"
               text="Listings, transport, messages, and receipts stay together."
             />
+          </div>
+
+          <div className="mt-7 hidden items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.045] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.25)] backdrop-blur md:inline-flex">
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-secondary/25 bg-[#06100B] shadow-[0_0_36px_rgba(201,168,76,0.22)] animate-[brand-float_5.5s_ease-in-out_infinite]">
+              <img src="/harvest-hub-mark.png" alt="" aria-hidden="true" className="h-full w-full scale-[1.08] object-cover" />
+              <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_20%,rgba(255,255,255,0.22)_45%,transparent_68%)] opacity-0 animate-[brand-shine_4.8s_ease-in-out_infinite]" />
+            </div>
+            <div className="max-w-xs text-left">
+              <div className="font-display text-xl text-foreground">Harvest Hub</div>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/68">
+                A connected trade desk for Zimbabwe's farms, buyers, transporters, and suppliers.
+              </p>
+            </div>
           </div>
         </motion.div>
 

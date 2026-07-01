@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
 import { useIsAdmin } from "@/lib/use-is-admin";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 export const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -81,17 +82,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: Props) {
         className="flex items-center gap-3 px-2 py-1"
         aria-label="Harvest Hub home"
       >
-        <img
-          src="/harvest-hub-logo.png"
-          alt="Harvest Hub"
-          className="h-11 w-auto rounded-md"
-        />
-        <div className="leading-tight">
-          <div className="font-display text-lg tracking-tight">Harvest Hub</div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-secondary/80">
-            Connect · Trade · Grow
-          </div>
-        </div>
+        <Wordmark size={42} showTagline />
       </Link>
 
       <nav className="flex-1 space-y-1 overflow-y-auto pr-1">

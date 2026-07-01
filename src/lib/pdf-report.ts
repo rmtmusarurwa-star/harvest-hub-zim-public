@@ -70,7 +70,7 @@ export function drawReportHeader(doc: jsPDF, opts: { title: string; subtitle?: s
   textColor(doc, BRAND_GOLD);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(opts.subtitle ?? "Connect · Trade · Grow", markCx + 28, markCy + 12);
+  doc.text(opts.subtitle ?? "Connect. Trade. Grow.", markCx + 28, markCy + 12);
 
   textColor(doc, [255, 255, 255]);
   doc.setFont("helvetica", "bold");

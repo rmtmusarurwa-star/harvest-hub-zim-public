@@ -165,7 +165,7 @@ function LandingPage() {
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
-          <Link to="/"><Wordmark size={32} /></Link>
+          <Link to="/"><Wordmark size={32} animated /></Link>
           <nav className="hidden items-center gap-6 md:flex">
             <Link to="/marketplace" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Marketplace</Link>
             <Link to="/shops" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Shops</Link>
@@ -200,6 +200,16 @@ function LandingPage() {
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-secondary" />
               </span>
               Zimbabwe's Agricultural Marketplace
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12, rotateX: -18 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0 }}
+              transition={{ delay: 0.18, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-6 inline-flex rounded-full border border-white/10 bg-white/[0.045] px-4 py-3 shadow-[0_22px_70px_rgba(0,0,0,0.28)] backdrop-blur"
+              style={{ transformPerspective: 900 }}
+            >
+              <Wordmark size={58} animated showTagline />
             </motion.div>
 
             <h1 className="font-display text-5xl leading-[1.05] tracking-tight md:text-7xl">
@@ -718,7 +728,7 @@ function LandingPage() {
       <footer className="border-t border-white/5 py-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 text-center text-xs text-muted-foreground sm:flex-row sm:justify-between lg:px-6">
           <Wordmark size={22} />
-          <span>© {new Date().getFullYear()} Harvest Hub · Connecting Zimbabwe's farms</span>
+          <span>© {new Date().getFullYear()} Harvest Hub. Connecting Zimbabwe's farms.</span>
           <div className="flex items-center gap-4">
             <Link to="/marketplace" className="transition-colors hover:text-foreground">Marketplace</Link>
             <Link to="/shops" className="transition-colors hover:text-foreground">Shops</Link>

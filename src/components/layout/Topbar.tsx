@@ -4,6 +4,7 @@ import { GlobalSearch } from "./GlobalSearch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ROLE_LABEL, useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 type Props = { onOpenMobile: () => void };
 
@@ -34,12 +35,7 @@ export function Topbar({ onOpenMobile }: Props) {
         </button>
 
         <div className="hidden lg:flex items-center gap-2 pr-2">
-          <span className="font-display text-base tracking-tight">
-            Harvest Hub
-          </span>
-          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary/80">
-            ZW
-          </span>
+          <Wordmark size={30} />
         </div>
 
         <GlobalSearch />

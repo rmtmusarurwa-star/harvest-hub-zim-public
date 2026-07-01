@@ -25,9 +25,9 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
           className="hidden lg:flex flex-col justify-between"
         >
           <div className="flex flex-col gap-2">
-            <Wordmark size={48} />
+            <Wordmark size={48} animated />
             <div className="text-[11px] uppercase tracking-[0.28em] text-secondary/80">
-              Connect · Trade · Grow
+              Connect. Trade. Grow.
             </div>
           </div>
 
@@ -61,9 +61,9 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer }: Props)
         >
           <div className="glass-strong w-full rounded-3xl p-7 lg:p-9">
             <div className="mb-6 flex flex-col items-center gap-2 lg:hidden">
-              <Wordmark size={40} />
+              <Wordmark size={40} animated />
               <div className="text-[10px] uppercase tracking-[0.28em] text-secondary/80">
-                Connect · Trade · Grow
+                Connect. Trade. Grow.
               </div>
             </div>
             <div className="mb-7">
