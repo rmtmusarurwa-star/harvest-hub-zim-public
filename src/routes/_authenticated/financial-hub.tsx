@@ -64,6 +64,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { splitExistingBuyerTotal } from "@/lib/payment-fees";
 
 export const Route = createFileRoute("/_authenticated/financial-hub")({
   head: () => ({
@@ -88,6 +89,7 @@ type OrderRow = {
   quantity: number;
   unit: string;
   unit_price: number;
+  subtotal?: number | string | null;
   total_amount: number;
   payment_method: string;
   payment_status: string;
@@ -144,6 +146,27 @@ const statusTone = (s: string) => {
   if (s === "failed" || s === "cancelled") return "bg-rose-500/15 text-rose-300 border-rose-500/20";
   return "bg-white/5 text-muted-foreground border-white/10";
 };
+
+function moneySplit(total: number, subtotalValue?: number | string | null) {
+  const subtotal =
+    subtotalValue == null ? Math.round((total / 1.02) * 100) / 100 : Number(subtotalValue);
+  const split = splitExistingBuyerTotal(total, subtotal);
+  return {
+    subtotal: split.subtotal,
+    fee: split.platformFee,
+    processingFee: split.processingFee,
+    total: split.buyerTotal,
+  };
+}
+
+function settlementStatus(order: OrderRow, isFarmer: boolean) {
+  if (order.payment_status === "paid" || order.payment_status === "confirmed") {
+    return isFarmer ? "Payable to you" : "Seller payable";
+  }
+  if (order.payment_status === "awaiting_confirmation") return "Proof under review";
+  if (order.payment_method === "cash_on_delivery") return "Pay on collection";
+  return "Awaiting payment";
+}
 
 function FinancialHubPage() {
   const { user, profile } = useAuth();
@@ -590,6 +613,8 @@ function FarmerView({
         </div>
       </div>
 
+      <SettlementLedger orders={orders} counterpartNames={buyerNames} isFarmer />
+
       {/* Expenses */}
       <div className="glass space-y-4 rounded-2xl border border-white/5 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -771,6 +796,92 @@ function BuyerView({
           <OrderTable orders={pendingOrders} sellerNames={sellerNames} onReorder={onReorder} />
         </TabsContent>
       </Tabs>
+
+      <SettlementLedger orders={orders} counterpartNames={sellerNames} isFarmer={false} />
+    </div>
+  );
+}
+
+function SettlementLedger({
+  orders,
+  counterpartNames,
+  isFarmer,
+}: {
+  orders: OrderRow[];
+  counterpartNames: Record<string, string>;
+  isFarmer: boolean;
+}) {
+  const visible = orders.slice(0, 8);
+
+  return (
+    <div className="glass space-y-4 rounded-2xl border border-white/5 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg">Settlement Ledger</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isFarmer
+              ? "See what buyers paid, processing costs, the 2% Harvest Hub fee, and the amount expected to reach you."
+              : "See what you paid, processing costs, the platform fee, and when the seller becomes payable."}
+          </p>
+        </div>
+        <Badge variant="outline" className="border-secondary/30 text-secondary">
+          2% platform fee
+        </Badge>
+      </div>
+
+      {visible.length === 0 ? (
+        <EmptyState
+          icon={<Wallet className="h-10 w-10" />}
+          title="No settlement entries yet"
+          hint="Completed and pending orders will create a clear money trail here."
+        />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/5 text-left text-[11px] uppercase tracking-widest text-secondary/70">
+                <th className="py-2 font-normal">Order</th>
+                <th className="py-2 font-normal">{isFarmer ? "Buyer" : "Seller"}</th>
+                <th className="py-2 font-normal">Status</th>
+                <th className="py-2 text-right font-normal">Buyer Paid</th>
+                <th className="py-2 text-right font-normal">Processing</th>
+                <th className="py-2 text-right font-normal">Fee</th>
+                <th className="py-2 text-right font-normal">Seller Gets</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((o) => {
+                const split = moneySplit(Number(o.total_amount), o.subtotal);
+                const counterpartId = isFarmer ? o.buyer_id : o.farmer_id;
+                return (
+                  <tr key={o.id} className="border-b border-white/5 last:border-0">
+                    <td className="py-3">
+                      <div className="font-mono text-xs text-secondary">{o.order_code}</div>
+                      <div className="max-w-[220px] truncate text-xs text-muted-foreground">
+                        {o.listing_title}
+                      </div>
+                    </td>
+                    <td className="py-3">{counterpartNames[counterpartId] || "Member"}</td>
+                    <td className="py-3">
+                      <Badge variant="outline" className={statusTone(o.payment_status)}>
+                        {settlementStatus(o, isFarmer)}
+                      </Badge>
+                    </td>
+                    <td className="py-3 text-right font-mono">{fmt(split.total)}</td>
+                    <td className="py-3 text-right font-mono text-blue-300">
+                      {fmt(split.processingFee)}
+                    </td>
+                    <td className="py-3 text-right font-mono text-amber-300">{fmt(split.fee)}</td>
+                    <td className="py-3 text-right font-mono text-secondary">
+                      {fmt(split.subtotal)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

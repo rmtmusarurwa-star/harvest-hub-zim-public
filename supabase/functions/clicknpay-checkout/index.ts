@@ -28,6 +28,32 @@ function genCode() {
   return `HHZ-${ts}${rand}`;
 }
 
+const PLATFORM_FEE_RATE = 0.02;
+
+const PROCESSING_FEES: Record<string, { rate: number; fixed: number }> = {
+  ecocash: { rate: 0.025, fixed: 0 },
+  onemoney: { rate: 0.025, fixed: 0 },
+  telecash: { rate: 0.025, fixed: 0 },
+  card: { rate: 0.035, fixed: 0.5 },
+  vpayments: { rate: 0.01, fixed: 0.5 },
+  zipit: { rate: 0, fixed: 0 },
+  cash_on_delivery: { rate: 0, fixed: 0 },
+};
+
+const roundMoney = (n: number) => Math.round(n * 100) / 100;
+
+function calculateBuyerCharges(subtotal: number, paymentMethod?: string) {
+  const platformFee = roundMoney(subtotal * PLATFORM_FEE_RATE);
+  const config = PROCESSING_FEES[paymentMethod ?? ""] ?? { rate: 0, fixed: 0 };
+  const beforeProcessing = subtotal + platformFee;
+  const buyerTotal =
+    config.rate > 0 || config.fixed > 0
+      ? roundMoney((beforeProcessing + config.fixed) / (1 - config.rate))
+      : roundMoney(beforeProcessing);
+  const processingFee = Math.max(0, roundMoney(buyerTotal - beforeProcessing));
+  return { platformFee, processingFee, buyerTotal };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
@@ -53,13 +79,10 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const PLATFORM_FEE_RATE = 0.02; // 2% charged TO the buyer on top of product price
-
     const primaryCode = genCode();
     const orderRows = items.map((it, i) => {
       const subtotal     = Math.round(it.price * it.quantity * 100) / 100;
-      const platformFee  = Math.round(subtotal * PLATFORM_FEE_RATE * 100) / 100;
-      const totalAmount  = Math.round((subtotal + platformFee) * 100) / 100;
+      const charges      = calculateBuyerCharges(subtotal, paymentMethod);
       return {
         order_code: i === 0 ? primaryCode : genCode(),
         buyer_id: buyerId,
@@ -70,7 +93,7 @@ serve(async (req) => {
         unit: it.unit,
         unit_price: it.price,
         subtotal,                          // product cost, what farmer receives
-        total_amount: totalAmount,         // what buyer pays (subtotal + 2% fee)
+        total_amount: charges.buyerTotal,  // subtotal + Harvest Hub fee + processing fee
         payment_method: paymentMethod ?? "card",
         payment_status: "pending",
         payment_reference: primaryCode,
@@ -106,9 +129,9 @@ serve(async (req) => {
     }, i: number) => ({
       id: i,
       productName: o.listing_title ?? "Farm Produce",
-      // description shows product qty; price is the full buyer amount (subtotal + 2% fee)
-      description: `${Number(o.quantity)} ${o.unit} · incl. 2% platform fee`,
-      price: Number(o.total_amount),  // buyer charged subtotal + platform fee
+      // description shows product qty; price is the full buyer amount
+      description: `${Number(o.quantity)} ${o.unit} · incl. Harvest Hub fee + processing`,
+      price: Number(o.total_amount),
       quantity: 1,
     }));
 

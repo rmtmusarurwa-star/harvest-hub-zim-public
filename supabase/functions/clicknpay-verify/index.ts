@@ -108,21 +108,21 @@ serve(async (req) => {
         .filter((o) => !!o.farmer_id)
         .map((o) => {
           // subtotal = what the product cost (farmer's portion, 100%)
-          // total_amount = subtotal + 2% platform fee charged to buyer
+          // total_amount = subtotal + Harvest Hub fee + payment processing fee.
           // For legacy orders (subtotal not set), fall back to old formula.
           const subtotal =
             o.subtotal != null
               ? Number(o.subtotal)
               : Math.round((Number(o.total_amount ?? 0) / 1.02) * 100) / 100;
           const total = Number(o.total_amount ?? 0);
-          const fee = Math.round((total - subtotal) * 100) / 100;
+          const fee = Math.round(subtotal * PLATFORM_FEE_RATE * 100) / 100;
           const net = subtotal; // farmer receives 100% of product price
           return {
             order_id: o.id,
             seller_id: o.farmer_id,
             payment_reference: primaryCode,
-            gross_amount: total, // total buyer paid (including fee)
-            platform_fee: fee, // 2% fee collected from buyer
+            gross_amount: total, // total buyer paid, including platform + processing fees
+            platform_fee: fee, // only Harvest Hub's 2% commission
             net_amount: net, // what farmer gets (subtotal, 100%)
             status: "pending",
           };

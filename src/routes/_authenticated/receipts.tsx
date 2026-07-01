@@ -55,6 +55,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { splitExistingBuyerTotal } from "@/lib/payment-fees";
 
 export const Route = createFileRoute("/_authenticated/receipts")({
   component: ReceiptsPage,
@@ -78,8 +79,13 @@ function moneySplit(o: OrderRow) {
   const total = Number(o.total_amount);
   const subtotal =
     order.subtotal == null ? Math.round((total / 1.02) * 100) / 100 : Number(order.subtotal);
-  const fee = Math.max(0, Math.round((total - subtotal) * 100) / 100);
-  return { subtotal, fee, total };
+  const split = splitExistingBuyerTotal(total, subtotal);
+  return {
+    subtotal: split.subtotal,
+    fee: split.platformFee,
+    processingFee: split.processingFee,
+    total: split.buyerTotal,
+  };
 }
 
 function ReceiptsPage() {
@@ -238,6 +244,7 @@ function ReceiptsPage() {
 <div class="card">
   <div class="row"><span class="muted">Produce subtotal</span><span>$${split.subtotal.toFixed(2)}</span></div>
   <div class="row"><span class="muted">Harvest Hub fee (2%)</span><span>$${split.fee.toFixed(2)}</span></div>
+  <div class="row"><span class="muted">Payment processing</span><span>$${split.processingFee.toFixed(2)}</span></div>
   <div class="row total"><span>Grand Total</span><span>$${split.total.toFixed(2)}</span></div>
 </div>
 <p class="muted" style="margin-top:24px;text-align:center">Thank you for trading on Harvest Hub.</p>
@@ -701,6 +708,10 @@ function ReceiptPreview(props: {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Harvest Hub fee (2%)</span>
             <span className="font-mono text-amber-400">${split.fee.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Payment processing</span>
+            <span className="font-mono text-blue-300">${split.processingFee.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between pt-1">
             <span className="text-[11px] uppercase tracking-widest text-muted-foreground">

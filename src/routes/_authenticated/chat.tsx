@@ -785,6 +785,18 @@ function ChatThread({
     sendText.mutate(v);
   }
 
+  function sendQuickTrustPrompt(kind: "proof" | "location" | "checkout") {
+    const copy = {
+      proof:
+        "Before we proceed, please send a clear photo or proof of the produce/livestock, plus quantity and harvest/availability date.",
+      location:
+        "Please confirm the pickup/delivery location and preferred collection time so transport can be arranged properly.",
+      checkout:
+        "Once we agree the price and quantity, let's move this into checkout so payment, fees, receipts, and settlement are tracked clearly.",
+    }[kind];
+    sendText.mutate(copy);
+  }
+
 
   return (
     <div className="flex h-full flex-col">
@@ -839,6 +851,33 @@ function ChatThread({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+
+      <div className="border-b border-white/5 bg-secondary/[0.04] px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Trade-safe prompts</span>
+          <button
+            type="button"
+            onClick={() => sendQuickTrustPrompt("proof")}
+            className="rounded-full border border-white/10 px-3 py-1 transition hover:border-secondary/40 hover:text-secondary"
+          >
+            Ask for proof
+          </button>
+          <button
+            type="button"
+            onClick={() => sendQuickTrustPrompt("location")}
+            className="rounded-full border border-white/10 px-3 py-1 transition hover:border-secondary/40 hover:text-secondary"
+          >
+            Confirm location
+          </button>
+          <button
+            type="button"
+            onClick={() => sendQuickTrustPrompt("checkout")}
+            className="rounded-full border border-white/10 px-3 py-1 transition hover:border-secondary/40 hover:text-secondary"
+          >
+            Move to checkout
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -1169,6 +1208,9 @@ function OfferCard({
         </div>
         <div className="mt-1 text-xs text-muted-foreground">
           {qty} {unit} · Total ${total.toFixed(2)}
+        </div>
+        <div className="mt-1 text-[11px] text-muted-foreground">
+          Checkout records payment, receipts, the 2% Harvest Hub fee, and seller settlement.
         </div>
         <div className="mt-2 text-[10px] uppercase tracking-wider">
           {status === "pending" && (

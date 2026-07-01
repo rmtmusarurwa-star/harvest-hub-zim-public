@@ -13,6 +13,7 @@ import {
   type OrderRow,
 } from "@/lib/order-utils";
 import { Button } from "@/components/ui/button";
+import { splitExistingBuyerTotal } from "@/lib/payment-fees";
 
 const searchSchema = z.object({
   codes: z.string().min(1),
@@ -134,7 +135,9 @@ function ConfirmationPage() {
     const row = o as OrderRow & { subtotal?: number | string | null };
     return s + Number(row.subtotal ?? Number(o.total_amount) / 1.02);
   }, 0);
-  const platformFee = Math.max(0, total - subtotal);
+  const split = splitExistingBuyerTotal(total, subtotal);
+  const platformFee = split.platformFee;
+  const processingFee = split.processingFee;
   const buyerName = profile?.full_name || user?.email || "Buyer";
   const allPaid = orders.every((o) => o.payment_status === "paid");
 
@@ -247,6 +250,10 @@ function ConfirmationPage() {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Harvest Hub fee (2%)</span>
             <span className="font-mono text-amber-400">${platformFee.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Payment processing</span>
+            <span className="font-mono text-blue-300">${processingFee.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between pt-2">
             <span className="text-xs uppercase tracking-widest text-muted-foreground">

@@ -1373,6 +1373,7 @@ type Obligation = {
   payment_reference: string;
   gross_amount: number;
   platform_fee: number;
+  processing_fee: number;
   net_amount: number;
   status: string;
   created_at: string;
@@ -1487,6 +1488,11 @@ async function enrichPayoutObligations(rawObl: RawPayoutObligation[]): Promise<O
       ...o,
       gross_amount: Number(o.gross_amount),
       platform_fee: Number(o.platform_fee),
+      processing_fee: Math.max(
+        0,
+        Math.round((Number(o.gross_amount) - Number(o.platform_fee) - Number(o.net_amount)) * 100) /
+          100,
+      ),
       net_amount: Number(o.net_amount),
       sellerId,
       sellerName: sellerProfile.full_name ?? "Unknown",
@@ -1536,6 +1542,9 @@ function PendingPaymentsTab() {
   const [rows, setRows] = useState<Obligation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"pending" | "disbursed" | "failed" | "all">(
+    "pending",
+  );
   const [disbursing, setDisbursing] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
 
@@ -1543,21 +1552,23 @@ function PendingPaymentsTab() {
     setLoading(true);
     // payout_obligations exists in migrations but is not in generated Supabase types yet.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase as any)
+    const baseQuery = (supabase as any)
       .from("payout_obligations")
       .select(
         "id, order_id, payment_reference, gross_amount, platform_fee, net_amount, status, created_at",
       )
-      .eq("status", "pending")
       .order("created_at", { ascending: true })
       .limit(300);
+    const query =
+      statusFilter === "all" ? baseQuery : baseQuery.eq("status", statusFilter);
+    const { data } = await query;
     setRows(await enrichPayoutObligations((data ?? []) as RawPayoutObligation[]));
     setLoading(false);
   }
 
   useEffect(() => {
     load();
-  }, []);
+  }, [statusFilter]);
 
   async function confirmDisbursement(obl: Obligation) {
     try {
@@ -1604,8 +1615,10 @@ function PendingPaymentsTab() {
       "order_code",
       "payment_reference",
       "buyer_paid",
+      "processing_fee",
       "harvest_hub_fee",
       "seller_payout",
+      "payout_status",
       "payout_account",
       "payout_ready",
     ];
@@ -1620,8 +1633,10 @@ function PendingPaymentsTab() {
         r.orderCode,
         r.payment_reference,
         r.gross_amount.toFixed(2),
+        r.processing_fee.toFixed(2),
         r.platform_fee.toFixed(2),
         r.net_amount.toFixed(2),
+        r.status,
         payoutLabel(r),
         hasPayoutDestination(r),
       ]
@@ -1643,10 +1658,10 @@ function PendingPaymentsTab() {
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-3">
         {[
-          { label: "Pending Settlements", value: filtered.length, icon: Wallet },
-          { label: "Amount To Send", value: `$${totalPending.toFixed(2)}`, icon: DollarSign },
+          { label: statusFilter === "pending" ? "Pending Settlements" : "Visible Settlements", value: filtered.length, icon: Wallet },
+          { label: statusFilter === "pending" ? "Amount To Send" : "Visible Amount", value: `$${totalPending.toFixed(2)}`, icon: DollarSign },
           {
-            label: "Oldest Pending",
+            label: statusFilter === "pending" ? "Oldest Pending" : "Oldest Entry",
             value: filtered[0] ? new Date(filtered[0].created_at).toLocaleDateString("en-GB") : "—",
             icon: History,
           },
@@ -1673,6 +1688,17 @@ function PendingPaymentsTab() {
             className="pl-9"
           />
         </div>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="disbursed">Sent</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
+          </SelectContent>
+        </Select>
         <Button size="sm" variant="outline" onClick={load} disabled={loading}>
           <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
           Refresh
@@ -1692,8 +1718,10 @@ function PendingPaymentsTab() {
               <th className="p-3 text-left">Buyer</th>
               <th className="p-3 text-left">Order</th>
               <th className="p-3 text-left">Buyer Paid</th>
+              <th className="p-3 text-left">Processing</th>
               <th className="p-3 text-left">Fee</th>
               <th className="p-3 text-left">Send To Seller</th>
+              <th className="p-3 text-left">Status</th>
               <th className="p-3 text-left">Payout Account</th>
               <th className="p-3 text-right">Action</th>
             </tr>
@@ -1701,14 +1729,14 @@ function PendingPaymentsTab() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-muted-foreground">
+                <td colSpan={11} className="p-8 text-center text-muted-foreground">
                   Loading pending payments...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-muted-foreground">
-                  No pending seller payments to settle.
+                <td colSpan={11} className="p-8 text-center text-muted-foreground">
+                  No seller payments match this view.
                 </td>
               </tr>
             ) : (
@@ -1734,8 +1762,23 @@ function PendingPaymentsTab() {
                     </div>
                   </td>
                   <td className="p-3">${r.gross_amount.toFixed(2)}</td>
+                  <td className="p-3 text-blue-300">${r.processing_fee.toFixed(2)}</td>
                   <td className="p-3 text-amber-400">${r.platform_fee.toFixed(2)}</td>
                   <td className="p-3 font-semibold text-secondary">${r.net_amount.toFixed(2)}</td>
+                  <td className="p-3">
+                    <Badge
+                      variant="outline"
+                      className={
+                        r.status === "pending"
+                          ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                          : r.status === "disbursed"
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                            : "border-rose-500/20 bg-rose-500/10 text-rose-300"
+                      }
+                    >
+                      {r.status === "disbursed" ? "sent" : r.status}
+                    </Badge>
+                  </td>
                   <td className="p-3 text-xs">
                     <div>{payoutLabel(r)}</div>
                     {!r.ecocash_number && !r.onemoney_number && !r.bank_account_number && (
@@ -1743,23 +1786,27 @@ function PendingPaymentsTab() {
                     )}
                   </td>
                   <td className="p-3 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!hasPayoutDestination(r)}
-                      onClick={() => {
-                        setDisbursing(r.id);
-                        setNotes("");
-                      }}
-                      title={
-                        hasPayoutDestination(r)
-                          ? "Mark this seller payout as sent"
-                          : "Seller must add payout details first"
-                      }
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                      Mark Sent
-                    </Button>
+                    {r.status === "pending" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!hasPayoutDestination(r)}
+                        onClick={() => {
+                          setDisbursing(r.id);
+                          setNotes("");
+                        }}
+                        title={
+                          hasPayoutDestination(r)
+                            ? "Mark this seller payout as sent"
+                            : "Seller must add payout details first"
+                        }
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                        Mark Sent
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No action</span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -1781,7 +1828,27 @@ function PendingPaymentsTab() {
                   <span className="font-medium">{selected.sellerName}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">Amount</span>
+                  <span className="text-muted-foreground">Buyer</span>
+                  <span className="text-right font-medium">{selected.buyerName}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Order</span>
+                  <span className="font-mono text-xs">{selected.orderCode}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Buyer paid</span>
+                  <span className="font-semibold">${selected.gross_amount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Processing fee</span>
+                  <span className="text-blue-300">${selected.processing_fee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Harvest Hub fee</span>
+                  <span className="text-amber-300">${selected.platform_fee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Send to seller</span>
                   <span className="font-semibold text-secondary">
                     ${selected.net_amount.toFixed(2)}
                   </span>

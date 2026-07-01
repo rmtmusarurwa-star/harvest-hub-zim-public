@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
 import { generateOrderCode } from "@/lib/order-utils";
+import { calculateBuyerCharges } from "@/lib/payment-fees";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,15 +44,14 @@ const METHODS: {
   desc: string;
   icon: typeof Phone;
   badge: string;
+  feeText: string;
 }[] = [
-  { id: "ecocash", name: "EcoCash", desc: "EcoCash mobile money · Econet", icon: Phone, badge: "Instant" },
-  { id: "onemoney", name: "OneMoney", desc: "OneMoney mobile money · NetOne", icon: Phone, badge: "Instant" },
-  { id: "zipit", name: "ZIPIT / Bank Transfer", desc: "CBZ Bank · Manual confirmation", icon: Building2, badge: "1–2 hrs" },
-  { id: "cash_on_delivery", name: "Cash on Delivery", desc: "Pay the farmer on collection", icon: Truck, badge: "On site" },
-  { id: "card", name: "Visa / Mastercard", desc: "Secure card payment via ClicknPay", icon: CreditCard, badge: "Secure" },
+  { id: "ecocash", name: "EcoCash", desc: "EcoCash mobile money · Econet", icon: Phone, badge: "Instant", feeText: "Processing 2.5%" },
+  { id: "onemoney", name: "OneMoney", desc: "OneMoney mobile money · NetOne", icon: Phone, badge: "Instant", feeText: "Processing 2.5%" },
+  { id: "zipit", name: "ZIPIT / Bank Transfer", desc: "CBZ Bank · Manual confirmation", icon: Building2, badge: "1–2 hrs", feeText: "No gateway fee" },
+  { id: "cash_on_delivery", name: "Cash on Delivery", desc: "Pay the farmer on collection", icon: Truck, badge: "On site", feeText: "No gateway fee" },
+  { id: "card", name: "Visa / Mastercard", desc: "Secure card payment via ClicknPay", icon: CreditCard, badge: "Secure", feeText: "Processing 3.5% + $0.50" },
 ];
-
-const PLATFORM_FEE_RATE = 0.02; // 2% charged ON TOP to buyer
 
 function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
@@ -132,8 +132,7 @@ function CheckoutPage() {
     if (!user) throw new Error("Not authenticated");
     const rows = items.map((it) => {
       const itemSubtotal   = Math.round(it.price * it.quantity * 100) / 100;
-      const itemFee        = Math.round(itemSubtotal * PLATFORM_FEE_RATE * 100) / 100;
-      const itemTotal      = Math.round((itemSubtotal + itemFee) * 100) / 100;
+      const charges        = calculateBuyerCharges(itemSubtotal, paymentMethod);
       return {
         order_code: generateOrderCode(),
         buyer_id: user.id,
@@ -144,7 +143,7 @@ function CheckoutPage() {
         unit: it.unit,
         unit_price: it.price,
         subtotal: itemSubtotal,      // product price (farmer's portion)
-        total_amount: itemTotal,     // buyer pays subtotal + 2% fee
+        total_amount: charges.buyerTotal,
         payment_method: paymentMethod,
         payment_status,
         payment_reference,
@@ -397,6 +396,7 @@ function CheckoutPage() {
   }
 
   const isCnpMethod = method ? CNP_METHODS.includes(method) : false;
+  const summaryCharges = calculateBuyerCharges(subtotal, method);
 
   const buttonLabel = (() => {
     if (submitting) return null;
@@ -480,6 +480,7 @@ function CheckoutPage() {
             {METHODS.map((m) => {
               const Icon = m.icon;
               const selected = method === m.id;
+              const methodCharges = calculateBuyerCharges(subtotal, m.id);
               return (
                 <button
                   key={m.id}
@@ -505,6 +506,14 @@ function CheckoutPage() {
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">{m.desc}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span className="rounded-full bg-blue-400/10 px-2 py-0.5 text-blue-300">
+                          {m.feeText}
+                        </span>
+                        <span className="text-muted-foreground">
+                          This cart: ${methodCharges.processingFee.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -679,17 +688,31 @@ function CheckoutPage() {
             ))}
           </ul>
           <div className="my-4 h-px bg-white/5" />
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-mono">${subtotal.toFixed(2)}</span>
+          <div className="mb-4 rounded-xl border border-blue-400/20 bg-blue-400/10 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+            Buyer total includes the produce price, Harvest Hub's 2% service fee, and any
+            method-specific payment processing fee.
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Platform fee (2%)</span>
-            <span className="font-mono">${(subtotal * PLATFORM_FEE_RATE).toFixed(2)}</span>
+            <span className="text-muted-foreground">Subtotal</span>
+            <span className="font-mono">${summaryCharges.subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Harvest Hub fee (2%)</span>
+            <span className="font-mono">${summaryCharges.platformFee.toFixed(2)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              {method ? summaryCharges.processingLabel : "Payment processing"}
+            </span>
+            <span className="font-mono">
+              {method ? `$${summaryCharges.processingFee.toFixed(2)}` : "Select method"}
+            </span>
           </div>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-xs uppercase tracking-widest text-muted-foreground">Total</span>
-            <span className="font-display text-3xl text-secondary">${(subtotal * (1 + PLATFORM_FEE_RATE)).toFixed(2)}</span>
+            <span className="font-display text-3xl text-secondary">
+              ${summaryCharges.buyerTotal.toFixed(2)}
+            </span>
           </div>
 
           <Button

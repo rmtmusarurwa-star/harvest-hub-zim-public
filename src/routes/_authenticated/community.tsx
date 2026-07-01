@@ -208,7 +208,7 @@ function CommunityList() {
             Knowledge travels faster together.
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Share knowledge with the Zimbabwean farming community.
+            Ask practical questions, share field updates, and help other members trade more safely.
           </p>
         </div>
         {user && <CreatePostDialog onCreated={load} />}
@@ -543,13 +543,17 @@ function CreatePostDialog({ onCreated }: { onCreated: () => void }) {
           <DialogTitle>Start a discussion</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          <div className="rounded-xl border border-secondary/20 bg-secondary/10 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+            Strong posts include location, crop or livestock type, quantity, timing, photos when useful,
+            and the kind of help you need. Avoid sharing private payment details in public threads.
+          </div>
           <div className="space-y-1">
             <Label>Title</Label>
             <Input
               maxLength={160}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ask a question or share an update..."
+              placeholder="Example: Need transport for 2 tonnes of tomatoes from Mutoko"
             />
           </div>
           <div className="space-y-1">
@@ -574,7 +578,7 @@ function CreatePostDialog({ onCreated }: { onCreated: () => void }) {
               rows={6}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Share details, ask for advice, post a success story..."
+              placeholder="Add location, timing, quantity, photos or proof available, and what answer would help you most."
             />
           </div>
           <div className="space-y-1">

@@ -55,6 +55,27 @@ function DashboardPage() {
       </motion.div>
 
       <CommandBar />
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <FinancialSummaryCard />
+        <div className="glass rounded-2xl border border-white/5 p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-secondary" />
+            <span className="text-sm font-semibold">Trade Control</span>
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Track what you owe, what is incoming, and which orders still need payment,
+            confirmation, delivery, or settlement.
+          </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/orders">Review Orders</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/financial-hub">Open Financial Hub</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
       <MarketTicker />
       <StatCards />
       <QuickActions />
@@ -65,8 +86,6 @@ function DashboardPage() {
           <ActivityFeed />
         </div>
         <div className="space-y-6">
-          {/* Outstanding balances — shown to all users with pending amounts */}
-          <FinancialSummaryCard />
           <AgentControlCenter />
           <LiveActivityFeed />
           <WeatherWidget />

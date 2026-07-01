@@ -31,6 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { splitExistingBuyerTotal } from "@/lib/payment-fees";
 
 export const Route = createFileRoute("/_authenticated/orders/$orderId")({
   component: OrderDetailPage,
@@ -41,8 +42,13 @@ function orderMoneySplit(order: ExtendedOrderRow) {
   const total = Number(order.total_amount);
   const subtotal =
     row.subtotal == null ? Math.round((total / 1.02) * 100) / 100 : Number(row.subtotal);
-  const fee = Math.max(0, Math.round((total - subtotal) * 100) / 100);
-  return { subtotal, fee, total };
+  const split = splitExistingBuyerTotal(total, subtotal);
+  return {
+    subtotal: split.subtotal,
+    fee: split.platformFee,
+    processingFee: split.processingFee,
+    total: split.buyerTotal,
+  };
 }
 
 // ── Step icon helper ────────────────────────────────────────────────────────
@@ -133,6 +139,106 @@ function FulfillmentTimeline({ status }: { status: FulfillmentStatus }) {
           </ol>
         </div>
       )}
+    </div>
+  );
+}
+
+function MoneyMovementTimeline({
+  order,
+  split,
+  isBuyer,
+}: {
+  order: ExtendedOrderRow;
+  split: { subtotal: number; fee: number; processingFee: number; total: number };
+  isBuyer: boolean;
+}) {
+  const paymentStatus = order.payment_status;
+  const isPaid = paymentStatus === "paid" || paymentStatus === "confirmed";
+  const isAwaitingProof = paymentStatus === "awaiting_confirmation";
+  const isCod = order.payment_method === "cash_on_delivery";
+  const sellerStatus = isPaid ? "Ready for admin settlement" : "Waiting for buyer payment";
+
+  const steps = [
+    {
+      label: "Order created",
+      detail: `${order.quantity} ${order.unit} of ${order.listing_title}`,
+      done: true,
+    },
+    {
+      label: isCod ? "Buyer pays on collection" : "Buyer payment",
+      detail: isPaid
+        ? `Buyer paid $${split.total.toFixed(2)}`
+        : isAwaitingProof
+          ? "Payment proof uploaded and waiting for admin confirmation"
+          : "Payment still pending",
+      done: isPaid,
+      active: !isPaid,
+    },
+    {
+      label: "Harvest Hub fee",
+      detail: `2% platform fee retained: $${split.fee.toFixed(2)}`,
+      done: isPaid,
+    },
+    {
+      label: "Payment processing",
+      detail:
+        split.processingFee > 0
+          ? `Gateway or merchant processing cost: $${split.processingFee.toFixed(2)}`
+          : "No separate processing fee recorded",
+      done: isPaid,
+    },
+    {
+      label: "Seller payout",
+      detail: `${sellerStatus}: $${split.subtotal.toFixed(2)}`,
+      done: false,
+      active: isPaid,
+    },
+  ];
+
+  return (
+    <div className="glass rounded-2xl border border-white/5 p-5">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Money Movement</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isBuyer
+              ? "This shows what you paid and when the seller becomes payable."
+              : "This shows what the buyer paid, Harvest Hub's fee, and your expected payout."}
+          </p>
+        </div>
+        <div className="rounded-xl bg-secondary/10 px-3 py-2 text-right">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Seller receives
+          </div>
+          <div className="font-display text-xl text-secondary">${split.subtotal.toFixed(2)}</div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {steps.map((step, idx) => (
+          <div key={step.label} className="flex gap-3">
+            <div className="flex flex-col items-center">
+              <span
+                className={cn(
+                  "grid h-7 w-7 place-items-center rounded-full border text-xs",
+                  step.done
+                    ? "border-secondary bg-secondary text-primary"
+                    : step.active
+                      ? "border-amber-400/60 bg-amber-400/10 text-amber-300"
+                      : "border-white/10 bg-white/[0.03] text-muted-foreground",
+                )}
+              >
+                {idx + 1}
+              </span>
+              {idx < steps.length - 1 && <span className="h-8 w-px bg-white/10" />}
+            </div>
+            <div className="pb-3">
+              <div className="text-sm font-medium text-foreground">{step.label}</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">{step.detail}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -419,6 +525,8 @@ function OrderDetailPage() {
       {/* Fulfillment timeline */}
       <FulfillmentTimeline status={fs} />
 
+      <MoneyMovementTimeline order={order} split={split} isBuyer={isBuyer} />
+
       {/* Review prompt (buyer, after delivery) */}
       <AnimatePresence>
         {showReview && (
@@ -532,6 +640,10 @@ function OrderDetailPage() {
           <div className="mt-1 flex justify-between">
             <span className="text-muted-foreground">Harvest Hub fee (2%)</span>
             <span className="font-mono text-amber-400">${split.fee.toFixed(2)}</span>
+          </div>
+          <div className="mt-1 flex justify-between">
+            <span className="text-muted-foreground">Payment processing</span>
+            <span className="font-mono text-blue-300">${split.processingFee.toFixed(2)}</span>
           </div>
           <div className="mt-2 flex justify-between border-t border-white/5 pt-2 font-medium">
             <span>Buyer paid</span>
